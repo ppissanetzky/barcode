@@ -85,7 +85,7 @@ if (process.env.NODE_ENV !== 'production') {
 // The dbtc routes
 //-----------------------------------------------------------------------------
 
-app.use('/api/dbtc', dbtcRouter);
+app.use('/bc/api/dbtc', dbtcRouter);
 
 //-----------------------------------------------------------------------------
 // The port that the Express application listens to.

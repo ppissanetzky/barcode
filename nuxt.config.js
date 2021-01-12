@@ -1,5 +1,13 @@
 import colors from 'vuetify/es5/util/colors'
 
+//-----------------------------------------------------------------------------
+// Load our build-time configuration
+//-----------------------------------------------------------------------------
+
+import BarcodeConfig from './barcode.config.js'
+
+//-----------------------------------------------------------------------------
+
 export default {
   // Disable server-side rendering (https://go.nuxtjs.dev/ssr-mode)
   ssr: false,
@@ -57,10 +65,16 @@ export default {
     proxy: true,
   },
 
-  // When we make a request to /api, it gets redirected to our server
-  // plus '/api'
+  // When we make a request to /bc/api, it gets redirected to our server
+  // plus '/bc/api'
   proxy: {
-    '/api': 'http://localhost:3003/',
+    '/bc/api': BarcodeConfig.BC_API_URL,
+  },
+
+  // This is exposed to pages in $config.uploadsBaseUrl so that they know
+  // the base URL for uploaded images
+  publicRuntimeConfig: {
+    BC_UPLOADS_URL: BarcodeConfig.BC_UPLOADS_URL,
   },
 
   // Vuetify module configuration (https://go.nuxtjs.dev/config-vuetify)

@@ -2,6 +2,12 @@ const express = require('express');
 const multer = require('multer');
 
 //-----------------------------------------------------------------------------
+// Function to get runtime configuration from the environment
+//-----------------------------------------------------------------------------
+
+const BarcodeConfig = require('../barcode.config');
+
+//-----------------------------------------------------------------------------
 // The database
 //-----------------------------------------------------------------------------
 
@@ -11,7 +17,7 @@ const db = require('./dbtc-database');
 // The destinaton for uploaded files (pictures)
 //-----------------------------------------------------------------------------
 
-const upload = multer({dest: '/var/www/html/uploads/'});
+const upload = multer({dest: BarcodeConfig.BC_UPLOADS_DIR});
 
 //-----------------------------------------------------------------------------
 // The router
@@ -23,9 +29,9 @@ const router = express.Router();
 // My collection of frags
 //-----------------------------------------------------------------------------
 
-router.get('/your-collection', async (req, res) => {
+router.get('/your-collection', (req, res) => {
     const {user} = req;
-    const frags = await db.selectAllFragsForUser(user);
+    const frags = db.selectAllFragsForUser(user);
     res.json({
         user,
         frags
@@ -36,10 +42,10 @@ router.get('/your-collection', async (req, res) => {
 // Data about one frag
 //-----------------------------------------------------------------------------
 
-router.get('/frag/:fragId', async (req, res) => {
+router.get('/frag/:fragId', (req, res) => {
     const {user, params} = req;
     const {fragId} = params;
-    const [frag, journals] = await db.selectFrag(fragId);
+    const [frag, journals] = db.selectFrag(fragId);
     res.json({
         user,
         isOwner: user.id === frag.ownerId,
@@ -52,7 +58,7 @@ router.get('/frag/:fragId', async (req, res) => {
 // When a new item is added
 //-----------------------------------------------------------------------------
 
-router.post('/add-new-item', upload.single('picture'), async (req, res) => {
+router.post('/add-new-item', upload.single('picture'), (req, res) => {
     // 'file' is added by multer and has all the information about the
     // uploaded file if one was present
     const {user, body, file} = req;
@@ -66,7 +72,7 @@ router.post('/add-new-item', upload.single('picture'), async (req, res) => {
         picture
     };
     // Add the new item
-    const fragId = await db.insertItem(params);
+    const fragId = db.insertItem(params);
     console.log('Added frag', fragId);
     res.json({
         fragId

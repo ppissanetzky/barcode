@@ -1,9 +1,11 @@
 
-const path = require('path');
-
 const {Database} = require('./db');
 
-const db = new Database(path.join(__dirname, 'database', 'dbtc.sqlite3'));
+//-----------------------------------------------------------------------------
+
+const DBTC_DB_VERSION = 1;
+
+const db = new Database('dbtc', DBTC_DB_VERSION);
 
 //-----------------------------------------------------------------------------
 // All frags for a given user - joined with species
@@ -25,8 +27,8 @@ const SELECT_FRAGS_FOR_USER = `
         mothers.name ASC
 `;
 
-async function selectAllFragsForUser(user) {
-    return await db.all(SELECT_FRAGS_FOR_USER, {$userId: user.id});
+function selectAllFragsForUser(user) {
+    return db.all(SELECT_FRAGS_FOR_USER, {userId: user.id});
 }
 
 //-----------------------------------------------------------------------------
@@ -55,14 +57,12 @@ const SELECT_FRAG_JOURNALS = `
         timestamp DESC
 `;
 
-async function selectFrag(fragId) {
+function selectFrag(fragId) {
     const bindings = {
-        $fragId: fragId
+        fragId
     };
-    const [[frag], journals] = await Promise.all([
-        await db.all(SELECT_A_FRAG, bindings),
-        await db.all(SELECT_FRAG_JOURNALS, bindings)
-    ]);
+    const [frag] = db.all(SELECT_A_FRAG, bindings);
+    const journals = db.all(SELECT_FRAG_JOURNALS, bindings);
     return [frag, journals];
 }
 
@@ -77,7 +77,7 @@ const SELECT_MOTHERS = `
         name ASC
 `;
 
-async function selectMothers() {
+function selectMothers() {
     return db.all(SELECT_MOTHERS);
 }
 
@@ -139,43 +139,31 @@ const INSERT_FRAG = `
         )
 `;
 
-const MOTHER_COLUMNS = new Set([
-    'name', 'type', 'scientificName', 'flow', 'light', 'hardiness', 'growthRate',
-    'sourceType', 'source', 'cost', 'size'
-]);
+const INSERT_ITEM_NULLABLE_VALUES = {
+    scientificName: null,
+    sourceType: null,
+    source: null,
+    size: null,
+    picture: null,
+    notes: null
+};
 
-const FRAG_COLUMNS = new Set([
-    'motherId',
-    'ownerId',
-    'dateAcquired',
-    'picture',
-    'notes',
-    'fragsAvailable'
-]);
-
-async function insertItem(values) {
-    // TODO: should be done in a transaction
-    const motherBindings = Object.keys(values).reduce((result, key) => {
-        if (MOTHER_COLUMNS.has(key)) {
-            result[`$${key}`] = values[key];
-        }
-        return result;
-    }, {});
-    console.log(motherBindings);
-    const motherId = await db.run(INSERT_MOTHER, motherBindings);
-    console.log('MOTHER ID', motherId);
-
-    const fragBindings = Object.keys(values).reduce((result, key) => {
-        if (FRAG_COLUMNS.has(key)) {
-            result[`$${key}`] = values[key];
-        }
-        return result;
-    }, {});
-    fragBindings['$motherId'] = motherId;
-    console.log(fragBindings);
-
-    const fragId = await db.run(INSERT_FRAG, fragBindings);
-    return fragId;
+function insertItem(values) {
+    return db.transaction(({run}) => {
+        const bindings = {
+            ...INSERT_ITEM_NULLABLE_VALUES,
+            ...values
+        };
+        const motherId = run(INSERT_MOTHER, bindings);
+        console.log('MOTHER ID', motherId);
+        const fragBindings = {
+            ...bindings,
+            motherId
+        };
+        console.log(fragBindings);
+        const fragId = run(INSERT_FRAG, fragBindings);
+        return fragId;
+    });
 }
 
 // //-----------------------------------------------------------------------------

@@ -3,16 +3,18 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "nuxt",
+    "dev": "BC_API_URL=http://localhost:3003 BC_UPLOADS_URL=http://localhost/uploads nuxt",
     "build": "nuxt build",
     "start": "nuxt start",
     "generate": "nuxt generate",
     "lint:js": "eslint --ext .js,.vue --ignore-path .gitignore .",
-    "lint": "npm run lint:js"
+    "lint": "npm run lint:js",
+    "server": "BC_UPLOADS_DIR=/var/www/html/uploads BC_DATABASE_DIR=/tmp nodemon server/server.js 16186"
   },
   "dependencies": {
     "@nuxtjs/axios": "^5.12.5",
     "@nuxtjs/proxy": "^2.1.0",
+    "better-sqlite3": "^7.1.2",
     "cookie": "^0.4.1",
     "core-js": "^3.6.5",
     "date-fns": "^2.16.1",
@@ -20,7 +22,6 @@
     "express": "^4.17.1",
     "multer": "^1.4.2",
     "nuxt": "^2.14.6",
-    "sqlite3": "^5.0.0",
     "vee-validate": "^3.4.5"
   },
   "devDependencies": {
@@ -29,6 +30,7 @@
     "@nuxtjs/vuetify": "^1.11.2",
     "babel-eslint": "^10.1.0",
     "eslint": "^7.10.0",
-    "eslint-plugin-nuxt": "^1.0.0"
+    "eslint-plugin-nuxt": "^1.0.0",
+    "nodemon": "^2.0.7"
   }
 }
