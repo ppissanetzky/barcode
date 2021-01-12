@@ -21,7 +21,7 @@
         :key="frag.fragId"
         cols="auto"
       >
-        <v-card :to="`./frag/${frag.fragId}`">
+        <v-card :to="`frag/${frag.fragId}`">
           <v-img
             v-if="frag.picture"
             :src="`http://localhost/uploads/${frag.picture}`"
@@ -64,7 +64,7 @@ function age (isoDateTime) {
 
 export default {
   async fetch () {
-    const { user, frags } = await this.$axios.$get('/dbtc/api/your-collection')
+    const { user, frags } = await this.$axios.$get('/api/dbtc/your-collection')
     frags.forEach((frag) => {
       frag.age = age(frag.dateAcquired)
     })

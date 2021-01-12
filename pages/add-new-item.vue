@@ -429,7 +429,7 @@ export default {
       // Convert the local date (only) to a full date/time with TZ information
       formData.set('dateAcquired', formatISO(parseISO(this.$data.dateAcquired)))
 
-      /* const { fragId } = */ await this.$axios.$post('/dbtc/api/add-new-item', formData, {
+      /* const { fragId } = */ await this.$axios.$post('/api/dbtc/add-new-item', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

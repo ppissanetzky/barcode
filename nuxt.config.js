@@ -57,17 +57,17 @@ export default {
     proxy: true,
   },
 
-  // When we make a request to /dbtc/api, it gets redirected to our server
-  // plus '/dbtc/api'
+  // When we make a request to /api, it gets redirected to our server
+  // plus '/api'
   proxy: {
-    '/dbtc/api': 'http://localhost:3003/barcode/',
+    '/api': 'http://localhost:3003/',
   },
 
   // Vuetify module configuration (https://go.nuxtjs.dev/config-vuetify)
   vuetify: {
     customVariables: ['~/assets/variables.scss'],
     theme: {
-      dark: true,
+      dark: false,
       themes: {
         dark: {
           primary: colors.blue.darken2,

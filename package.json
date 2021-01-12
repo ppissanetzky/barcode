@@ -13,10 +13,14 @@
   "dependencies": {
     "@nuxtjs/axios": "^5.12.5",
     "@nuxtjs/proxy": "^2.1.0",
+    "cookie": "^0.4.1",
     "core-js": "^3.6.5",
     "date-fns": "^2.16.1",
     "date-fns-tz": "^1.0.12",
+    "express": "^4.17.1",
+    "multer": "^1.4.2",
     "nuxt": "^2.14.6",
+    "sqlite3": "^5.0.0",
     "vee-validate": "^3.4.5"
   },
   "devDependencies": {
