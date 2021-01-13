@@ -33,6 +33,7 @@ router.get('/your-collection', (req, res) => {
     const {user} = req;
     const frags = db.selectAllFragsForUser(user);
     res.json({
+        success: true,
         user,
         frags
     });
@@ -47,6 +48,7 @@ router.get('/frag/:fragId', (req, res) => {
     const {fragId} = params;
     const [frag, journals] = db.selectFrag(fragId);
     res.json({
+        success: true,
         user,
         isOwner: user.id === frag.ownerId,
         frag,
@@ -75,7 +77,30 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
     const fragId = db.insertItem(params);
     console.log('Added frag', fragId);
     res.json({
+        success: true,
         fragId
+    });
+});
+
+//-----------------------------------------------------------------------------
+// Changing the number of available frags
+//-----------------------------------------------------------------------------
+
+router.put('/frag/:fragId/available/:fragsAvailable', (req, res) => {
+    const {user, params} = req;
+    const {fragId, fragsAvailable} = params;
+    // Validate the frag. It must belong to this user and be alive. We don't
+    // care how many frags are already available, so we send -1 for that
+    const frag = db.validateFrag(user.id, fragId, true, -1);
+    if (!frag) {
+        // TODO: Error
+        return res.status(500).end();
+    }
+    // Now update it
+    db.updateFragsAvailable(user.id, fragId, fragsAvailable);
+    res.json({
+        success: true,
+        fragsAvailable
     });
 });
 

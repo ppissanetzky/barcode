@@ -166,75 +166,60 @@ function insertItem(values) {
     });
 }
 
-// //-----------------------------------------------------------------------------
-// // Select everything about a frag given parameters - to validate the frag
-// //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Select everything about a frag given parameters - to validate the frag
+//-----------------------------------------------------------------------------
 
-// const SELECT_VALID_FRAG = `
-//     SELECT
-//         species.species_id          AS species_id,
-//         species.name                AS species_name,
-//         species.type                AS species_type,
-//         species.scientific_name     AS species_scientific_name,
-//         species.notes               AS species_notes,
+const SELECT_VALID_FRAG = `
+    SELECT
+        *,
+        CASE WHEN frags.isAlive AND frags.fragsAvailable > 0
+            THEN 1 ELSE 0 END AS isAvailable
+    FROM
+        mothers,
+        frags
+    WHERE
+        frags.fragId            = $fragId AND
+        frags.motherId          = mothers.motherId AND
+        frags.isAlive           = $isAlive AND
+        frags.fragsAvailable    > $fragsAvailable AND
+        frags.ownerId           = $ownerId
+`;
 
-//         frags.frag_id               AS frag_id,
-//         frags.date_acquired         AS date_acquired,
-//         frags.picture               AS picture,
-//         frags.notes                 AS notes,
-//         frags.frag_of               AS frag_of,
-//         frags.frags_available       AS frags_available,
-//         frags.is_alive              AS is_alive,
+// Returns undefined if the frag is not valid. Otherwise, returns
+// the one and only row
 
-//         CASE WHEN frags.is_alive AND frags.frags_available > 0
-//             THEN 1 ELSE 0 END AS is_available
-//     FROM
-//         frags,
-//         species
-//     WHERE
-//         frags.frag_id           = $frag_id AND
-//         frags.is_alive          = $is_alive AND
-//         frags.frags_available   > $frags_available AND
-//         frags.owner             = $owner AND
-//         frags.species_id        = species.species_id
-// `;
+function validateFrag(ownerId, fragId, isAlive, fragsAvailable) {
+    const [frag] = db.all(SELECT_VALID_FRAG, {
+        fragId,
+        isAlive: isAlive ? 1 : 0,
+        fragsAvailable,
+        ownerId
+    });
+    return frag;
+}
 
-// // Returns undefined if the frag is not valid. Otherwise, returns
-// // the one and only row
+//-----------------------------------------------------------------------------
+// Given an owner, frag ID and a new number for fragsAvailable
+//-----------------------------------------------------------------------------
 
-// async function validateFrag(owner, fragId, isAlive, fragsAvailable) {
-//     const rows = await db.all(SELECT_VALID_FRAG, {
-//         $frag_id: fragId,
-//         $is_alive: isAlive ? 1 : 0,
-//         $frags_available: fragsAvailable,
-//         $owner: owner.id
-//     });
-//     const [frag] = rows;
-//     return frag;
-// }
+const UPDATE_FRAGS_AVAILABLE = `
+    UPDATE
+        frags
+    SET
+        fragsAvailable = $fragsAvailable
+    WHERE
+        fragId = $fragId AND
+        ownerId = $ownerId
+`;
 
-// //-----------------------------------------------------------------------------
-// // Given an owner, frag ID and increment, add the increment to frags_available
-// // Note that the increment can be negative to decrease the number of frags.
-// //-----------------------------------------------------------------------------
-
-// const UPDATE_FRAGS_AVAILABLE = `
-//     UPDATE
-//         frags
-//     SET
-//         frags_available = frags_available + $increment
-//     WHERE
-//         frag_id = $frag_id AND
-//         owner = $owner
-// `;
-
-// async function updateFragsAvailable(owner, fragId, increment) {
-//     await db.run(UPDATE_FRAGS_AVAILABLE, {
-//         $frag_id: fragId,
-//         $owner: owner.id,
-//         $increment: increment
-//     });
-// }
+function updateFragsAvailable(ownerId, fragId, fragsAvailable) {
+    db.run(UPDATE_FRAGS_AVAILABLE, {
+        fragId,
+        ownerId,
+        fragsAvailable
+    });
+}
 
 // //-----------------------------------------------------------------------------
 
@@ -242,5 +227,7 @@ module.exports = {
     selectAllFragsForUser,
     selectMothers,
     insertItem,
-    selectFrag
+    selectFrag,
+    validateFrag,
+    updateFragsAvailable
 }
