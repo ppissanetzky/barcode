@@ -2,54 +2,49 @@
   <v-container fluid>
     <v-row>
       <v-col>
-        <h1>Test page</h1>
+        <v-btn>
+          click
+        </v-btn>
       </v-col>
     </v-row>
     <v-row>
-      <v-autocomplete
-        v-model="selectedUser"
-        :items="users"
-        :loading="isLoadingUsers"
-        :search-input.sync="searchForUser"
-        hide-no-data
-        hide-selected
-        item-text="name"
-        item-value="id"
-        label="Recipient"
-        placeholder="Start typing to search"
-        prepend-icon="mdi-database-search"
-        return-object
-        outlined
-      />
-      <v-divider />
+      <v-col>
+        <bc-user-autocomplete
+          v-model="user"
+          label="Recipient"
+        />
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
+        <bc-date-picker
+          v-model="myDate"
+          label="Choose a date, fool"
+          hint="do it"
+          name="date"
+        />
+      </v-col>
     </v-row>
   </v-container>
 </template>
 <script>
+import BcUserAutocomplete from '~/components/BcUserAutocomplete.vue'
 export default {
-  data: () => ({
-    users: [],
-    isLoadingUsers: false,
-    selectedUser: null,
-    searchForUser: null
-  }),
-
-  watch: {
-    async searchForUser (value) {
-      // Items have already been requested
-      if (this.isLoadingUsers) {
-        return
-      }
-
-      // Lazily load input items
-      this.isLoadingUsers = true
-      try {
-        const { users } = await this.$axios.$get(`/bc/api/dbtc/find-users?prefix=${encodeURIComponent(value)}`)
-        this.users = users.map(([id, name]) => ({ id, name }))
-      } finally {
-        this.isLoadingUsers = false
-      }
+  components: { BcUserAutocomplete },
+  data () {
+    return {
+      user: undefined,
+      myDate: undefined
     }
+  },
+  watch: {
+    user (value) {
+      console.warn('USER IS', value ? value.name : 'NONE')
+    },
+    myDate (value) {
+      console.warn('DATE IS', this.myDate)
+    }
+
   }
 }
 </script>

@@ -73,60 +73,12 @@
                   <!-- Date acquired -->
 
                   <v-col>
-                    <v-menu
-                      ref="menu"
-                      v-model="menu"
-                      :close-on-content-click="false"
-                      :return-value.sync="dateAcquired"
-                      transition="scale-transition"
-                      offset-y
-                      min-width="290px"
-                    >
-                      <template v-slot:activator="{ on, attrs }">
-                        <validation-provider
-                          v-slot="{ errors }"
-                          rules="required|length:10"
-                          name="date acquired"
-                        >
-                          <v-text-field
-                            id="dateAcquired"
-                            v-model="dateAcquired"
-                            label="Date acquired"
-                            v-bind="attrs"
-                            name="dateAcquired"
-                            hint="The date you got it"
-                            persistent-hint
-                            :error-messages="errors"
-                            readonly
-                            required
-                            outlined
-                            v-on="on"
-                          />
-                        </validation-provider>
-                      </template>
-                      <v-date-picker
-                        v-model="dateAcquired"
-                        :max="today"
-                        no-title
-                        scrollable
-                      >
-                        <v-spacer />
-                        <v-btn
-                          text
-                          color="primary"
-                          @click="menu = false"
-                        >
-                          Cancel
-                        </v-btn>
-                        <v-btn
-                          text
-                          color="primary"
-                          @click="$refs.menu.save(dateAcquired)"
-                        >
-                          OK
-                        </v-btn>
-                      </v-date-picker>
-                    </v-menu>
+                    <bc-date-picker
+                      v-model="dateAcquired"
+                      label="Date acquired"
+                      name="date acquired"
+                      hint="The date you got it"
+                    />
                   </v-col>
 
                   <!-- Frags available -->
@@ -365,20 +317,19 @@
 // rules with their messages
 import { ValidationObserver, ValidationProvider } from 'vee-validate/dist/vee-validate.full.esm'
 import { formatISO, parseISO } from 'date-fns'
-
-// Today's date time converted to local and stripped of its time
-const today = formatISO(new Date(), { representation: 'date' })
+import BcDatePicker from '~/components/BcDatePicker.vue'
 
 export default {
   components: {
     ValidationObserver,
-    ValidationProvider
+    ValidationProvider,
+    BcDatePicker
   },
   data () {
     return {
       name: undefined,
       type: undefined,
-      dateAcquired: today,
+      dateAcquired: undefined,
       fragsAvailable: 0,
       picture: undefined,
       size: undefined,
@@ -392,10 +343,6 @@ export default {
       source: undefined,
       cost: '0.00',
 
-      // To initialize the date and max dates on the date picker
-      today,
-      // The date picker menu
-      menu: false,
       // For the loading animation on the add it now button
       loading: false,
       loader: null
@@ -435,7 +382,7 @@ export default {
       })
 
       // Convert the local date (only) to a full date/time with TZ information
-      formData.set('dateAcquired', formatISO(parseISO(this.$data.dateAcquired)))
+      formData.set('dateAcquired', formatISO(parseISO(this.dateAcquired)))
 
       /* const { fragId } = */ await this.$axios.$post('/bc/api/dbtc/add-new-item', formData, {
         headers: {
