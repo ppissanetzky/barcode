@@ -344,7 +344,9 @@
                     <v-btn
                       color="primary"
                       type="submit"
-                      :disabled="invalid"
+                      :disabled="invalid || loading"
+                      :loading="loading"
+                      @click="loader = 'loading'"
                     >
                       Add it now
                     </v-btn>
@@ -355,32 +357,6 @@
           </validation-observer>
         </v-card>
       </v-col>
-    </v-row>
-
-    <!-- Dialog we show after the item is added -->
-
-    <v-row justify="center">
-      <v-dialog
-        v-model="dialog"
-        persistent
-        max-width="290"
-      >
-        <v-card>
-          <v-card-title class="headline">
-            Item added!
-          </v-card-title>
-          <v-card-text v-text="`${name} was added!`" />
-          <v-card-actions>
-            <v-spacer />
-            <v-btn
-              text
-              to="/"
-            >
-              OK
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
     </v-row>
   </v-container>
 </template>
@@ -416,9 +392,13 @@ export default {
       source: undefined,
       cost: '0.00',
 
+      // To initialize the date and max dates on the date picker
+      today,
+      // The date picker menu
       menu: false,
-      dialog: false,
-      today
+      // For the loading animation on the add it now button
+      loading: false,
+      loader: null
     }
   },
   methods: {
@@ -427,6 +407,7 @@ export default {
     },
 
     async submit () {
+      this.loading = true
       const formData = new FormData()
       const keys = [
         'name',
@@ -460,10 +441,11 @@ export default {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
-      }).then((fragId) => {
-        this.$data.dialog = true
-        return fragId
       })
+      // Navigate back to the home page
+      this.$router.replace('/')
+      // Turn off the loading button
+      this.loading = false
     }
   }
 }
