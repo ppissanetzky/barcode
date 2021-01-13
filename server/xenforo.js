@@ -104,6 +104,15 @@ async function apiRequest(endpoint, method, params, headers) {
 }
 
 //-----------------------------------------------------------------------------
+
+function isXfUserAllowed(xfUser) {
+    // This should be an array of group IDs (numbers). Check to make sure
+    // the user is in one of the groups allowed to participate.
+    const {secondary_group_ids = []} = xfUser;
+    return secondary_group_ids.some((id) => ALLOWED_GROUPS.has(id));
+}
+
+//-----------------------------------------------------------------------------
 // Construct our own user object from a XenForo user
 //-----------------------------------------------------------------------------
 
@@ -119,7 +128,6 @@ function makeUser(xfUser) {
         register_date,
         view_url,
         age,
-
     } = xfUser;
     return ({
         id: parseInt(user_id, 10),
@@ -131,7 +139,7 @@ function makeUser(xfUser) {
         registerDate: register_date,
         lastActivityDate: last_activity,
         viewUrl: view_url,
-        avatarUrl: m,
+        avatarUrl: m
     });
 }
 
@@ -204,11 +212,8 @@ async function validateXenForoUser(headers) {
         throw new Error(`User ${username} has invalid state "${user_state}"`);
     }
 
-    // This should be an array of group IDs (numbers). Check to make sure
-    // the user is in one of the groups allowed to participate.
-    const {secondary_group_ids = []} = user;
-    const allowed = secondary_group_ids.some((id) => ALLOWED_GROUPS.has(id));
-    if (!allowed) {
+    // See if the user is allowed to participate
+    if (!isXfUserAllowed(user)) {
         throw new MemberNotAllowedError(NON_SUPPORTING_MEMBER_MESSAGE);
     }
 
@@ -312,6 +317,31 @@ async function sendAlert(recipientId, body, linkText, linkUrl) {
 }
 
 //-----------------------------------------------------------------------------
+// This API returns all users with names matching the given prefix.
+// NOTE: It returns partial users. Most notably, the groups are missing,
+// so we can't tell whether they are allowed to use the system.
+// We'll have to validate them later.
+// https://xenforo.com/community/pages/api-endpoints/#route_get_users_find_name
+//-----------------------------------------------------------------------------
+
+async function findUsersWithPrefix(prefix) {
+    const response = await apiRequest('users/find-name', 'GET', {
+        username: prefix
+    });
+    const users = [];
+    if (response) {
+        const {exact, recommendations} = response;
+        if (exact) {
+            users.push(makeUser(exact));
+        }
+        recommendations.forEach((xfUser) => {
+            users.push(makeUser(xfUser));
+        });
+    }
+    return users;
+}
+
+//-----------------------------------------------------------------------------
 
 module.exports = {
     validateXenForoUser,
@@ -320,7 +350,8 @@ module.exports = {
     LOGIN_LINK,
     MemberNotAllowedError,
     startConversation,
-    sendAlert
+    sendAlert,
+    findUsersWithPrefix
 };
 
 /*

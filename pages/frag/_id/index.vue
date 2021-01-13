@@ -55,7 +55,7 @@
                   if you no longer have all of those frags.
                 </v-card-text>
 
-                <validation-observer ref="fragsAvailableObserver" v-slot="{ invalidFragsAvailable }">
+                <validation-observer ref="fragsAvailableObserver" v-slot="{ invalid }">
                   <v-form
                     id="update-frags-available"
                     @submit.prevent="submitPreventFragsAvailable"
@@ -85,7 +85,7 @@
                           <v-btn
                             color="secondary"
                             type="submit"
-                            :disabled="invalidFragsAvailable"
+                            :disabled="invalid"
                           >
                             Update
                           </v-btn>

@@ -1,6 +1,8 @@
 const express = require('express');
 const multer = require('multer');
 
+const {findUsersWithPrefix} = require('./xenforo');
+
 //-----------------------------------------------------------------------------
 // Function to get runtime configuration from the environment
 //-----------------------------------------------------------------------------
@@ -96,11 +98,32 @@ router.put('/frag/:fragId/available/:fragsAvailable', (req, res) => {
         // TODO: Error
         return res.status(500).end();
     }
+    // Validate fragsAvailable
+    const value = parseInt(fragsAvailable, 10);
+    if (isNaN(value) || value < 0) {
+        // TODO: Error
+        return res.status(500).end();
+    }
     // Now update it
-    db.updateFragsAvailable(user.id, fragId, fragsAvailable);
+    db.updateFragsAvailable(user.id, fragId, value);
     res.json({
         success: true,
-        fragsAvailable
+        fragsAvailable: value
+    });
+});
+
+//-----------------------------------------------------------------------------
+// TODO: Belongs in a '/user' API
+//-----------------------------------------------------------------------------
+
+router.get('/find-users', async (req, res) => {
+    const {query} = req;
+    const {prefix} = query;
+    const fullUsers = await findUsersWithPrefix(prefix);
+    // Make it smaller, only returning [[id, name],...]
+    const users = fullUsers.map(({id, name}) => [id, name]);
+    res.json({
+        users
     });
 });
 
