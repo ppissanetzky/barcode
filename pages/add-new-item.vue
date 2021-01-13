@@ -356,6 +356,32 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Dialog we show after the item is added -->
+
+    <v-row justify="center">
+      <v-dialog
+        v-model="dialog"
+        persistent
+        max-width="290"
+      >
+        <v-card>
+          <v-card-title class="headline">
+            Item added!
+          </v-card-title>
+          <v-card-text v-text="`${name} was added!`" />
+          <v-card-actions>
+            <v-spacer />
+            <v-btn
+              text
+              to="/"
+            >
+              OK
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </v-row>
   </v-container>
 </template>
 <script>
@@ -391,6 +417,7 @@ export default {
       cost: '0.00',
 
       menu: false,
+      dialog: false,
       today
     }
   },
@@ -433,9 +460,10 @@ export default {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
+      }).then((fragId) => {
+        this.$data.dialog = true
+        return fragId
       })
-
-      // TODO: redirect? show a dialog?
     }
   }
 }
