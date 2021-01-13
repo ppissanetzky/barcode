@@ -31,7 +31,7 @@ export default {
 
   // Router
   router: {
-    base: '/barcode/'
+    base: '/bc/'
   },
 
   // Global CSS (https://go.nuxtjs.dev/config-css)

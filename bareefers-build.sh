@@ -6,19 +6,19 @@ BASE_URL=https://bareefers.org
 
 # The base directory
 
-BASE_DIR=/home/admin3/bc
+BASE_DIR=/home/admin3/barcode-data
 
 # The directory where uploads will go
 
-BC_UPLOADS_DIR=${BASE_DIR}/uploads
+BC_UPLOADS_DIR=${BASE_DIR}/uploads/bc/uploads
 
 # The directory where the databases will go
 
-BC_DATABASE_DIR=${BASE_DIR}/database
+BC_DATABASE_DIR=${BASE_DIR}/databases
 
 # The directory that holds the static site
 
-SITE_DIR=${BASE_DIR}/site
+SITE_DIR=${BASE_DIR}/site/bc
 
 # Make all the directories
 
