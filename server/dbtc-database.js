@@ -133,7 +133,7 @@ const INSERT_FRAG = `
             $dateAcquired,
             $picture,
             $notes,
-            NULL,
+            $fragOf,
             $fragsAvailable,
             1
         )
@@ -158,11 +158,63 @@ function insertItem(values) {
         console.log('MOTHER ID', motherId);
         const fragBindings = {
             ...bindings,
-            motherId
+            motherId,
+            fragOf: null
         };
         console.log(fragBindings);
         const fragId = run(INSERT_FRAG, fragBindings);
         return fragId;
+    });
+}
+
+const DECREMENT_FRAGS_AVAILABLE = `
+    UPDATE
+        frags
+    SET
+        fragsAvailable = MAX(fragsAvailable - 1, 0)
+    WHERE
+        fragId = $fragId AND
+        ownerId = $ownerId
+`;
+
+const SELECT_FRAGS_AVAILABLE = `
+    SELECT
+        fragsAvailable
+    FROM
+        frags
+        WHERE
+        fragId = $fragId AND
+        ownerId = $ownerId
+`;
+
+// give a frag to someone else. userId is the one that is
+// giving the frag
+//
+// values.ownerId is the recipient
+// values.fragOf is the ID of the source frag
+
+function giveAFrag(userId, values) {
+    return db.transaction(({run, all}) => {
+        // Insert into the frags table
+        const fragBindings = {
+            ...values,
+            fragsAvailable: 0
+        };
+        console.log('GIVING FRAG', fragBindings);
+        run(INSERT_FRAG, fragBindings);
+
+        // Decrement available frags on the source frag
+        run(DECREMENT_FRAGS_AVAILABLE, {
+            ownerId: userId,
+            fragId: values.fragOf
+        });
+
+        // Now get the current number of frags available
+        const [{fragsAvailable}] = all(SELECT_FRAGS_AVAILABLE, {
+            ownerId: userId,
+            fragId: values.fragOf
+        });
+        return fragsAvailable;
     });
 }
 
@@ -207,7 +259,7 @@ const UPDATE_FRAGS_AVAILABLE = `
     UPDATE
         frags
     SET
-        fragsAvailable = $fragsAvailable
+        fragsAvailable = MAX($fragsAvailable, 0)
     WHERE
         fragId = $fragId AND
         ownerId = $ownerId
@@ -229,5 +281,6 @@ module.exports = {
     insertItem,
     selectFrag,
     validateFrag,
-    updateFragsAvailable
+    updateFragsAvailable,
+    giveAFrag
 }

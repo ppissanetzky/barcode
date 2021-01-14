@@ -50,6 +50,10 @@ class Database {
                 const statement = db.prepare(query);
                 const info = statement.run(params);
                 return info.lastInsertRowid;
+            },
+            all(query, params) {
+                const statement = db.prepare(query);
+                return statement.all(params);
             }
         });
     }

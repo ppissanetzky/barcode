@@ -344,8 +344,7 @@ export default {
       cost: '0.00',
 
       // For the loading animation on the add it now button
-      loading: false,
-      loader: null
+      loading: false
     }
   },
   methods: {
@@ -355,44 +354,50 @@ export default {
 
     async submit () {
       this.loading = true
-      const formData = new FormData()
-      const keys = [
-        'name',
-        'type',
-        // 'dateAcquired', - added below
-        'fragsAvailable',
-        'picture',
-        'size',
-        'scientificName',
-        'notes',
-        'light',
-        'flow',
-        'hardiness',
-        'growthRate',
-        'sourceType',
-        'source',
-        'cost'
-      ]
+      try {
+        const formData = new FormData()
+        const keys = [
+          'name',
+          'type',
+          // 'dateAcquired', - added below
+          'fragsAvailable',
+          'picture',
+          'size',
+          'scientificName',
+          'notes',
+          'light',
+          'flow',
+          'hardiness',
+          'growthRate',
+          'sourceType',
+          'source',
+          'cost'
+        ]
 
-      keys.forEach((key) => {
-        const value = this.$data[key]
-        if (typeof value !== 'undefined') {
-          formData.set(key, value)
-        }
-      })
+        keys.forEach((key) => {
+          const value = this.$data[key]
+          if (typeof value !== 'undefined') {
+            formData.set(key, value)
+          }
+        })
 
-      // Convert the local date (only) to a full date/time with TZ information
-      formData.set('dateAcquired', formatISO(parseISO(this.dateAcquired)))
+        // Convert the local date (only) to a full date/time with TZ information
+        formData.set('dateAcquired', formatISO(parseISO(this.dateAcquired)))
 
-      /* const { fragId } = */ await this.$axios.$post('/bc/api/dbtc/add-new-item', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      })
-      // Navigate back to the home page
-      this.$router.replace('/')
-      // Turn off the loading button
-      this.loading = false
+        const { fragId } = await this.$axios.$post('/bc/api/dbtc/add-new-item', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+        // Navigate to the details page for this frag, replacing
+        // this page in the history, so that going back from the
+        // details takes us back to the previous page and not this
+        // one
+        this.$router.replace(`frag/${fragId}`)
+      } finally {
+        // Turn off the loading button
+        this.loading = false
+      }
     }
   }
 }

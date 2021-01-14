@@ -127,11 +127,12 @@ function makeUser(xfUser) {
         is_staff,
         register_date,
         view_url,
-        age,
+        age
     } = xfUser;
     return ({
         id: parseInt(user_id, 10),
         name: username,
+        allowed: isXfUserAllowed(xfUser),
         title: user_title,
         location: location,
         age: age,

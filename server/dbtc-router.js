@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 
-const {findUsersWithPrefix} = require('./xenforo');
+const {findUsersWithPrefix, lookupUser} = require('./xenforo');
 
 //-----------------------------------------------------------------------------
 // Function to get runtime configuration from the environment
@@ -109,6 +109,48 @@ router.put('/frag/:fragId/available/:fragsAvailable', (req, res) => {
     res.json({
         success: true,
         fragsAvailable: value
+    });
+});
+
+//-----------------------------------------------------------------------------
+// Giving a frag
+//-----------------------------------------------------------------------------
+
+router.post('/give-a-frag', upload.single('picture'), async (req, res) => {
+    // 'file' is added by multer and has all the information about the
+    // uploaded file if one was present
+    const {user, body, file} = req;
+    const picture = file ? file.filename : null;
+    // Validate
+    const {fragOf, ownerId} = body;
+    console.log('give-a-frag', user, body);
+    // Validate the frag. It must belong to this user and be alive. It must
+    // have > 0 frags available
+    const frag = db.validateFrag(user.id, fragOf, true, 0);
+    if (!frag) {
+        // TODO: Error
+        return res.status(500).end();
+    }
+    // Now make sure the new owner is allowed
+    // TODO: no way to find whether the recipient is a supporting member
+    /*
+    const recipient = await lookupUser(ownerId);
+    if (!(recipient && recipient.allowed)) {
+        // TODO: Error
+        return res.status(500).end();
+    }
+    */
+    // Inputs from the form
+    const params = {
+        ...body,
+        picture
+    };
+    // Do it
+    const fragsAvailable = db.giveAFrag(user.id, params);
+    // Reply
+    res.json({
+        success: true,
+        fragsAvailable
     });
 });
 

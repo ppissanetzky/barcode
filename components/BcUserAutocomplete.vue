@@ -24,6 +24,10 @@ export default {
     value: {
       type: Object,
       default: null
+    },
+    excludeUser: {
+      type: Number,
+      default: 0
     }
   },
 
@@ -62,6 +66,9 @@ export default {
       this.$axios.$get(`/bc/api/dbtc/find-users?prefix=${encodeURIComponent(value)}`)
         .then(({ users }) => {
           this.users = users.map(([id, name]) => ({ id, name }))
+          if (this.excludeUser) {
+            this.users = this.users.filter(({ id }) => id !== this.excludeUser)
+          }
         })
         .finally(() => {
           this.isLoading = false
