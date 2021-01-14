@@ -266,10 +266,17 @@ const UPDATE_FRAGS_AVAILABLE = `
 `;
 
 function updateFragsAvailable(ownerId, fragId, fragsAvailable) {
-    db.run(UPDATE_FRAGS_AVAILABLE, {
-        fragId,
-        ownerId,
-        fragsAvailable
+    db.transaction(({run, all}) => {
+        run(UPDATE_FRAGS_AVAILABLE, {
+            fragId,
+            ownerId,
+            fragsAvailable
+        });
+        const [{fragsAvailable: result}] = all(SELECT_FRAGS_AVAILABLE, {
+            fragId,
+            ownerId
+        });
+        return result;
     });
 }
 

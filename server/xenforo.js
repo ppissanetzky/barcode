@@ -257,8 +257,12 @@ async function lookupUser(userId) {
     }
     // Otherwise, look the user up in XenForo
     try {
-        const {user} = await apiRequest(`users/${id}/`, 'GET');
-        if (user) {
+        const {user} = await apiRequest(`users/${id}/`, 'GET', {
+            // Without this, we don't get information about the secondary
+            // groups and we cannot determine whether the user is allowed
+            api_bypass_permissions: 1
+        });
+        if (user && isXfUserAllowed(user)) {
             return cacheUser(makeUser(user));
         }
     }
@@ -318,25 +322,29 @@ async function sendAlert(recipientId, body, linkText, linkUrl) {
 }
 
 //-----------------------------------------------------------------------------
-// This API returns all users with names matching the given prefix.
-// NOTE: It returns partial users. Most notably, the groups are missing,
-// so we can't tell whether they are allowed to use the system.
-// We'll have to validate them later.
+// This API returns all users that are allowed to use the system with names
+// matching the given prefix.
+// It also caches them
 // https://xenforo.com/community/pages/api-endpoints/#route_get_users_find_name
 //-----------------------------------------------------------------------------
 
 async function findUsersWithPrefix(prefix) {
     const response = await apiRequest('users/find-name', 'GET', {
-        username: prefix
+        username: prefix,
+        // Without this, we don't get information about the secondary
+        // groups and we cannot determine whether the user is allowed
+        api_bypass_permissions: 1
     });
     const users = [];
     if (response) {
         const {exact, recommendations} = response;
-        if (exact) {
-            users.push(makeUser(exact));
+        if (exact && isXfUserAllowed(exact)) {
+            users.push(cacheUser(makeUser(exact)));
         }
         recommendations.forEach((xfUser) => {
-            users.push(makeUser(xfUser));
+            if (isXfUserAllowed(xfUser)) {
+                users.push(cacheUser(makeUser(xfUser)));
+            }
         });
     }
     return users;
@@ -357,9 +365,10 @@ module.exports = {
 
 /*
 (async function() {
-    const result = await startConversation([15211, 16186, 16188], 'It is time to return the PAR meter',
-    'Just wanted to let you know that you should return it soon.\n[url=https://bareefers.org/barcode/equipment/1]Click here to return it[/url]');
-    console.log(result);
+    const r = await apiRequest(`users/find-name`, 'GET', {
+        username: 'co',
+        api_bypass_permissions: 1});
+    console.log(r);
 })();
 */
 
@@ -377,37 +386,4 @@ module.exports = {
     });
     console.log(response);
 })();
-*/
-/*
-(async function() {
-    // barcode = 16186
-    const environmentUserId = process.env.XF_USER;
-    if (!environmentUserId) {
-        return;
-    }
-    console.warn('Using XF user', environmentUserId);
-    const loginTokenResponse = await apiRequest('auth/login-token', 'POST', {user_id: environmentUserId});
-    const {login_url} = loginTokenResponse;
-    const [{headers}] = await httpsRequest(login_url);
-    const cookie = headers['set-cookie'].map((item) => item.split(' ')[0]).join(' ');
-    const user = await apiRequest(`users/${environmentUserId}`, 'GET', {}, {Cookie: cookie});
-    console.log(user);
-})();
-*/
-/*
-apiRequest('auth/login-token', 'POST', {user_id: }).then((response) => {
-    console.log(response);
-    const {login_url} = response;
-
-    return new Promise((resolve, reject) => {
-        const request = https.request(login_url, (response) => {
-            console.log(JSON.stringify(response.headers));
-            let body = '';
-            response.on('data', (chunk) => body += chunk);
-            response.on('end', () => resolve(body));
-        });
-        request.on('error', reject);
-        request.end();
-    });
-});
 */

@@ -79,7 +79,6 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
     const fragId = db.insertItem(params);
     console.log('Added frag', fragId);
     res.json({
-        success: true,
         fragId
     });
 });
@@ -104,11 +103,10 @@ router.put('/frag/:fragId/available/:fragsAvailable', (req, res) => {
         // TODO: Error
         return res.status(500).end();
     }
-    // Now update it
-    db.updateFragsAvailable(user.id, fragId, value);
+    // Now update it, which returns the new value
+    const result = db.updateFragsAvailable(user.id, fragId, value);
     res.json({
-        success: true,
-        fragsAvailable: value
+        fragsAvailable: result
     });
 });
 
@@ -132,14 +130,11 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res) => {
         return res.status(500).end();
     }
     // Now make sure the new owner is allowed
-    // TODO: no way to find whether the recipient is a supporting member
-    /*
     const recipient = await lookupUser(ownerId);
     if (!(recipient && recipient.allowed)) {
         // TODO: Error
         return res.status(500).end();
     }
-    */
     // Inputs from the form
     const params = {
         ...body,
@@ -149,7 +144,6 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res) => {
     const fragsAvailable = db.giveAFrag(user.id, params);
     // Reply
     res.json({
-        success: true,
         fragsAvailable
     });
 });
