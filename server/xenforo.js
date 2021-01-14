@@ -219,24 +219,36 @@ async function validateXenForoUser(headers) {
     }
 
     // Otherwise, the user is valid, so we return it along with cookies
-    // to set (if any)
+    // to set (if any).
     return [cacheUser(makeUser(user)), null];
 }
 
 //-----------------------------------------------------------------------------
 // This is a cache of users we keep around.
-// TODO: clear items every so often - unbounded growth otherwise
+// TODO: clear items every so often - unbounded growth otherwise. We only
+// have ~200 supporting members, so it shouldn't get out of hand.
 //-----------------------------------------------------------------------------
 
 const USER_CACHE = new Map();
 
-// Add a user to the cache and return a user object. Also add the user to
-// the database out of band.
+// Add a user to the cache if it is not already there. Return a user object.
+// Also add the user to the database out of band.
 
-function cacheUser(user) {
-    USER_CACHE.set(user.id, user);
-    Promise.resolve().then(() => usersDatabase.addUser(user));
+function cacheUser(user, skipDatabase) {
+    if (!USER_CACHE.get(user.id)) {
+        USER_CACHE.set(user.id, user);
+        if (!skipDatabase) {
+            console.log('Adding', user.id, 'to database');
+        }
+        Promise.resolve().then(() => usersDatabase.addUser(user));
+    }
     return user;
+}
+
+// Drop a user from the cache
+
+function dropCachedUser(id) {
+    USER_CACHE.delete(parseInt(id, 10));
 }
 
 // Get a user object from the cache given a user ID. Returns a user object
@@ -262,7 +274,7 @@ async function lookupUser(userId) {
     const inDatabase = usersDatabase.getUser(id);
     if (inDatabase) {
         console.log('Found user', id, 'in database');
-        return inDatabase;
+        return cacheUser(inDatabase, true);
     }
     // Otherwise, look the user up in XenForo
     try {
