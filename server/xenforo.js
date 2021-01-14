@@ -3,6 +3,8 @@ const https = require('https');
 const qs = require('querystring');
 const cookieParser = require('cookie');
 
+const usersDatabase = require('./users-database');
+
 //-----------------------------------------------------------------------------
 // A constant for conditional behavior while testing
 //-----------------------------------------------------------------------------
@@ -123,7 +125,6 @@ function makeUser(xfUser) {
         location,
         avatar_urls: {m},
         user_title,
-        last_activity,
         is_staff,
         register_date,
         view_url,
@@ -138,7 +139,6 @@ function makeUser(xfUser) {
         age: age,
         isStaff: is_staff,
         registerDate: register_date,
-        lastActivityDate: last_activity,
         viewUrl: view_url,
         avatarUrl: m
     });
@@ -230,10 +230,12 @@ async function validateXenForoUser(headers) {
 
 const USER_CACHE = new Map();
 
-// Add a user to the cache and return a user object
+// Add a user to the cache and return a user object. Also add the user to
+// the database out of band.
 
 function cacheUser(user) {
     USER_CACHE.set(user.id, user);
+    Promise.resolve().then(() => usersDatabase.addUser(user));
     return user;
 }
 
@@ -253,7 +255,14 @@ async function lookupUser(userId) {
     }
     const result = USER_CACHE.get(id);
     if (result) {
+        console.log('Found user', id, 'in cache')
         return result;
+    }
+    // Look it up in the database
+    const inDatabase = usersDatabase.getUser(id);
+    if (inDatabase) {
+        console.log('Found user', id, 'in database');
+        return inDatabase;
     }
     // Otherwise, look the user up in XenForo
     try {
@@ -263,6 +272,7 @@ async function lookupUser(userId) {
             api_bypass_permissions: 1
         });
         if (user && isXfUserAllowed(user)) {
+            console.log('Found user', id, 'in forum');
             return cacheUser(makeUser(user));
         }
     }
