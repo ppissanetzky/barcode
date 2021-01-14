@@ -20,7 +20,6 @@ CREATE TABLE IF NOT EXISTS users (
     age                 INTEGER,
     isStaff             INTEGER,
     registerDate        INTEGER,
-    lastActivityDate    INTEGER,
     viewUrl             TEXT,
     avatarUrl           TEXT
 );
