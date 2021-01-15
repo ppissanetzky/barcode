@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS frags (
 -------------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS journals (
+    journalId       INTEGER PRIMARY KEY,
     fragId          INTEGER NOT NULL,
     timestamp       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     entryType       TEXT NOT NULL,

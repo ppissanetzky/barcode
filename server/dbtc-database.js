@@ -280,7 +280,41 @@ function updateFragsAvailable(ownerId, fragId, fragsAvailable) {
     });
 }
 
-// //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+const INSERT_JOURNAL = `
+    INSERT INTO journals (
+        fragId,
+        timestamp,
+        entryType,
+        picture,
+        notes
+    )
+    VALUES (
+        $fragId,
+        $timestamp,
+        $entryType,
+        $picture,
+        $notes
+    )
+`;
+
+const SELECT_JOURNAL = `SELECT * FROM journals WHERE journalId = $journalId`;
+const SELECT_TIMESTAMP = `SELECT CURRENT_TIMESTAMP AS timestamp`;
+
+function addJournal(values) {
+    return db.transaction(({run, all}) => {
+        if (!values.timestamp) {
+            const [{timestamp}] = all(SELECT_TIMESTAMP, {});
+            values.timestamp = timestamp;
+        }
+        const journalId = run(INSERT_JOURNAL, values);
+        const [journal] = all(SELECT_JOURNAL, {journalId});
+        return journal;
+    });
+}
+
+//-----------------------------------------------------------------------------
 
 module.exports = {
     selectAllFragsForUser,
@@ -289,5 +323,6 @@ module.exports = {
     selectFrag,
     validateFrag,
     updateFragsAvailable,
-    giveAFrag
+    giveAFrag,
+    addJournal
 }

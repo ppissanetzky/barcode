@@ -39,10 +39,10 @@ export default {
   },
   watch: {
     user (value) {
-      console.warn('USER IS', value ? value.name : 'NONE')
+      // console.warn('USER IS', value ? value.name : 'NONE')
     },
     myDate (value) {
-      console.warn('DATE IS', this.myDate)
+      // console.warn('DATE IS', this.myDate)
     }
 
   }

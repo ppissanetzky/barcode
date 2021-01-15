@@ -77,9 +77,17 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
     };
     // Add the new item
     const fragId = db.insertItem(params);
-    console.log('Added frag', fragId);
+    // Add a journal
+    const journal = db.addJournal({
+        fragId,
+        timestamp: body.dateAcquired,
+        entryType: 'acquired',
+        picture: picture,
+        notes: 'Acquired it'
+    });
     res.json({
-        fragId
+        fragId,
+        journal
     });
 });
 
@@ -120,7 +128,7 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res) => {
     const {user, body, file} = req;
     const picture = file ? file.filename : null;
     // Validate
-    const {fragOf, ownerId} = body;
+    const {fragOf, ownerId, dateAcquired} = body;
     console.log('give-a-frag', user, body);
     // Validate the frag. It must belong to this user and be alive. It must
     // have > 0 frags available
@@ -142,10 +150,48 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res) => {
     };
     // Do it
     const fragsAvailable = db.giveAFrag(user.id, params);
+    // Add a journal entry
+    const journal = db.addJournal({
+        fragId: fragOf,
+        timestamp: dateAcquired,
+        entryType: 'gave',
+        picture,
+        notes: `Gave a frag to ${recipient.name}`
+    });
     // Reply
     res.json({
-        fragsAvailable
+        fragsAvailable,
+        journal
     });
+});
+
+//-----------------------------------------------------------------------------
+
+router.post('/frag/:fragId/journal', upload.single('picture'), (req, res) => {
+    // 'file' is added by multer and has all the information about the
+    // uploaded file if one was present
+    const {user, body, params, file} = req;
+    const picture = file ? file.filename : null;
+    // Validate
+    const {fragId} = params;
+    // Validate the frag. It must belong to this user and be alive. It must
+    // have > -1 frags available
+    const frag = db.validateFrag(user.id, fragId, true, -1);
+    if (!frag) {
+        // TODO: Error
+        return res.status(500).end();
+    }
+    console.log(body);
+    // Do it
+    const journal = db.addJournal({
+        fragId,
+        timestamp: null,
+        entryType: body.entryType || null,
+        picture,
+        notes: body.notes || null
+    });
+    // Reply
+    res.json({journal});
 });
 
 //-----------------------------------------------------------------------------

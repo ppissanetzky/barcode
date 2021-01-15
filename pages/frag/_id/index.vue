@@ -146,7 +146,7 @@
                                 <bc-user-autocomplete
                                   v-model="recipient"
                                   label="Recipient"
-                                  :excludeUser="user.id"
+                                  :exclude-user="user.id"
                                 />
                               </validation-provider>
                             </v-col>
@@ -212,7 +212,138 @@
                 </div>
               </v-expand-transition>
             </div>
+
+            <!-- A line item that expands to show a form to add a journal entry -->
+            <div>
+              <v-divider />
+              <v-card-actions>
+                <h3>Add a journal entry</h3>
+                <v-spacer />
+                <v-btn
+                  icon
+                  @click="showAddJournal = !showAddJournal"
+                >
+                  <v-icon>{{ showAddJournal ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                </v-btn>
+              </v-card-actions>
+              <v-expand-transition>
+                <div v-show="showAddJournal">
+                  <v-divider />
+                  <v-form
+                    id="journal"
+                    @submit="submitJournal"
+                    @submit.prevent="submitPreventJournal"
+                  >
+                    <v-container>
+                      <v-row>
+                        <v-col>
+                          <v-btn-toggle
+                            v-model="journalType"
+                            mandatory
+                          >
+                            <v-btn value="update">
+                              <v-icon>mdi-progress-check</v-icon>
+                            </v-btn>
+                            <v-btn value="good">
+                              <v-icon>mdi-thumb-up-outline</v-icon>
+                            </v-btn>
+                            <v-btn value="bad">
+                              <v-icon>mdi-thumb-down-outline</v-icon>
+                            </v-btn>
+                          </v-btn-toggle>
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col>
+                          <v-file-input
+                            v-model="journalPicture"
+                            outlined
+                            label="Picture"
+                            accept="image/*"
+                            prepend-icon=""
+                          />
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col>
+                          <v-textarea
+                            v-model="journalText"
+                            outlined
+                            label="Entry"
+                            auto-grow
+                            rows="2"
+                          />
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col>
+                          <v-spacer />
+                          <v-btn
+                            color="secondary"
+                            type="submit"
+                            :disabled="!(journalPicture || journalText)"
+                            :loading="loadingJournal"
+                            @click="loader = 'loading'"
+                          >
+                            Submit
+                          </v-btn>
+                        </v-col>
+                      </v-row>
+                    </v-container>
+                  </v-form>
+                </div>
+              </v-expand-transition>
+            </div>
           </div>
+        </v-card>
+      </v-col>
+
+      <!-- Another column and card to show journal information -->
+
+      <v-col v-if="journals.length">
+        <v-card>
+          <v-card-title>Journal</v-card-title>
+          <v-divider />
+          <v-container>
+            <v-data-iterator
+              v-if="journals.length"
+              :items="journals"
+              item-key="journalId"
+              :items-per-page="4"
+              sort-by="order"
+            >
+              <template v-slot:default="{ items }">
+                <v-row>
+                  <v-col
+                    v-for="j in items"
+                    :key="j.journalId"
+                  >
+                    <v-card
+                      max-width="300px"
+                    >
+                      <v-card-title>
+                        {{ j.age }} ago
+                        <v-spacer />
+                        <v-icon
+                          right
+                        >
+                          {{ j.icon }}
+                        </v-icon>
+                      </v-card-title>
+
+                      <v-img
+                        v-if="j.picture"
+                        :src="`${$config.BC_UPLOADS_URL}/${j.picture}`"
+                        max-width="300px"
+                        max-height="200px"
+                      />
+                      <v-card-text v-text="j.notes" />
+                    </v-card>
+                  </v-col>
+                </v-row>
+              </template>
+            </v-data-iterator>
+          </v-container>
         </v-card>
       </v-col>
     </v-row>
@@ -232,10 +363,37 @@
 <script>
 // This imports the validation observer, provider and all the
 // rules with their messages
-import { formatISO, parseISO } from 'date-fns'
+import { formatISO, parseISO, formatDistanceToNow } from 'date-fns'
 import { ValidationObserver, ValidationProvider } from 'vee-validate/dist/vee-validate.full.esm'
 import BcUserAutocomplete from '~/components/BcUserAutocomplete.vue'
 import BcDatePicker from '~/components/BcDatePicker.vue'
+
+function augment (journal) {
+  let { timestamp } = journal
+  // Database timestamps are all in UTC, but sqlite doesn't
+  // bother to add the 'Z' at the end, so add it now
+  if (timestamp.length === 19) {
+    timestamp += 'Z'
+    journal.timestamp = timestamp
+  }
+  // Parse the timestamp and and add a date
+  journal.date = parseISO(timestamp)
+  // And a way to order them
+  journal.order = -journal.date.valueOf()
+  // Define a read only property for the human readable age
+  Object.defineProperty(journal, 'age', {
+    get () {
+      return formatDistanceToNow(this.date)
+    }
+  })
+  switch (journal.entryType) {
+    case 'good': journal.icon = 'mdi-thumb-up-outline'; break
+    case 'bad': journal.icon = 'mdi-thumb-down-outline'; break
+    case 'gave': journal.icon = 'mdi-hand-heart-outline'; break
+    case 'acquired': journal.icon = 'mdi-emoticon-happy-outline'; break
+    default: journal.icon = 'mdi-progress-check'
+  }
+}
 
 export default {
   components: {
@@ -250,6 +408,7 @@ export default {
     this.user = user
     this.isOwner = isOwner
     this.frag = frag
+    journals.forEach(augment)
     this.journals = journals
     this.editedFragsAvailable = this.frag.fragsAvailable
   },
@@ -279,6 +438,13 @@ export default {
       // Notes about the frag
       notes: undefined,
 
+      // For the journal
+      showAddJournal: false,
+      journalPicture: undefined,
+      journalText: undefined,
+      journalType: 'update',
+      loadingJournal: false,
+
       // snackbar for changes
       snackbar: false,
       snackbarText: ''
@@ -302,6 +468,13 @@ export default {
 
     hasAvailableFrags () {
       return this.frag.isAlive && this.fragsAvailable > 0
+    },
+
+    // If the user can make changes we will show a form
+    // to add a journal entry. Or, if there are entries
+    // we will show them
+    shouldShowJournal () {
+      return this.canMakeChanges || this.journals.length
     }
   },
 
@@ -338,7 +511,7 @@ export default {
         formData.set('dateAcquired', formatISO(parseISO(this.dateGiven)))
         formData.set('picture', this.picture)
         formData.set('notes', this.notes)
-        const { fragsAvailable } = await this.$axios.$post('/bc/api/dbtc/give-a-frag', formData, {
+        const { fragsAvailable, journal } = await this.$axios.$post('/bc/api/dbtc/give-a-frag', formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
@@ -346,6 +519,10 @@ export default {
         // Update available frags from the response
         this.fragsAvailable = fragsAvailable
         this.editedFragsAvailable = fragsAvailable
+
+        // Augment and add the journal
+        augment(journal)
+        this.journals.unshift(journal)
         // Clear the form because we're staying in the same page
         this.recipient = undefined
         this.picture = undefined
@@ -365,6 +542,41 @@ export default {
       this.snackbarText = `${this.fragsAvailable} made available`
       this.snackbar = true
       */
+    },
+
+    submitPreventJournal () {
+      // Do nothing, just here to keep the page from reloading
+    },
+
+    async submitJournal (event) {
+      this.loadingJournal = true
+      try {
+        const formData = new FormData()
+        formData.set('entryType', this.journalType)
+        if (this.journalPicture) {
+          formData.set('picture', this.journalPicture)
+        }
+        if (this.journalText) {
+          formData.set('notes', this.journalText)
+        }
+
+        const { journal } = await this.$axios.$post(`/bc/api/dbtc/frag/${this.frag.fragId}/journal`, formData)
+
+        augment(journal)
+        // Add it as the first one in our array
+        this.journals.unshift(journal)
+
+        // Reset the form values
+        this.journalPicture = ''
+        this.journalType = 'update'
+        this.journalText = ''
+
+        // Show the snack bar
+        this.snackbarText = 'Journal entry added'
+        this.snackbar = true
+      } finally {
+        this.loadingJournal = false
+      }
     }
   }
 }
