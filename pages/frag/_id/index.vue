@@ -3,23 +3,24 @@
     <v-row>
       <v-col>
         <h1 v-if="frag" v-text="frag.name" />
+        <h3 v-if="user && !isOwner" v-text="user.name" />
       </v-col>
     </v-row>
 
     <!-- The card -->
     <v-row>
       <v-col cols="auto">
-        <v-card v-if="frag" max-width="300">
+        <v-card v-if="frag" max-width="375">
           <v-img
             v-if="frag.picture"
             :src="`${$config.BC_UPLOADS_URL}/${frag.picture}`"
-            max-width="300px"
-            max-height="200px"
+            max-width="375px"
+            max-height="300px"
           />
           <v-img
             v-else
-            max-width="300px"
-            max-height="200px"
+            max-width="375px"
+            max-height="300px"
             src="/picture-placeholder.png"
           />
           <v-card-subtitle v-text="frag.scientificName" />
@@ -27,6 +28,13 @@
             <v-chip label v-text="frag.type" />
             <v-chip v-if="frag.age" label v-text="frag.age" />
             <v-chip v-if="hasAvailableFrags" label v-text="`${fragsAvailable} available`" />
+            <v-chip
+              v-if="!frag.isAlive"
+              color="error"
+              label
+            >
+              RIP
+            </v-chip>
           </v-card-text>
 
           <!-- All the things that can be changed about this frag are wrapped in this div -->
@@ -66,7 +74,7 @@
                     >
                       <v-container>
                         <v-row>
-                          <v-col cols="auto">
+                          <v-col>
                             <validation-provider
                               v-slot="{ errors }"
                               rules="required|integer|min_value:0"
@@ -294,47 +302,105 @@
                 </div>
               </v-expand-transition>
             </div>
+
+            <!--
+                A line item that expands to show a small form to mark the frag as dead -->
+            <div>
+              <v-divider />
+              <v-card-actions>
+                <h3>RIP</h3>
+                <v-spacer />
+                <v-btn
+                  icon
+                  @click="showRIP = !showRIP"
+                >
+                  <v-icon>{{ showRIP ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                </v-btn>
+              </v-card-actions>
+
+              <v-expand-transition>
+                <div v-show="showRIP">
+                  <v-divider />
+                  <v-card-text>
+                    They don't always make it and that's OK. If you mark the {{ frag.name }} as lost
+                    you won't be able to make any more changes to it.
+                  </v-card-text>
+
+                  <v-form
+                    @submit.prevent="submitPreventRIP"
+                    @submit="submitRIP"
+                  >
+                    <v-container>
+                      <v-row>
+                        <v-col>
+                          <v-textarea
+                            id="ripNotes"
+                            v-model="ripNotes"
+                            outlined
+                            label="What happened?"
+                            auto-grow
+                            rows="3"
+                          />
+                          <v-btn
+                            color="secondary"
+                            type="submit"
+                            :loading="loadingRIP"
+                            @click="loader = 'loading'"
+                          >
+                            RIP
+                          </v-btn>
+                        </v-col>
+                      </v-row>
+                    </v-container>
+                  </v-form>
+                </div>
+              </v-expand-transition>
+            </div>
           </div>
         </v-card>
       </v-col>
 
       <!-- Another column and card to show journal information -->
-
-      <v-col v-if="journals.length">
-        <v-card>
-          <v-card-title>Journal</v-card-title>
-          <v-divider />
-          <v-container>
+      <v-col v-if="journals.length" cols="auto">
+        <v-row>
+          <v-col>
+            <h2>Journal</h2>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
             <v-data-iterator
               v-if="journals.length"
               :items="journals"
               item-key="journalId"
-              :items-per-page="4"
+              :items-per-page="5"
               sort-by="order"
+              hide-default-footer
+              disable-pagination
             >
               <template v-slot:default="{ items }">
-                <v-row>
-                  <v-col
-                    v-for="j in items"
-                    :key="j.journalId"
-                  >
+                <v-row
+                  v-for="j in items"
+                  :key="j.journalId"
+                >
+                  <v-col>
                     <v-card
-                      max-width="300px"
+                      max-width="375px"
+                      width="100%"
                     >
                       <v-card-title>
-                        {{ j.age }} ago
+                        {{ j.age }}
                         <v-spacer />
-                        <v-icon
-                          right
-                        >
+                        <v-icon right>
                           {{ j.icon }}
                         </v-icon>
                       </v-card-title>
+                      <v-card-subtitle v-text="j.date.toLocaleDateString()" />
 
                       <v-img
                         v-if="j.picture"
                         :src="`${$config.BC_UPLOADS_URL}/${j.picture}`"
-                        max-width="300px"
+                        max-width="375px"
                         max-height="200px"
                       />
                       <v-card-text v-text="j.notes" />
@@ -343,8 +409,8 @@
                 </v-row>
               </template>
             </v-data-iterator>
-          </v-container>
-        </v-card>
+          </v-col>
+        </v-row>
       </v-col>
     </v-row>
 
@@ -363,27 +429,28 @@
 <script>
 // This imports the validation observer, provider and all the
 // rules with their messages
-import { formatISO, parseISO, formatDistanceToNow } from 'date-fns'
+import { formatISO, parseISO, differenceInDays, formatDistance } from 'date-fns'
 import { ValidationObserver, ValidationProvider } from 'vee-validate/dist/vee-validate.full.esm'
 import BcUserAutocomplete from '~/components/BcUserAutocomplete.vue'
 import BcDatePicker from '~/components/BcDatePicker.vue'
 
-function augment (journal) {
-  let { timestamp } = journal
-  // Database timestamps are all in UTC, but sqlite doesn't
-  // bother to add the 'Z' at the end, so add it now
-  if (timestamp.length === 19) {
-    timestamp += 'Z'
-    journal.timestamp = timestamp
+function age (date, suffix) {
+  const today = new Date()
+  if (differenceInDays(today, date) < 1) {
+    return 'today'
   }
+  return `${formatDistance(today, date)} ${suffix}`
+}
+
+function augment (journal) {
   // Parse the timestamp and and add a date
-  journal.date = parseISO(timestamp)
-  // And a way to order them
+  journal.date = parseISO(journal.timestamp)
+  // And a way to order them in reverse chronological
   journal.order = -journal.date.valueOf()
   // Define a read only property for the human readable age
   Object.defineProperty(journal, 'age', {
     get () {
-      return formatDistanceToNow(this.date)
+      return age(this.date, 'ago')
     }
   })
   switch (journal.entryType) {
@@ -391,8 +458,11 @@ function augment (journal) {
     case 'bad': journal.icon = 'mdi-thumb-down-outline'; break
     case 'gave': journal.icon = 'mdi-hand-heart-outline'; break
     case 'acquired': journal.icon = 'mdi-emoticon-happy-outline'; break
+    case 'fragged': journal.icon = 'mdi-hand-saw'; break
+    case 'rip': journal.icon = 'mdi-emoticon-dead-outline'; break
     default: journal.icon = 'mdi-progress-check'
   }
+  return journal
 }
 
 export default {
@@ -445,6 +515,11 @@ export default {
       journalType: 'update',
       loadingJournal: false,
 
+      // For RIP
+      showRIP: false,
+      ripNotes: undefined,
+      loadingRIP: false,
+
       // snackbar for changes
       snackbar: false,
       snackbarText: ''
@@ -486,8 +561,9 @@ export default {
     async submitFragsAvailable () {
       this.loadingMakeFragsAvailable = true
       try {
-        await this.$axios.$put(`/bc/api/dbtc/frag/${this.frag.fragId}/available/${this.editedFragsAvailable}`)
+        const { journal } = await this.$axios.$put(`/bc/api/dbtc/frag/${this.frag.fragId}/available/${this.editedFragsAvailable}`)
         this.fragsAvailable = this.editedFragsAvailable
+        this.journals.unshift(augment(journal))
         this.snackbarText = `${this.fragsAvailable} made available`
         this.snackbar = true
       } finally {
@@ -511,18 +587,13 @@ export default {
         formData.set('dateAcquired', formatISO(parseISO(this.dateGiven)))
         formData.set('picture', this.picture)
         formData.set('notes', this.notes)
-        const { fragsAvailable, journal } = await this.$axios.$post('/bc/api/dbtc/give-a-frag', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        })
+        const { fragsAvailable, journal } = await this.$axios.$post('/bc/api/dbtc/give-a-frag', formData)
         // Update available frags from the response
         this.fragsAvailable = fragsAvailable
         this.editedFragsAvailable = fragsAvailable
 
         // Augment and add the journal
-        augment(journal)
-        this.journals.unshift(journal)
+        this.journals.unshift(augment(journal))
         // Clear the form because we're staying in the same page
         this.recipient = undefined
         this.picture = undefined
@@ -562,9 +633,8 @@ export default {
 
         const { journal } = await this.$axios.$post(`/bc/api/dbtc/frag/${this.frag.fragId}/journal`, formData)
 
-        augment(journal)
         // Add it as the first one in our array
-        this.journals.unshift(journal)
+        this.journals.unshift(augment(journal))
 
         // Reset the form values
         this.journalPicture = ''
@@ -576,6 +646,29 @@ export default {
         this.snackbar = true
       } finally {
         this.loadingJournal = false
+      }
+    },
+
+    submitPreventRIP () {
+      // Do nothing
+    },
+
+    async submitRIP () {
+      this.loadingRIP = true
+      try {
+        const formData = new FormData()
+        if (this.ripNotes) {
+          formData.set('notes', this.ripNotes)
+        }
+        const { journal } = await this.$axios.$post(`/bc/api/dbtc/frag/${this.frag.fragId}/rip`, formData)
+        this.journals.unshift(augment(journal))
+        this.frag.isAlive = false
+        this.frag.isAvailable = false
+        // Show the snack bar
+        this.snackbarText = 'Sorry for your loss'
+        this.snackbar = true
+      } finally {
+        this.loadingRIP = false
       }
     }
   }

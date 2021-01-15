@@ -14,7 +14,7 @@ PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS mothers (
     motherId        INTEGER PRIMARY KEY,
-    timestamp       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    timestamp       TEXT NOT NULL,
     name            TEXT NOT NULL,
     type            TEXT CHECK (type IN('LPS', 'SPS', 'Softie', 'Other')) NOT NULL,
     scientificName  TEXT,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS mothers (
 
 CREATE TABLE IF NOT EXISTS frags (
     fragId          INTEGER PRIMARY KEY,
-    timestamp       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    timestamp       TEXT NOT NULL,
     motherId        INTEGER NOT NULL,
     ownerId         INTEGER NOT NULL,
     dateAcquired    TEXT NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS frags (
 CREATE TABLE IF NOT EXISTS journals (
     journalId       INTEGER PRIMARY KEY,
     fragId          INTEGER NOT NULL,
-    timestamp       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    timestamp       TEXT NOT NULL,
     entryType       TEXT NOT NULL,
     picture         TEXT NULL,
     notes           TEXT NULL,
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS journals (
 CREATE TABLE IF NOT EXISTS fans (
     motherId        INTEGER NOT NULL,
     userId          INTEGER NOT NULL,
-    timestamp       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    timestamp       TEXT NOT NULL,
 
     PRIMARY KEY (motherId, userId),
     FOREIGN KEY (motherId) REFERENCES mothers (motherId)

@@ -8,6 +8,18 @@ const DBTC_DB_VERSION = 1;
 const db = new Database('dbtc', DBTC_DB_VERSION);
 
 //-----------------------------------------------------------------------------
+// Because sqlite's CURRENT_TIMESTAMP omits the 'Z' and just assumes UTC, we
+// use this function instead, which always includes the timezone
+//-----------------------------------------------------------------------------
+
+function addTimestamp(values) {
+    if (!values.timestamp) {
+        values.timestamp = (new Date()).toISOString();
+    }
+    return values;
+}
+
+//-----------------------------------------------------------------------------
 // All frags for a given user - joined with species
 //-----------------------------------------------------------------------------
 
@@ -86,6 +98,7 @@ function selectMothers() {
 const INSERT_MOTHER = `
     INSERT INTO mothers
         (
+            timestamp,
             name,
             type,
             scientificName,
@@ -100,6 +113,7 @@ const INSERT_MOTHER = `
         )
     VALUES
         (
+            $timestamp,
             $name,
             $type,
             $scientificName,
@@ -117,6 +131,7 @@ const INSERT_MOTHER = `
 const INSERT_FRAG = `
     INSERT INTO frags
         (
+            timestamp,
             motherId,
             ownerId,
             dateAcquired,
@@ -128,6 +143,7 @@ const INSERT_FRAG = `
         )
     VALUES
         (
+            $timestamp,
             $motherId,
             $ownerId,
             $dateAcquired,
@@ -154,7 +170,7 @@ function insertItem(values) {
             ...INSERT_ITEM_NULLABLE_VALUES,
             ...values
         };
-        const motherId = run(INSERT_MOTHER, bindings);
+        const motherId = run(INSERT_MOTHER, addTimestamp(bindings));
         console.log('MOTHER ID', motherId);
         const fragBindings = {
             ...bindings,
@@ -162,7 +178,7 @@ function insertItem(values) {
             fragOf: null
         };
         console.log(fragBindings);
-        const fragId = run(INSERT_FRAG, fragBindings);
+        const fragId = run(INSERT_FRAG, addTimestamp(fragBindings));
         return fragId;
     });
 }
@@ -201,7 +217,7 @@ function giveAFrag(userId, values) {
             fragsAvailable: 0
         };
         console.log('GIVING FRAG', fragBindings);
-        run(INSERT_FRAG, fragBindings);
+        run(INSERT_FRAG, addTimestamp(fragBindings));
 
         // Decrement available frags on the source frag
         run(DECREMENT_FRAGS_AVAILABLE, {
@@ -300,18 +316,30 @@ const INSERT_JOURNAL = `
 `;
 
 const SELECT_JOURNAL = `SELECT * FROM journals WHERE journalId = $journalId`;
-const SELECT_TIMESTAMP = `SELECT CURRENT_TIMESTAMP AS timestamp`;
 
 function addJournal(values) {
     return db.transaction(({run, all}) => {
-        if (!values.timestamp) {
-            const [{timestamp}] = all(SELECT_TIMESTAMP, {});
-            values.timestamp = timestamp;
-        }
-        const journalId = run(INSERT_JOURNAL, values);
+        const journalId = run(INSERT_JOURNAL, addTimestamp(values));
         const [journal] = all(SELECT_JOURNAL, {journalId});
         return journal;
     });
+}
+
+//-----------------------------------------------------------------------------
+
+const UPDATE_ALIVE = `
+    UPDATE
+        frags
+    SET
+        isAlive = 0,
+        fragsAvailable = 0
+    WHERE
+        fragId = $fragId AND
+        ownerId = ownerId
+`;
+
+function markAsDead(ownerId, fragId) {
+    db.run(UPDATE_ALIVE, {fragId, ownerId});
 }
 
 //-----------------------------------------------------------------------------
@@ -324,5 +352,6 @@ module.exports = {
     validateFrag,
     updateFragsAvailable,
     giveAFrag,
-    addJournal
+    addJournal,
+    markAsDead
 }

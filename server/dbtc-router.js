@@ -82,7 +82,10 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
         fragId,
         timestamp: body.dateAcquired,
         entryType: 'acquired',
-        picture: picture,
+        // TODO: Undecided on whether this journal entry
+        // should have the same picture since it will be
+        // the cover picture for the frag
+        picture: null,
         notes: 'Acquired it'
     });
     res.json({
@@ -113,8 +116,17 @@ router.put('/frag/:fragId/available/:fragsAvailable', (req, res) => {
     }
     // Now update it, which returns the new value
     const result = db.updateFragsAvailable(user.id, fragId, value);
+    // Add a journal
+    const journal = db.addJournal({
+        fragId,
+        timestamp: null,
+        entryType: 'fragged',
+        picture: null,
+        notes: `Updated available frags to ${value}`
+    });
     res.json({
-        fragsAvailable: result
+        fragsAvailable: result,
+        journal
     });
 });
 
@@ -166,6 +178,8 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res) => {
 });
 
 //-----------------------------------------------------------------------------
+// Add a journal entry
+//-----------------------------------------------------------------------------
 
 router.post('/frag/:fragId/journal', upload.single('picture'), (req, res) => {
     // 'file' is added by multer and has all the information about the
@@ -189,6 +203,39 @@ router.post('/frag/:fragId/journal', upload.single('picture'), (req, res) => {
         entryType: body.entryType || null,
         picture,
         notes: body.notes || null
+    });
+    // Reply
+    res.json({journal});
+});
+
+//-----------------------------------------------------------------------------
+// Mark a frag as dead
+//-----------------------------------------------------------------------------
+
+router.post('/frag/:fragId/rip', upload.none(), (req, res) => {
+    // 'file' is added by multer and has all the information about the
+    // uploaded file if one was present
+    const {user, body, params} = req;
+    // Validate
+    const {fragId} = params;
+    // Validate the frag. It must belong to this user and be alive. It must
+    // have > -1 frags available
+    const frag = db.validateFrag(user.id, fragId, true, -1);
+    if (!frag) {
+        // TODO: Error
+        return res.status(500).end();
+    }
+    console.log(req.headers)
+    console.log(body)
+    // Do it
+    db.markAsDead(user.id, fragId);
+    // Add a journal
+    const journal = db.addJournal({
+        fragId,
+        timestamp: null,
+        entryType: 'rip',
+        picture: null,
+        notes: body.notes || 'RIP'
     });
     // Reply
     res.json({journal});
