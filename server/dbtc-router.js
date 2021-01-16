@@ -45,10 +45,11 @@ router.get('/your-collection', (req, res) => {
 // Data about one frag
 //-----------------------------------------------------------------------------
 
-router.get('/frag/:fragId', (req, res) => {
+router.get('/frag/:fragId', async (req, res) => {
     const {user, params} = req;
     const {fragId} = params;
     const [frag, journals] = db.selectFrag(fragId);
+    frag.owner = await lookupUser(frag.ownerId);
     res.json({
         success: true,
         user,
@@ -254,6 +255,41 @@ router.post('/frag/:fragId/rip', upload.none(), (req, res) => {
     });
     // Reply
     res.json({journal});
+});
+
+//-----------------------------------------------------------------------------
+// Returns the DBTC mothers
+//-----------------------------------------------------------------------------
+
+router.get('/mothers', async (req, res) => {
+    const {user} = req;
+    const mothers = db.selectCollection(user.id);
+    // Now, get full user information about all of the
+    // owners. This could get expensive
+    await Promise.all(mothers.map(async (mother) => {
+        // We're also going to split the list of owners
+        // into two lists: one for those that have frags
+        // and another for those that don't. We remove
+        // the original owners.
+        const owners = mother.owners;
+        delete mother.owners;
+        mother.haves = [];
+        mother.haveNots = [];
+        await Promise.all(owners.map(async (owner) => {
+            const fullUser = await lookupUser(owner.ownerId);
+            Object.assign(owner, fullUser);
+            if (owner.fragsAvailable) {
+                mother.haves.push(owner);
+            }
+            else {
+                mother.haveNots.push(owner);
+            }
+        }))
+    }));
+    res.json({
+        user,
+        mothers
+    });
 });
 
 //-----------------------------------------------------------------------------

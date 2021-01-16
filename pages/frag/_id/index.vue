@@ -3,7 +3,7 @@
     <v-row>
       <v-col>
         <h1 v-if="frag" v-text="frag.name" />
-        <h3 v-if="user && !isOwner" v-text="user.name" />
+        <h3 v-if="frag && !isOwner" v-text="frag.owner.name" />
       </v-col>
     </v-row>
 

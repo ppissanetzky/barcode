@@ -373,6 +373,91 @@ function updateFragPicture(ownerId, fragId, picture) {
 }
 
 //-----------------------------------------------------------------------------
+// Select mothers that have frags alive, including:
+//  an array of all the frags
+//  an array of all the frag pictures (which can have nulls in it)
+//-----------------------------------------------------------------------------
+// Example row:
+//
+// motherId = 6
+// timestamp = 2021-01-16T01:05:31.696Z
+//      name = Armor Of God Zoa
+//      type = Softie
+// scientificName =
+//      flow = Medium
+//     light = Medium
+// hardiness = Normal
+// growthRate = Normal
+// sourceType = Member
+//    source = Srt4Eric
+//      cost = 0.0
+//      size =
+//    owners = [
+//              {"ownerId":16186,"fragId":10,"fragsAvailable":0},
+//              {"ownerId":803,"fragId":11,"fragsAvailable":0},
+//              {"ownerId":14245,"fragId":12,"fragsAvailable":0},
+//              {"ownerId":13957,"fragId":13,"fragsAvailable":0},
+//
+//  Note that 16186 appears twice because someone else gave them a frag back
+//
+//              {"ownerId":16186,"fragId":14,"fragsAvailable":0}
+//             ]
+//  pictures = ["92dc15eff7cb74ba939806449b9fa88e",null,null,"a93b531dd1339e1dd14d18b907438191",null]
+//-----------------------------------------------------------------------------
+
+const SELECT_COLLECTION = `
+    SELECT
+        mothers.*,
+        json_group_array(
+            json_object(
+                'ownerId', ownerId,
+                'fragId', fragId,
+                'fragsAvailable', fragsAvailable
+            )
+        ) AS owners,
+        json_group_array(picture) AS pictures
+    FROM
+        mothers,
+        frags
+    WHERE
+        mothers.motherId = frags.motherId AND
+        frags.isAlive = 1
+    GROUP BY
+        1
+    ORDER BY
+        mothers.name
+`;
+
+function selectCollection(userId) {
+    const rows = db.all(SELECT_COLLECTION, {});
+    console.log(JSON.stringify(rows, null, 2));
+    // Now, go through them and parse the JSON parts
+    rows.forEach((row) => {
+        // Remove the null pictures
+        row.pictures = JSON.parse(row.pictures).filter((picture) => picture);
+        // Parse the owners and filter them
+        row.owners = JSON.parse(row.owners).filter(({ownerId}) => {
+            // If this owner is the same as the calling user, remove it
+            // from the array.
+            if (ownerId === userId) {
+                // Mark the row with the fact that the calling user
+                // owns it
+                row.ownsIt = true;
+                return false;
+            }
+            return true;
+        })
+        // Also sort the list in descending order by frags available,
+        // so the ones with the most frags are first
+        .sort((a, b) => b.fragsAvailable - a.fragsAvailable);
+    });
+    // Return only the ones that have at least one owner. This gets rid
+    // of any that only userId owns - because those will be in their
+    // collection and shouldn't be displayed here
+    return rows.filter(({owners}) => owners.length > 0);
+}
+
+//-----------------------------------------------------------------------------
 
 module.exports = {
     selectAllFragsForUser,
@@ -384,5 +469,6 @@ module.exports = {
     giveAFrag,
     addJournal,
     markAsDead,
-    updateFragPicture
+    updateFragPicture,
+    selectCollection
 }
