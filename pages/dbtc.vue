@@ -61,11 +61,11 @@
                 </v-list-item-avatar>
 
                 <v-list-item-content>
-                    <v-list-item-title>
-                      <a :href="owner.viewUrl" target="_blank">{{ owner.name }}</a>
-                        {{ owner.fragsAvailable ? ' has ' + owner.fragsAvailable : 'doesn\'t have any frags'}}
-                        {{ owner.location && owner.fragsAvailable ? ' in ' + owner.location : '' }}
-                    </v-list-item-title>
+                  <v-list-item-title>
+                    <a :href="owner.viewUrl" target="_blank">{{ owner.name }}</a>
+                    {{ owner.fragsAvailable ? ' has ' + owner.fragsAvailable : 'doesn\'t have any frags' }}
+                    {{ owner.location && owner.fragsAvailable ? ' in ' + owner.location : '' }}
+                  </v-list-item-title>
                 </v-list-item-content>
 
                 <v-list-item-action>
@@ -73,7 +73,6 @@
                     <v-icon>mdi-information</v-icon>
                   </v-btn>
                 </v-list-item-action>
-
               </v-list-item>
             </v-list>
           </div>
@@ -85,31 +84,31 @@
               <v-list-item
                 v-for="owner in m.haveNots"
                 :key="owner.ownerId"
-                >
-                  <v-list-item-avatar>
-                    <v-img
-                      v-if="owner.avatarUrl"
-                      :src="owner.avatarUrl"
-                    />
-                    <v-icon
-                      v-else
-                      size="48px"
-                    >
-                      mdi-account-circle
-                    </v-icon>
-                  </v-list-item-avatar>
+              >
+                <v-list-item-avatar>
+                  <v-img
+                    v-if="owner.avatarUrl"
+                    :src="owner.avatarUrl"
+                  />
+                  <v-icon
+                    v-else
+                    size="48px"
+                  >
+                    mdi-account-circle
+                  </v-icon>
+                </v-list-item-avatar>
 
-                  <v-list-item-content>
-                      <v-list-item-title>
-                        <a :href="owner.viewUrl" target="_blank">{{ owner.name }}</a>
-                          {{ owner.location ? ' in ' + owner.location : '' }}
-                      </v-list-item-title>
-                  </v-list-item-content>
-                  <v-list-item-action>
-                    <v-btn icon :to="'/frag/' + owner.fragId">
-                      <v-icon>mdi-information</v-icon>
-                    </v-btn>
-                  </v-list-item-action>
+                <v-list-item-content>
+                  <v-list-item-title>
+                    <a :href="owner.viewUrl" target="_blank">{{ owner.name }}</a>
+                    {{ owner.location ? ' in ' + owner.location : '' }}
+                  </v-list-item-title>
+                </v-list-item-content>
+                <v-list-item-action>
+                  <v-btn icon :to="'/frag/' + owner.fragId">
+                    <v-icon>mdi-information</v-icon>
+                  </v-btn>
+                </v-list-item-action>
               </v-list-item>
             </v-list>
           </div>
