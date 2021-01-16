@@ -209,15 +209,21 @@ const SELECT_FRAGS_AVAILABLE = `
 // values.ownerId is the recipient
 // values.fragOf is the ID of the source frag
 
+const INSERT_FRAG_NULLABLE_VALUES = {
+    picture: null,
+    notes: null
+};
+
 function giveAFrag(userId, values) {
     return db.transaction(({run, all}) => {
         // Insert into the frags table
         const fragBindings = {
+            ...INSERT_FRAG_NULLABLE_VALUES,
             ...values,
             fragsAvailable: 0
         };
         console.log('GIVING FRAG', fragBindings);
-        run(INSERT_FRAG, addTimestamp(fragBindings));
+        const fragId = run(INSERT_FRAG, addTimestamp(fragBindings));
 
         // Decrement available frags on the source frag
         run(DECREMENT_FRAGS_AVAILABLE, {
@@ -230,7 +236,7 @@ function giveAFrag(userId, values) {
             ownerId: userId,
             fragId: values.fragOf
         });
-        return fragsAvailable;
+        return [fragsAvailable, fragId];
     });
 }
 
@@ -317,9 +323,17 @@ const INSERT_JOURNAL = `
 
 const SELECT_JOURNAL = `SELECT * FROM journals WHERE journalId = $journalId`;
 
+const JOURNAL_NULLABLE_VALUES = {
+    picture: null,
+    notes: null
+};
+
 function addJournal(values) {
     return db.transaction(({run, all}) => {
-        const journalId = run(INSERT_JOURNAL, addTimestamp(values));
+        const journalId = run(INSERT_JOURNAL, addTimestamp({
+            ...JOURNAL_NULLABLE_VALUES,
+            ...values
+        }));
         const [journal] = all(SELECT_JOURNAL, {journalId});
         return journal;
     });
@@ -344,6 +358,22 @@ function markAsDead(ownerId, fragId) {
 
 //-----------------------------------------------------------------------------
 
+const UPDATE_PICTURE = `
+    UPDATE
+        frags
+    SET
+        picture = $picture
+    WHERE
+        fragId = $fragId AND
+        ownerId = $ownerId
+`;
+
+function updateFragPicture(ownerId, fragId, picture) {
+    db.run(UPDATE_PICTURE, {ownerId, fragId, picture})
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     selectAllFragsForUser,
     selectMothers,
@@ -353,5 +383,6 @@ module.exports = {
     updateFragsAvailable,
     giveAFrag,
     addJournal,
-    markAsDead
+    markAsDead,
+    updateFragPicture
 }

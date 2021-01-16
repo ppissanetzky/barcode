@@ -82,11 +82,9 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
         fragId,
         timestamp: body.dateAcquired,
         entryType: 'acquired',
-        // TODO: Undecided on whether this journal entry
-        // should have the same picture since it will be
-        // the cover picture for the frag
-        picture: null,
-        notes: 'Acquired it'
+        picture,
+        notes: body.source ?
+            `Got it from ${body.source}` : 'Acquired it'
     });
     res.json({
         fragId,
@@ -161,8 +159,16 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res) => {
         picture
     };
     // Do it
-    const fragsAvailable = db.giveAFrag(user.id, params);
-    // Add a journal entry
+    const [fragsAvailable, newFragId] = db.giveAFrag(user.id, params);
+    // Add a journal entry for the recipient
+    db.addJournal({
+        fragId: newFragId,
+        timestamp: dateAcquired,
+        entryType: 'acquired',
+        notes: `Got it from ${user.name}`
+    });
+
+    // Add a journal entry for the one who gave it
     const journal = db.addJournal({
         fragId: fragOf,
         timestamp: dateAcquired,
@@ -204,8 +210,17 @@ router.post('/frag/:fragId/journal', upload.single('picture'), (req, res) => {
         picture,
         notes: body.notes || null
     });
+    // Update the cover picture for the frag
+    let coverPicture;
+    if (body.makeCoverPicture && picture) {
+        db.updateFragPicture(user.id, fragId, picture);
+        coverPicture = picture;
+    }
     // Reply
-    res.json({journal});
+    res.json({
+        journal,
+        coverPicture
+    });
 });
 
 //-----------------------------------------------------------------------------

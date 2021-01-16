@@ -90,8 +90,13 @@
                                 :error-messages="errors"
                                 required
                                 outlined
+                                hide-details="auto"
                               />
                             </validation-provider>
+                          </v-col>
+                        </v-row>
+                        <v-row>
+                          <v-col>
                             <v-btn
                               color="secondary"
                               type="submit"
@@ -181,6 +186,7 @@
                                 label="Picture of the frag"
                                 accept="image/*"
                                 prepend-icon=""
+                                hide-details="auto"
                               />
                             </v-col>
                           </v-row>
@@ -195,6 +201,7 @@
                                 label="Notes about the frag"
                                 auto-grow
                                 rows="1"
+                                hide-details="auto"
                               />
                             </v-col>
                           </v-row>
@@ -269,6 +276,13 @@
                             label="Picture"
                             accept="image/*"
                             prepend-icon=""
+                            hide-details="auto"
+                          />
+                          <v-checkbox
+                            v-model="journalMakeCoverPicture"
+                            label="Make this the cover picture"
+                            :disabled="!journalPicture"
+                            hide-details="auto"
                           />
                         </v-col>
                       </v-row>
@@ -280,6 +294,7 @@
                             label="Entry"
                             auto-grow
                             rows="2"
+                            hide-details="auto"
                           />
                         </v-col>
                       </v-row>
@@ -340,7 +355,12 @@
                             label="What happened?"
                             auto-grow
                             rows="3"
+                            hide-details="auto"
                           />
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col>
                           <v-btn
                             color="secondary"
                             type="submit"
@@ -514,6 +534,7 @@ export default {
       journalText: undefined,
       journalType: 'update',
       loadingJournal: false,
+      journalMakeCoverPicture: false,
 
       // For RIP
       showRIP: false,
@@ -585,8 +606,12 @@ export default {
         formData.set('ownerId', this.recipient.id)
         // Convert the local date (only) to a full date/time with TZ information
         formData.set('dateAcquired', formatISO(parseISO(this.dateGiven)))
-        formData.set('picture', this.picture)
-        formData.set('notes', this.notes)
+        if (this.picture) {
+          formData.set('picture', this.picture)
+        }
+        if (this.notes) {
+          formData.set('notes', this.notes)
+        }
         const { fragsAvailable, journal } = await this.$axios.$post('/bc/api/dbtc/give-a-frag', formData)
         // Update available frags from the response
         this.fragsAvailable = fragsAvailable
@@ -606,13 +631,6 @@ export default {
       } finally {
         this.loadingGiveAFrag = false
       }
-      /*
-      await this.$axios.$put(`/bc/api/dbtc/frag/${this.frag.fragId}/available/${this.fragsAvailable}`)
-      // This will update the chip
-      this.frag.fragsAvailable = this.fragsAvailable
-      this.snackbarText = `${this.fragsAvailable} made available`
-      this.snackbar = true
-      */
     },
 
     submitPreventJournal () {
@@ -630,16 +648,25 @@ export default {
         if (this.journalText) {
           formData.set('notes', this.journalText)
         }
+        if (this.journalMakeCoverPicture) {
+          formData.set('makeCoverPicture', true)
+        }
 
-        const { journal } = await this.$axios.$post(`/bc/api/dbtc/frag/${this.frag.fragId}/journal`, formData)
+        const { journal, coverPicture } = await this.$axios.$post(`/bc/api/dbtc/frag/${this.frag.fragId}/journal`, formData)
 
         // Add it as the first one in our array
         this.journals.unshift(augment(journal))
+
+        // Update the cover picture for the frag
+        if (coverPicture) {
+          this.frag.picture = coverPicture
+        }
 
         // Reset the form values
         this.journalPicture = ''
         this.journalType = 'update'
         this.journalText = ''
+        this.journalMakeCoverPicture = false
 
         // Show the snack bar
         this.snackbarText = 'Journal entry added'

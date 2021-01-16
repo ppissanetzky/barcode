@@ -239,7 +239,7 @@
                 </v-row>
 
                 <v-row>
-                  <v-col>Source details - optional &amp; private</v-col>
+                  <v-col>Source details - optional</v-col>
                 </v-row>
 
                 <!-- Source type and name -->
