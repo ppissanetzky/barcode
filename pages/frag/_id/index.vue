@@ -37,6 +37,27 @@
             </v-chip>
           </v-card-text>
 
+          <v-simple-table dense>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th class="text-center">Light</th>
+                  <th class="text-center">Flow</th>
+                  <th class="text-center">Hardiness</th>
+                  <th class="text-center">Growth rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="text-center">{{ frag.light.toLowerCase() }}</td>
+                  <td class="text-center">{{ frag.flow.toLowerCase() }}</td>
+                  <td class="text-center">{{ frag.hardiness.toLowerCase() }}</td>
+                  <td class="text-center">{{ frag.growthRate.toLowerCase() }}</td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
+
           <!-- All the things that can be changed about this frag are wrapped in this div -->
 
           <div v-if="canMakeChanges">

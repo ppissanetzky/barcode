@@ -171,13 +171,11 @@ function insertItem(values) {
             ...values
         };
         const motherId = run(INSERT_MOTHER, addTimestamp(bindings));
-        console.log('MOTHER ID', motherId);
         const fragBindings = {
             ...bindings,
             motherId,
             fragOf: null
         };
-        console.log(fragBindings);
         const fragId = run(INSERT_FRAG, addTimestamp(fragBindings));
         return fragId;
     });
@@ -222,7 +220,6 @@ function giveAFrag(userId, values) {
             ...values,
             fragsAvailable: 0
         };
-        console.log('GIVING FRAG', fragBindings);
         const fragId = run(INSERT_FRAG, addTimestamp(fragBindings));
 
         // Decrement available frags on the source frag
@@ -430,7 +427,6 @@ const SELECT_COLLECTION = `
 
 function selectCollection(userId) {
     const rows = db.all(SELECT_COLLECTION, {});
-    console.log(JSON.stringify(rows, null, 2));
     // Now, go through them and parse the JSON parts
     rows.forEach((row) => {
         // Remove the null pictures

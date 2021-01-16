@@ -6,6 +6,32 @@
       </v-col>
     </v-row>
 
+    <!-- Controls for filtering -->
+
+    <v-row>
+      <v-col cols="auto">
+        <v-select
+          v-model="typeFilter"
+          label="Type"
+          :items="['All', 'SPS', 'LPS', 'Softie', 'Other']"
+          solo
+          hide-details="auto"
+        />
+      </v-col>
+      <v-col cols="auto">
+        <v-select
+          v-model="memberFilter"
+          label="Member"
+          :items="members"
+          item-value="ownerId"
+          item-text="name"
+          return-object
+          solo
+          hide-details="auto"
+        />
+      </v-col>
+    </v-row>
+
     <!-- The cards of mothers -->
     <v-row>
       <v-col
@@ -38,6 +64,27 @@
               You have it
             </v-chip>
           </v-card-text>
+
+          <v-simple-table dense>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th class="text-center">Light</th>
+                  <th class="text-center">Flow</th>
+                  <th class="text-center">Hardiness</th>
+                  <th class="text-center">Growth rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="text-center">{{ m.light.toLowerCase() }}</td>
+                  <td class="text-center">{{ m.flow.toLowerCase() }}</td>
+                  <td class="text-center">{{ m.hardiness.toLowerCase() }}</td>
+                  <td class="text-center">{{ m.growthRate.toLowerCase() }}</td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
 
           <div v-if="m.haves.length">
             <v-divider />
@@ -124,11 +171,27 @@ export default {
 
     this.user = user
     this.mothers = mothers
+
+    this.members.push({ ownerId: 0, name: 'All' })
+    mothers.forEach(({ haves, haveNots }) => {
+      haves.forEach(owner => this.members.push(owner))
+      haveNots.forEach(owner => this.members.push(owner))
+    })
   },
   data () {
     return {
       user: {},
-      mothers: []
+      mothers: [],
+      members: [],
+
+      typeFilter: undefined,
+      memberFilter: undefined
+    }
+  },
+
+  watch: {
+    typeFilter (value) {
+      console.log(value)
     }
   }
 }

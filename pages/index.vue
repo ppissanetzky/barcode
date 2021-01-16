@@ -49,6 +49,28 @@
             </v-chip>
             <v-chip v-if="frag.isAvailable" label v-text="`${frag.fragsAvailable} available`" />
           </v-card-text>
+
+          <v-simple-table dense>
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th class="text-center">Light</th>
+                  <th class="text-center">Flow</th>
+                  <th class="text-center">Hardiness</th>
+                  <th class="text-center">Growth rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="text-center">{{ frag.light.toLowerCase() }}</td>
+                  <td class="text-center">{{ frag.flow.toLowerCase() }}</td>
+                  <td class="text-center">{{ frag.hardiness.toLowerCase() }}</td>
+                  <td class="text-center">{{ frag.growthRate.toLowerCase() }}</td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
+
         </v-card>
       </v-col>
     </v-row>
