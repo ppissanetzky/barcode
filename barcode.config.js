@@ -1,5 +1,15 @@
 
 //-----------------------------------------------------------------------------
+// This will read the values from the .env file and put them in process.env
+//-----------------------------------------------------------------------------
+
+require('dotenv').config()
+
+//-----------------------------------------------------------------------------
+
+const PRODUCTION = process.env.NODE_ENV === 'production';
+
+//-----------------------------------------------------------------------------
 // This is very important configuration that is needed both by the client
 // build and the server. It all comes from the environment but in the case of
 // the client build, it gets baked in to the client. So, make sure it is set
@@ -7,6 +17,19 @@
 //-----------------------------------------------------------------------------
 
 module.exports = {
+
+    //-------------------------------------------------------------------------
+    // Just a wrapper for the NODE_ENV environment variable
+    //-------------------------------------------------------------------------
+
+    get BC_PRODUCTION() { return PRODUCTION },
+
+    //-------------------------------------------------------------------------
+    // This is the API key we need to access the XenForo rest API. It should
+    // never be in git.
+    //-------------------------------------------------------------------------
+
+    get BC_XF_API_KEY () { return get('BC_XF_API_KEY') },
 
     //-------------------------------------------------------------------------
     // This one has to be provided to the client BUILD. It points to the URL
@@ -19,7 +42,7 @@ module.exports = {
     // calls to our server.
     //-------------------------------------------------------------------------
 
-    get BC_API_URL () { return get('BC_API_URL'); },
+    get BC_API_URL () { return get('BC_API_URL') },
 
     //-------------------------------------------------------------------------
     // This one has to be provided to the client BUILD. It points to the URL
@@ -31,7 +54,7 @@ module.exports = {
     // For production, it should be 'https://bareefers.org/bc/uploads'
     //-------------------------------------------------------------------------
 
-    get BC_UPLOADS_URL () { return get('BC_UPLOADS_URL'); },
+    get BC_UPLOADS_URL () { return get('BC_UPLOADS_URL') },
 
     //-------------------------------------------------------------------------
     // This has to be provided to the server at RUNTIME. It is the local
@@ -43,7 +66,7 @@ module.exports = {
     // For production, it should be '/home/admin3/bc-data/uploads'
     //-------------------------------------------------------------------------
 
-    get BC_UPLOADS_DIR () { return get('BC_UPLOADS_DIR'); },
+    get BC_UPLOADS_DIR () { return get('BC_UPLOADS_DIR') },
 
     //-------------------------------------------------------------------------
     // This has to be provided to the server at RUNTIME. It is the local
@@ -53,7 +76,16 @@ module.exports = {
     //
     // For production, it should be '/home/admin3/bc-data/database'
 
-    get BC_DATABASE_DIR () { return get('BC_DATABASE_DIR'); },
+    get BC_DATABASE_DIR () { return get('BC_DATABASE_DIR') },
+
+    //-------------------------------------------------------------------------
+    // This is only for development, so we can run the server as if
+    // all requests come from this user. This one is different in that
+    // we don't crash if it is missing.
+    //-------------------------------------------------------------------------
+
+    get BC_TEST_USER () { return PRODUCTION ? undefined : process.env.BC_TEST_USER },
+
 };
 
 //-----------------------------------------------------------------------------
@@ -61,9 +93,9 @@ module.exports = {
 function get(name) {
     const value = process.env[name];
     if (!value) {
-        console.error(`MISSING ENVIRONMENT VARIABLE "${name}"`);
+        console.error(`MISSING ENVIRONMENT VARIABLE "${name}", SEE barcode.config.js`);
         process.exit(2);
     }
-    console.warn(`${name}=${value}`);
+    // console.warn(`${name}=${value}`);
     return value;
 }

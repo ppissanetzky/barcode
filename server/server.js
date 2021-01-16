@@ -1,5 +1,7 @@
 const express = require('express');
 
+const {BC_PRODUCTION} = require('../barcode.config');
+
 //-----------------------------------------------------------------------------
 // The routes (URLs) for DBTC
 //-----------------------------------------------------------------------------
@@ -74,7 +76,7 @@ app.use((req, res, next) => {
 // Just for debugging purposes
 //-----------------------------------------------------------------------------
 
-if (process.env.NODE_ENV !== 'production') {
+if (!BC_PRODUCTION) {
     app.use((req, res, next) => {
         console.log(`(${req.user.name}:${req.user.id}) :`, req.url);
         next();

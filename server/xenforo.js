@@ -3,19 +3,14 @@ const https = require('https');
 const qs = require('querystring');
 const cookieParser = require('cookie');
 
+const {BC_TEST_USER, BC_XF_API_KEY} = require('../barcode.config');
 const usersDatabase = require('./users-database');
 
 //-----------------------------------------------------------------------------
-// A constant for conditional behavior while testing
+// A user for testing
 //-----------------------------------------------------------------------------
 
-const TESTING = process.env.NODE_ENV !== 'production';
-
-// If testing and the first argument is present, use it as a test user
-
-const TEST_USER = TESTING && process.argv[2];
-
-TEST_USER && console.warn('Running as user', TEST_USER);
+BC_TEST_USER && console.warn('Running as user', BC_TEST_USER);
 
 //-----------------------------------------------------------------------------
 // TEST USERS
@@ -29,7 +24,7 @@ TEST_USER && console.warn('Running as user', TEST_USER);
 // Constants
 //-----------------------------------------------------------------------------
 
-const API_KEY = 'ALMLGH6saPr2IzSjl3WGE70UkaocN_9K';
+const API_KEY = BC_XF_API_KEY;
 const HOST = 'bareefers.org';
 const PATH = '/forum/api';
 const SESSION_COOKIE = 'xfb_session';
@@ -167,8 +162,8 @@ class MemberNotAllowedError extends Error {
 
 async function validateXenForoUser(headers) {
     // During development, use a test user
-    if (TEST_USER) {
-        const user = await lookupUser(TEST_USER);
+    if (BC_TEST_USER) {
+        const user = await lookupUser(BC_TEST_USER);
         if (user) {
             return [user];
         }
