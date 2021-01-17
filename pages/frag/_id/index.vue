@@ -312,7 +312,7 @@
                           <v-textarea
                             v-model="journalText"
                             outlined
-                            label="Entry"
+                            label="How's it doing?"
                             auto-grow
                             rows="2"
                             hide-details="auto"
