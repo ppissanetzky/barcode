@@ -16,6 +16,12 @@ const BarcodeConfig = require('../barcode.config');
 const db = require('./dbtc-database');
 
 //-----------------------------------------------------------------------------
+// Errors
+//-----------------------------------------------------------------------------
+
+const {INVALID_FRAG, INVALID_INCREMENT, INVALID_RECIPIENT} = require('./errors');
+
+//-----------------------------------------------------------------------------
 // The destinaton for uploaded files (pictures)
 //-----------------------------------------------------------------------------
 
@@ -45,10 +51,13 @@ router.get('/your-collection', (req, res) => {
 // Data about one frag
 //-----------------------------------------------------------------------------
 
-router.get('/frag/:fragId', async (req, res) => {
+router.get('/frag/:fragId', async (req, res, next) => {
     const {user, params} = req;
     const {fragId} = params;
     const [frag, journals] = db.selectFrag(fragId);
+    if (!frag) {
+        return next(INVALID_FRAG());
+    }
     frag.owner = await lookupUser(frag.ownerId);
     res.json({
         success: true,
@@ -97,21 +106,19 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
 // Changing the number of available frags
 //-----------------------------------------------------------------------------
 
-router.put('/frag/:fragId/available/:fragsAvailable', (req, res) => {
+router.put('/frag/:fragId/available/:fragsAvailable', (req, res, next) => {
     const {user, params} = req;
     const {fragId, fragsAvailable} = params;
     // Validate the frag. It must belong to this user and be alive. We don't
     // care how many frags are already available, so we send -1 for that
     const frag = db.validateFrag(user.id, fragId, true, -1);
     if (!frag) {
-        // TODO: Error
-        return res.status(500).end();
+        return next(INVALID_FRAG());
     }
     // Validate fragsAvailable
     const value = parseInt(fragsAvailable, 10);
     if (isNaN(value) || value < 0) {
-        // TODO: Error
-        return res.status(500).end();
+        return next(INVALID_INCREMENT());
     }
     // Now update it, which returns the new value
     const result = db.updateFragsAvailable(user.id, fragId, value);
@@ -133,7 +140,7 @@ router.put('/frag/:fragId/available/:fragsAvailable', (req, res) => {
 // Giving a frag
 //-----------------------------------------------------------------------------
 
-router.post('/give-a-frag', upload.single('picture'), async (req, res) => {
+router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => {
     // 'file' is added by multer and has all the information about the
     // uploaded file if one was present
     const {user, body, file} = req;
@@ -145,14 +152,12 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res) => {
     // have > 0 frags available
     const frag = db.validateFrag(user.id, fragOf, true, 0);
     if (!frag) {
-        // TODO: Error
-        return res.status(500).end();
+        return next(INVALID_FRAG());
     }
     // Now make sure the new owner is allowed
     const recipient = await lookupUser(ownerId);
     if (!(recipient && recipient.allowed)) {
-        // TODO: Error
-        return res.status(500).end();
+        return next(INVALID_RECIPIENT());
     }
     // Inputs from the form
     const params = {
@@ -188,7 +193,7 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res) => {
 // Add a journal entry
 //-----------------------------------------------------------------------------
 
-router.post('/frag/:fragId/journal', upload.single('picture'), (req, res) => {
+router.post('/frag/:fragId/journal', upload.single('picture'), (req, res, next) => {
     // 'file' is added by multer and has all the information about the
     // uploaded file if one was present
     const {user, body, params, file} = req;
@@ -199,8 +204,7 @@ router.post('/frag/:fragId/journal', upload.single('picture'), (req, res) => {
     // have > -1 frags available
     const frag = db.validateFrag(user.id, fragId, true, -1);
     if (!frag) {
-        // TODO: Error
-        return res.status(500).end();
+        return next(INVALID_FRAG());
     }
     console.log(body);
     // Do it
@@ -228,7 +232,7 @@ router.post('/frag/:fragId/journal', upload.single('picture'), (req, res) => {
 // Mark a frag as dead
 //-----------------------------------------------------------------------------
 
-router.post('/frag/:fragId/rip', upload.none(), (req, res) => {
+router.post('/frag/:fragId/rip', upload.none(), (req, res, next) => {
     // 'file' is added by multer and has all the information about the
     // uploaded file if one was present
     const {user, body, params} = req;
@@ -238,8 +242,7 @@ router.post('/frag/:fragId/rip', upload.none(), (req, res) => {
     // have > -1 frags available
     const frag = db.validateFrag(user.id, fragId, true, -1);
     if (!frag) {
-        // TODO: Error
-        return res.status(500).end();
+        return next(INVALID_FRAG());
     }
     console.log(req.headers)
     console.log(body)

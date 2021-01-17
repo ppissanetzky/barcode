@@ -5,6 +5,7 @@ const cookieParser = require('cookie');
 
 const {BC_TEST_USER, BC_XF_API_KEY} = require('../barcode.config');
 const usersDatabase = require('./users-database');
+const {AUTHENTICATION_FAILED, MEMBER_NEEDS_UPGRADE} = require('./errors');
 
 //-----------------------------------------------------------------------------
 // A user for testing
@@ -140,27 +141,21 @@ function makeUser(xfUser) {
 }
 
 //-----------------------------------------------------------------------------
-// Custom error to signal that although this user is valid, they are not
-// allowed to use the system because they need an upgrade. The error message
-// and link to upgrade will be shown to the user.
-//
-// In the BAR specific case, this happens when they are not a supporting
-// member.
-//
-//-----------------------------------------------------------------------------
-
-class MemberNotAllowedError extends Error {
-    constructor(message) {
-        super(message);
-        this.link = SUPPORTING_MEMBER_LINK;
-    }
-};
-
-//-----------------------------------------------------------------------------
 // Validate the current user. Returns a user object if everything is OK
 //-----------------------------------------------------------------------------
 
+
 async function validateXenForoUser(headers) {
+
+    function authenticationFailed(reason) {
+        console.error('AUTHENTICATION FAILED :', reason, ':', headers);
+        return AUTHENTICATION_FAILED(
+            'You must be logged in. Please click the button below to go to the login page.',
+            LOGIN_LINK,
+            'Log in'
+        );
+    }
+
     // During development, use a test user
     if (BC_TEST_USER) {
         const user = await lookupUser(BC_TEST_USER);
@@ -171,7 +166,7 @@ async function validateXenForoUser(headers) {
 
     // No cookies, no milk
     if (!headers.cookie) {
-        throw new Error('Missing cookies');
+        throw authenticationFailed('No cookies at all');
     }
 
     // Parse the cookie header
@@ -182,7 +177,7 @@ async function validateXenForoUser(headers) {
     const rememberCookie = cookies[USER_COOKIE];
 
     if (!sessionId && !rememberCookie) {
-        throw new Error('No XF cookies at all, must login');
+        throw authenticationFailed('No XF cookies');
     }
 
     // We do have at least one, so call XF to authenticate with them
@@ -194,10 +189,10 @@ async function validateXenForoUser(headers) {
     // Now, validate the response
     const {success, user} = response || {};
     if (!success) {
-        throw new Error('Auth request failed');
+        throw authenticationFailed('Auth request failed');
     }
     if (!user) {
-        throw new Error('Auth response missing user');
+        throw authenticationFailed('Auth response missing user');
     }
 
     // Get details about the user
@@ -205,12 +200,16 @@ async function validateXenForoUser(headers) {
 
     // If the state is not 'valid', we don't like the user
     if (user_state !== 'valid') {
-        throw new Error(`User ${username} has invalid state "${user_state}"`);
+        throw authenticationFailed(`User ${username} has invalid state "${user_state}"`);
     }
 
     // See if the user is allowed to participate
     if (!isXfUserAllowed(user)) {
-        throw new MemberNotAllowedError(NON_SUPPORTING_MEMBER_MESSAGE);
+        throw MEMBER_NEEDS_UPGRADE(
+            NON_SUPPORTING_MEMBER_MESSAGE,
+            SUPPORTING_MEMBER_LINK,
+            'Learn more'
+        );
     }
 
     // Otherwise, the user is valid, so we return it along with cookies
@@ -373,8 +372,6 @@ module.exports = {
     validateXenForoUser,
     lookupUser,
     lookupUserWithFallback,
-    LOGIN_LINK,
-    MemberNotAllowedError,
     startConversation,
     sendAlert,
     findUsersWithPrefix

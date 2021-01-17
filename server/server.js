@@ -1,6 +1,14 @@
 const express = require('express');
 
+//-----------------------------------------------------------------------------
+// Configuration
+//-----------------------------------------------------------------------------
+
 const {BC_PRODUCTION} = require('../barcode.config');
+
+//-----------------------------------------------------------------------------
+
+const {ExplicitError} = require('./errors');
 
 //-----------------------------------------------------------------------------
 // The routes (URLs) for DBTC
@@ -12,11 +20,7 @@ const dbtcRouter = require('./dbtc-router');
 // The XenForo stuff
 //-----------------------------------------------------------------------------
 
-const {
-    validateXenForoUser,
-    LOGIN_LINK,
-    MemberNotAllowedError
-} = require('./xenforo');
+const {validateXenForoUser} = require('./xenforo');
 
 //-----------------------------------------------------------------------------
 // Create the express app
@@ -50,24 +54,7 @@ app.use((req, res, next) => {
             next();
         }
         catch(error) {
-            if (error instanceof MemberNotAllowedError) {
-                res.json({
-                    error: ERROR_CODES.MEMBER_NEEDS_UPGRADE,
-                    message: error.message,
-                    link: error.link,
-                    button: 'Learn more'
-                });
-            }
-            else {
-                console.error('Failed to validate user :', error);
-                console.error(JSON.stringify(req.headers));
-                res.json({
-                    error: ERROR_CODES.AUTHENTICATION_FAILED,
-                    message: 'You must be logged in. Please click the button below to go to the login page.',
-                    link: LOGIN_LINK,
-                    button: 'Log in'
-                });
-            }
+            next(error);
         }
     });
 });
@@ -88,6 +75,23 @@ if (!BC_PRODUCTION) {
 //-----------------------------------------------------------------------------
 
 app.use('/bc/api/dbtc', dbtcRouter);
+
+//-----------------------------------------------------------------------------
+
+app.use((error, req, res, next) => {
+    if (res.headersSent) {
+      return next(error)
+    }
+    // Always a 500
+    res.status(500);
+    // If it is one of our application errors, put the error JSON in the
+    // response body
+    if (error instanceof ExplicitError) {
+        res.json(error.asJSON());
+    }
+    // End it
+    res.end();
+});
 
 //-----------------------------------------------------------------------------
 // The port that the Express application listens to.
