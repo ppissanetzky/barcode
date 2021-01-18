@@ -23,7 +23,7 @@
                     <v-autocomplete
                       v-model="typeFilter"
                       label="Type"
-                      :items="['SPS', 'LPS', 'Softie', 'Other']"
+                      :items="types"
                       clearable
                       hide-details
                       solo
@@ -177,10 +177,11 @@ export default {
     this.filteredMothers = mothers.filter(({ fragsAvailable }) => fragsAvailable > 0)
 
     const members = []
-    mothers.forEach(({ haves, haveNots, name }) => {
+    mothers.forEach(({ haves, haveNots, name, type }) => {
       haves.forEach(owner => members.push(owner))
       haveNots.forEach(owner => members.push(owner))
       this.names.push(name)
+      this.types.push(type)
     })
     members.sort((a, b) => {
       if (a.name < b.name) {
@@ -199,6 +200,7 @@ export default {
       filteredMothers: [],
       members: [],
       names: [],
+      types: [],
 
       typeFilter: '',
       memberFilter: '',

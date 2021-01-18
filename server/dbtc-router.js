@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 
-const {findUsersWithPrefix, lookupUser} = require('./xenforo');
+const {findUsersWithPrefix, lookupUser, getThreadsForItemType} = require('./xenforo');
 
 //-----------------------------------------------------------------------------
 // Function to get runtime configuration from the environment
@@ -83,7 +83,8 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
         ownerId: user.id,
         fragsAvailable: parseInt(body.fragsAvailable, 10),
         cost: parseFloat(body.cost),
-        picture
+        picture,
+        threadId: parseInt(body.threadId, 10)
     };
     // Add the new item
     const fragId = db.insertItem(params);
@@ -298,6 +299,27 @@ router.get('/mothers', async (req, res) => {
     res.json({
         user,
         mothers
+    });
+});
+
+//-----------------------------------------------------------------------------
+// Get enums (types and rules for now)
+//-----------------------------------------------------------------------------
+
+router.get('/enums', (req, res) => {
+    res.json(db.getEnums());
+});
+
+//-----------------------------------------------------------------------------
+// Get threads for a specific type
+//-----------------------------------------------------------------------------
+
+router.get('/threads-for-type', async (req, res) => {
+    const {user, query} = req;
+    const {type} = query;
+    const threads = await getThreadsForItemType(user.id, type);
+    res.json({
+        threads
     });
 });
 

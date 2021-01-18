@@ -9,6 +9,52 @@ PRAGMA user_version = 1;
 PRAGMA foreign_keys = ON;
 
 -------------------------------------------------------------------------------
+-- Types table
+-------------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS types (
+    type            TEXT PRIMARY KEY NOT NULL,
+    forumId         INTEGER NOT NULL
+);
+
+INSERT OR IGNORE INTO types (type, forumId) VALUES ('SPS',      31);
+INSERT OR IGNORE INTO types (type, forumId) VALUES ('Zoa',      32);
+INSERT OR IGNORE INTO types (type, forumId) VALUES ('Softie',   34);
+INSERT OR IGNORE INTO types (type, forumId) VALUES ('Other',    35);
+INSERT OR IGNORE INTO types (type, forumId) VALUES ('LPS',      36);
+
+-------------------------------------------------------------------------------
+-- Rules table
+-------------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS rules (
+    rule            TEXT PRIMARY KEY NOT NULL,
+    description     TEXT NOT NULL,
+    url             TEXT
+);
+
+INSERT OR IGNORE INTO rules (rule, description, url)
+VALUES (
+    'DBTC',
+    'Don''t break the chain',
+    'https://www.bareefers.org/forum/threads/dbtc-info-rules.23030/'
+);
+
+INSERT OR IGNORE INTO rules (rule, description, url)
+VALUES (
+    'PIF',
+    'Pay it forward (free stuff)',
+    NULL
+);
+
+INSERT OR IGNORE INTO rules (rule, description, url)
+VALUES (
+    'Private',
+    'Only visibile to you',
+    NULL
+);
+
+-------------------------------------------------------------------------------
 -- Mothers table
 -------------------------------------------------------------------------------
 
@@ -16,7 +62,7 @@ CREATE TABLE IF NOT EXISTS mothers (
     motherId        INTEGER PRIMARY KEY,
     timestamp       TEXT NOT NULL,
     name            TEXT NOT NULL,
-    type            TEXT CHECK (type IN('LPS', 'SPS', 'Softie', 'Other')) NOT NULL,
+    type            TEXT NOT NULL,
     scientificName  TEXT,
     flow            TEXT CHECK (flow IN('Low', 'Medium', 'High')) NOT NULL DEFAULT 'Medium',
     light           TEXT CHECK (light IN('Low', 'Medium', 'High')) NOT NULL DEFAULT 'Medium',
@@ -25,7 +71,12 @@ CREATE TABLE IF NOT EXISTS mothers (
     sourceType      TEXT CHECK (sourceType IN ('Member', 'LFS', 'Online', 'Other')),
     source          TEXT,
     cost            REAL NOT NULL DEFAULT 0,
-    size            TEXT
+    size            TEXT,
+    rules           TEXT NOT NULL,
+    threadId        INTEGER,
+
+    FOREIGN KEY (type) REFERENCES types (type),
+    FOREIGN KEY (rules) REFERENCES rules (rule)
 );
 
 -------------------------------------------------------------------------------

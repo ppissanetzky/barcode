@@ -20,6 +20,29 @@ function addTimestamp(values) {
 }
 
 //-----------------------------------------------------------------------------
+
+const SELECT_TYPES = 'SELECT * FROM types ORDER BY type';
+
+function getTypes() {
+    return db.all(SELECT_TYPES, {});
+}
+
+const SELECT_TYPE = 'SELECT * FROM types WHERE type = $type';
+
+function getType(type) {
+    const [row] = db.all(SELECT_TYPE, {type});
+    return row;
+}
+
+const SELECT_RULES = 'SELECT * FROM rules ORDER BY rule';
+
+function getEnums() {
+    const types = db.all(SELECT_TYPES, {});
+    const rules = db.all(SELECT_RULES, {});
+    return {types, rules};
+}
+
+//-----------------------------------------------------------------------------
 // All frags for a given user - joined with species
 //-----------------------------------------------------------------------------
 
@@ -109,7 +132,9 @@ const INSERT_MOTHER = `
             sourceType,
             source,
             cost,
-            size
+            size,
+            rules,
+            threadId
         )
     VALUES
         (
@@ -124,7 +149,9 @@ const INSERT_MOTHER = `
             $sourceType,
             $source,
             $cost,
-            $size
+            $size,
+            $rules,
+            $threadId
         )
 `;
 
@@ -161,7 +188,8 @@ const INSERT_ITEM_NULLABLE_VALUES = {
     source: null,
     size: null,
     picture: null,
-    notes: null
+    notes: null,
+    threadId: null
 };
 
 function insertItem(values) {
@@ -466,5 +494,8 @@ module.exports = {
     addJournal,
     markAsDead,
     updateFragPicture,
-    selectCollection
+    selectCollection,
+    getTypes,
+    getType,
+    getEnums
 }

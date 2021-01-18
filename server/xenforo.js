@@ -5,6 +5,8 @@ const cookieParser = require('cookie');
 
 const {BC_TEST_USER, BC_XF_API_KEY} = require('../barcode.config');
 const usersDatabase = require('./users-database');
+const dbtcDatabase = require('./dbtc-database');
+
 const {AUTHENTICATION_FAILED, MEMBER_NEEDS_UPGRADE} = require('./errors');
 
 //-----------------------------------------------------------------------------
@@ -368,23 +370,39 @@ async function findUsersWithPrefix(prefix) {
 
 //-----------------------------------------------------------------------------
 
+async function getThreadsForItemType(userId, type) {
+    const {forumId} = dbtcDatabase.getType(type) || {};
+    if (!forumId) {
+        return [];
+    }
+    const {pagination, threads = []} = await apiRequest(`forums/${forumId}`, 'GET', {
+        with_threads: true,
+        page: 1,
+        starter_id: userId
+    });
+    console.log(pagination);
+    return threads.map(({thread_id, title}) => ({
+        threadId: thread_id,
+        title
+    }));
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     validateXenForoUser,
     lookupUser,
     lookupUserWithFallback,
     startConversation,
     sendAlert,
-    findUsersWithPrefix
+    findUsersWithPrefix,
+    getThreadsForItemType
 };
 
-/*
-(async function() {
-    const r = await apiRequest(`users/find-name`, 'GET', {
-        username: 'co',
-        api_bypass_permissions: 1});
-    console.log(r);
-})();
-*/
+// (async function() {
+//     const response = await getThreadsForItemType(803, 'LPS');
+//     console.log(response);
+// })();
 
 /* ALERT EXAMPLE
 

@@ -21,7 +21,7 @@
               <!-- Required information -->
               <v-container>
                 <v-row>
-                  <v-col>Required information</v-col>
+                  <v-col><h3>Required information</h3></v-col>
                 </v-row>
 
                 <!-- Name -->
@@ -60,7 +60,9 @@
                         v-model="type"
                         label="Type"
                         name="type"
-                        :items="['LPS','SPS','Softie','Other']"
+                        :items="types"
+                        item-value="type"
+                        item-text="type"
                         :error-messages="errors"
                         required
                         outlined
@@ -129,10 +131,77 @@
                       />
                     </validation-provider>
                   </v-col>
+                  <v-col>
+                    <validation-provider
+                      v-slot="{ errors }"
+                      rules="required"
+                      name="rules"
+                    >
+                      <v-select
+                        id="type"
+                        v-model="rules"
+                        label="Rules"
+                        name="rules"
+                        :items="allRules"
+                        item-value="rule"
+                        item-text="rule"
+                        :error-messages="errors"
+                        required
+                        outlined
+                      />
+                    </validation-provider>
+                  </v-col>
                 </v-row>
 
                 <v-row>
-                  <v-col>Additional details - optional</v-col>
+                  <v-col>
+                    <v-divider />
+                  </v-col>
+                </v-row>
+
+                <v-row>
+                  <v-col><h3>Forum linking</h3></v-col>
+                </v-row>
+
+                <v-row>
+                  <v-col>
+                    <p>Choose whether you would like BARcode to create a new thread to track this item or use an existing thread.</p>
+                    <div v-if="!type">
+                      <p class="red--text">Please select the item's "type" above.</p>
+                    </div>
+                    <div v-else>
+                      <validation-provider
+                        v-slot="{ errors }"
+                        rules="required"
+                        name="thread"
+                      >
+                        <v-autocomplete
+                          id="type"
+                          v-model="threadId"
+                          label="Thread"
+                          name="thread"
+                          :items="threadsByType[type]"
+                          item-value="threadId"
+                          item-text="title"
+                          :error-messages="errors"
+                          required
+                          outlined
+                          clearable
+                        />
+                      </validation-provider>
+
+                    </div>
+                  </v-col>
+                </v-row>
+
+                <v-row>
+                  <v-col>
+                    <v-divider />
+                  </v-col>
+                </v-row>
+
+                <v-row>
+                  <v-col><h3>Additional details - optional</h3></v-col>
                 </v-row>
 
                 <!-- Size -->
@@ -239,7 +308,7 @@
                 </v-row>
 
                 <v-row>
-                  <v-col>Source details - optional</v-col>
+                  <v-col><h3>Source details - optional</h3></v-col>
                 </v-row>
 
                 <!-- Source type and name -->
@@ -325,6 +394,11 @@ export default {
     ValidationProvider,
     BcDatePicker
   },
+  async fetch () {
+    const { types, rules } = await this.$axios.$get('/bc/api/dbtc/enums')
+    this.types = types
+    this.allRules = rules
+  },
   data () {
     return {
       name: undefined,
@@ -342,6 +416,13 @@ export default {
       sourceType: 'Other',
       source: undefined,
       cost: '0.00',
+      rules: 'DBTC',
+      threadId: undefined,
+
+      // Enums
+      types: [],
+      allRules: [],
+      threadsByType: {},
 
       // For the loading animation on the add it now button
       loading: false
@@ -371,7 +452,9 @@ export default {
           'growthRate',
           'sourceType',
           'source',
-          'cost'
+          'cost',
+          'rules',
+          'threadId'
         ]
 
         keys.forEach((key) => {
@@ -398,6 +481,18 @@ export default {
         // Turn off the loading button
         this.loading = false
       }
+    }
+  },
+  watch: {
+    async type (value) {
+      if (this.threadsByType[value]) {
+        return
+      }
+      const { threads } = await this.$axios.$get(`/bc/api/dbtc/threads-for-type?type=${encodeURIComponent(value)}`)
+      this.threadsByType[value] = [
+        { threadId: 0, title: '<Create a new thread>' },
+        ...threads
+      ]
     }
   }
 }
