@@ -10,57 +10,11 @@
     <!-- The card -->
     <v-row>
       <v-col cols="auto">
-        <v-card v-if="frag" max-width="375">
-          <v-img
-            v-if="frag.picture"
-            :src="`${$config.BC_UPLOADS_URL}/${frag.picture}`"
-            max-width="375px"
-            max-height="300px"
-          />
-          <v-img
-            v-else
-            max-width="375px"
-            max-height="300px"
-            src="/picture-placeholder.png"
-          />
-          <v-card-subtitle v-text="frag.scientificName" />
-          <v-card-text>
-            <v-chip label v-text="frag.type" />
-            <v-chip v-if="frag.age" label v-text="frag.age" />
-            <v-chip v-if="hasAvailableFrags" label v-text="`${fragsAvailable} available`" />
-            <v-chip
-              v-if="!frag.isAlive"
-              color="error"
-              label
-            >
-              RIP
-            </v-chip>
-          </v-card-text>
-
-          <v-simple-table dense>
-            <template v-slot:default>
-              <thead>
-                <tr>
-                  <th class="text-center">Light</th>
-                  <th class="text-center">Flow</th>
-                  <th class="text-center">Hardiness</th>
-                  <th class="text-center">Growth rate</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="text-center">{{ frag.light.toLowerCase() }}</td>
-                  <td class="text-center">{{ frag.flow.toLowerCase() }}</td>
-                  <td class="text-center">{{ frag.hardiness.toLowerCase() }}</td>
-                  <td class="text-center">{{ frag.growthRate.toLowerCase() }}</td>
-                </tr>
-              </tbody>
-            </template>
-          </v-simple-table>
+        <bc-frag-card v-if="frag" :frag-or-mother="frag" :user="user">
 
           <!-- All the things that can be changed about this frag are wrapped in this div -->
 
-          <div v-if="canMakeChanges">
+          <template v-if="canMakeChanges">
             <!--
                 A line item that expands to show a small form to make frags available
                 only if the user owns this frag
@@ -397,8 +351,8 @@
                 </div>
               </v-expand-transition>
             </div>
-          </div>
-        </v-card>
+          </template>
+        </bc-frag-card>
       </v-col>
 
       <!-- Another column and card to show journal information -->
@@ -474,6 +428,7 @@ import { formatISO, parseISO, differenceInDays, formatDistance } from 'date-fns'
 import { ValidationObserver, ValidationProvider } from 'vee-validate/dist/vee-validate.full.esm'
 import BcUserAutocomplete from '~/components/BcUserAutocomplete.vue'
 import BcDatePicker from '~/components/BcDatePicker.vue'
+import BcFragCard from '~/components/BcFragCard.vue'
 
 function age (date, suffix) {
   const today = new Date()
@@ -511,7 +466,8 @@ export default {
     ValidationObserver,
     ValidationProvider,
     BcUserAutocomplete,
-    BcDatePicker
+    BcDatePicker,
+    BcFragCard
   },
   async fetch () {
     const fragId = this.$route.params.id

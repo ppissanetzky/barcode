@@ -21,90 +21,25 @@
         :key="frag.fragId"
         cols="auto"
       >
-        <v-card :to="`frag/${frag.fragId}`" max-width="375">
-          <v-img
-            v-if="frag.picture"
-            :src="`${$config.BC_UPLOADS_URL}/${frag.picture}`"
-            max-width="375px"
-            max-height="300px"
-          />
-          <v-img
-            v-else
-            max-width="375px"
-            max-height="300px"
-            src="/picture-placeholder.png"
-          />
-
-          <v-card-title v-text="frag.name" />
-          <v-card-subtitle v-text="frag.scientificName" />
-          <v-card-text>
-            <v-chip label v-text="frag.type" />
-            <v-chip v-if="frag.age" label v-text="frag.age" />
-            <v-chip
-              v-if="!frag.isAlive"
-              color="error"
-              label
-            >
-              RIP
-            </v-chip>
-            <v-chip v-if="frag.isAvailable" label v-text="`${frag.fragsAvailable} available`" />
-          </v-card-text>
-
-          <v-simple-table dense>
-            <template v-slot:default>
-              <thead>
-                <tr>
-                  <th class="text-center">Light</th>
-                  <th class="text-center">Flow</th>
-                  <th class="text-center">Hardiness</th>
-                  <th class="text-center">Growth rate</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="text-center">{{ frag.light.toLowerCase() }}</td>
-                  <td class="text-center">{{ frag.flow.toLowerCase() }}</td>
-                  <td class="text-center">{{ frag.hardiness.toLowerCase() }}</td>
-                  <td class="text-center">{{ frag.growthRate.toLowerCase() }}</td>
-                </tr>
-              </tbody>
-            </template>
-          </v-simple-table>
-
-        </v-card>
+        <bc-frag-card :fragOrMother="frag" :user="user" :to="`frag/${frag.fragId}`" />
       </v-col>
     </v-row>
   </v-container>
 </template>
 <script>
-import { parseISO, differenceInDays, formatDistance, formatDuration } from 'date-fns'
-
-function age (isoDateTime) {
-  const today = new Date()
-  const future = parseISO(isoDateTime)
-  if (isNaN(future)) {
-    return
-  }
-  if (differenceInDays(today, future) === 0) {
-    return formatDuration({ days: 1 })
-  }
-  return formatDistance(today, future)
-}
+import BcFragCard from '~/components/BcFragCard.vue'
 
 export default {
+  components: { BcFragCard },
   async fetch () {
     const { user, frags } = await this.$axios.$get('/bc/api/dbtc/your-collection')
-    frags.forEach((frag) => {
-      frag.age = age(frag.dateAcquired)
-    })
-
     this.user = user
     this.frags = frags
   },
   data () {
     return {
-      user: null,
-      frags: null
+      user: {},
+      frags: {}
     }
   }
 }

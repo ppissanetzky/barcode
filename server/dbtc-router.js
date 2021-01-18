@@ -159,6 +159,10 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
     if (!(recipient && recipient.allowed)) {
         return next(INVALID_RECIPIENT());
     }
+    // You can't give a frag to yourself
+    if (recipient.id === user.id) {
+        return next(INVALID_RECIPIENT());
+    }
     // Inputs from the form
     const params = {
         ...body,
@@ -278,11 +282,13 @@ router.get('/mothers', async (req, res) => {
         delete mother.owners;
         mother.haves = [];
         mother.haveNots = [];
+        mother.fragsAvailable = 0;
         await Promise.all(owners.map(async (owner) => {
             const fullUser = await lookupUser(owner.ownerId);
             Object.assign(owner, fullUser);
             if (owner.fragsAvailable) {
                 mother.haves.push(owner);
+                mother.fragsAvailable += owner.fragsAvailable;
             }
             else {
                 mother.haveNots.push(owner);
