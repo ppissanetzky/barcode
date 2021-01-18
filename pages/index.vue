@@ -21,7 +21,7 @@
         :key="frag.fragId"
         cols="auto"
       >
-        <bc-frag-card :fragOrMother="frag" :user="user" :to="`frag/${frag.fragId}`" />
+        <bc-frag-card :frag-or-mother="frag" :user="user" :to="`frag/${frag.fragId}`" />
       </v-col>
     </v-row>
   </v-container>

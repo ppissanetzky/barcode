@@ -65,8 +65,13 @@
 
       <!-- A chip that shows it is dead -->
 
-      <v-chip v-if="!isAlive" color="error" label>RIP</v-chip>
-
+      <v-chip
+        v-if="!isAlive"
+        color="error"
+        label
+      >
+        RIP
+      </v-chip>
     </v-card-text>
 
     <!-- A table to show light, flow, hardiness and growth rate -->
@@ -75,18 +80,50 @@
       <template v-slot:default>
         <thead>
           <tr>
-            <th class="text-center">Light</th>
-            <th class="text-center">Flow</th>
-            <th class="text-center">Hardiness</th>
-            <th class="text-center">Growth rate</th>
+            <th
+              class="text-center"
+            >
+              Light
+            </th>
+            <th
+              class="text-center"
+            >
+              Flow
+            </th>
+            <th
+              class="text-center"
+            >
+              Hardiness
+            </th>
+            <th
+              class="text-center"
+            >
+              Growth rate
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="text-center">{{ fragOrMother.light.toLowerCase() }}</td>
-            <td class="text-center">{{ fragOrMother.flow.toLowerCase() }}</td>
-            <td class="text-center">{{ fragOrMother.hardiness.toLowerCase() }}</td>
-            <td class="text-center">{{ fragOrMother.growthRate.toLowerCase() }}</td>
+            <td
+              class="text-center"
+            >
+              {{ fragOrMother.light.toLowerCase() }}
+            </td>
+            <td
+              class="text-center"
+            >
+              {{ fragOrMother.flow.toLowerCase() }}
+            </td>
+            <td
+              class="text-center"
+            >
+              {{ fragOrMother.hardiness.toLowerCase() }}
+            </td>
+            <td
+              class="text-center"
+            >
+              {{ fragOrMother.growthRate.toLowerCase() }}
+            </td>
           </tr>
         </tbody>
       </template>
@@ -188,21 +225,12 @@
         </div>
       </v-expand-transition>
     </div>
-    <slot/>
+    <slot />
   </v-card>
 </template>
 <script>
 
-import { parseISO, differenceInDays, formatDistance } from 'date-fns'
-
-function age (isoDate, textForToday, suffix) {
-  const today = new Date()
-  const date = parseISO(isoDate)
-  if (differenceInDays(today, date) < 1) {
-    return textForToday
-  }
-  return `${formatDistance(today, date)}${suffix ? ' ' + suffix : ''}`
-}
+import { age } from '~/dates'
 
 export default {
   props: {
@@ -257,7 +285,6 @@ export default {
     } else {
       // Otherwise, it may have several pictures
       this.pictures = thing.pictures
-      console.log(this.pictures)
       // Whether this user owns it comes from the server
       this.ownsIt = thing.ownsIt
       // Alive

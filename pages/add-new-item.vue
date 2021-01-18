@@ -167,7 +167,11 @@
                   <v-col>
                     <p>Choose whether you would like BARcode to create a new thread to track this item or use an existing thread.</p>
                     <div v-if="!type">
-                      <p class="red--text">Please select the item's "type" above.</p>
+                      <p
+                        class="red--text"
+                      >
+                        Please select the item's "type" above.
+                      </p>
                     </div>
                     <div v-else>
                       <validation-provider
@@ -189,7 +193,6 @@
                           clearable
                         />
                       </validation-provider>
-
                     </div>
                   </v-col>
                 </v-row>
@@ -385,7 +388,7 @@
 // This imports the validation observer, provider and all the
 // rules with their messages
 import { ValidationObserver, ValidationProvider } from 'vee-validate/dist/vee-validate.full.esm'
-import { formatISO, parseISO } from 'date-fns'
+import { utcIsoStringFromString } from '~/dates'
 import BcDatePicker from '~/components/BcDatePicker.vue'
 
 export default {
@@ -428,6 +431,18 @@ export default {
       loading: false
     }
   },
+  watch: {
+    async type (value) {
+      if (this.threadsByType[value]) {
+        return
+      }
+      const { threads } = await this.$axios.$get(`/bc/api/dbtc/threads-for-type?type=${encodeURIComponent(value)}`)
+      this.threadsByType[value] = [
+        { threadId: 0, title: '<Create a new thread>' },
+        ...threads
+      ]
+    }
+  },
   methods: {
     submitPrevent () {
       this.$refs.observer.validate()
@@ -465,7 +480,7 @@ export default {
         })
 
         // Convert the local date (only) to a full date/time with TZ information
-        formData.set('dateAcquired', formatISO(parseISO(this.dateAcquired)))
+        formData.set('dateAcquired', utcIsoStringFromString(this.dateAcquired))
 
         const { fragId } = await this.$axios.$post('/bc/api/dbtc/add-new-item', formData, {
           headers: {
@@ -481,18 +496,6 @@ export default {
         // Turn off the loading button
         this.loading = false
       }
-    }
-  },
-  watch: {
-    async type (value) {
-      if (this.threadsByType[value]) {
-        return
-      }
-      const { threads } = await this.$axios.$get(`/bc/api/dbtc/threads-for-type?type=${encodeURIComponent(value)}`)
-      this.threadsByType[value] = [
-        { threadId: 0, title: '<Create a new thread>' },
-        ...threads
-      ]
     }
   }
 }

@@ -148,7 +148,6 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
     const picture = file ? file.filename : null;
     // Validate
     const {fragOf, ownerId, dateAcquired} = body;
-    console.log('give-a-frag', user, body);
     // Validate the frag. It must belong to this user and be alive. It must
     // have > 0 frags available
     const frag = db.validateFrag(user.id, fragOf, true, 0);
@@ -211,7 +210,6 @@ router.post('/frag/:fragId/journal', upload.single('picture'), (req, res, next) 
     if (!frag) {
         return next(INVALID_FRAG());
     }
-    console.log(body);
     // Do it
     const journal = db.addJournal({
         fragId,
@@ -249,8 +247,6 @@ router.post('/frag/:fragId/rip', upload.none(), (req, res, next) => {
     if (!frag) {
         return next(INVALID_FRAG());
     }
-    console.log(req.headers)
-    console.log(body)
     // Do it
     db.markAsDead(user.id, fragId);
     // Add a journal

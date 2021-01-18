@@ -41,13 +41,6 @@
 </template>
 <script>
 export default {
-  mounted () {
-    const { query } = this.$route
-    this.code = query.code
-    this.message = query.message
-    this.link = query.link || '/'
-    this.button = query.button || 'OK'
-  },
   data () {
     return {
       code: undefined,
@@ -55,6 +48,13 @@ export default {
       link: undefined,
       button: undefined
     }
+  },
+  mounted () {
+    const { query } = this.$route
+    this.code = query.code
+    this.message = query.message
+    this.link = query.link || '/'
+    this.button = query.button || 'OK'
   }
 }
 </script>

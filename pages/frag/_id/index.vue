@@ -10,8 +10,11 @@
     <!-- The card -->
     <v-row>
       <v-col cols="auto">
-        <bc-frag-card v-if="frag" :frag-or-mother="frag" :user="user">
-
+        <bc-frag-card
+          v-if="frag"
+          :frag-or-mother="frag"
+          :user="user"
+        >
           <!-- All the things that can be changed about this frag are wrapped in this div -->
 
           <template v-if="canMakeChanges">
@@ -424,29 +427,21 @@
 <script>
 // This imports the validation observer, provider and all the
 // rules with their messages
-import { formatISO, parseISO, differenceInDays, formatDistance } from 'date-fns'
 import { ValidationObserver, ValidationProvider } from 'vee-validate/dist/vee-validate.full.esm'
+import { age, utcIsoStringFromString, dateFromIsoString } from '~/dates'
 import BcUserAutocomplete from '~/components/BcUserAutocomplete.vue'
 import BcDatePicker from '~/components/BcDatePicker.vue'
 import BcFragCard from '~/components/BcFragCard.vue'
 
-function age (date, suffix) {
-  const today = new Date()
-  if (differenceInDays(today, date) < 1) {
-    return 'today'
-  }
-  return `${formatDistance(today, date)} ${suffix}`
-}
-
 function augment (journal) {
   // Parse the timestamp and and add a date
-  journal.date = parseISO(journal.timestamp)
+  journal.date = dateFromIsoString(journal.timestamp)
   // And a way to order them in reverse chronological
   journal.order = -journal.date.valueOf()
   // Define a read only property for the human readable age
   Object.defineProperty(journal, 'age', {
     get () {
-      return age(this.date, 'ago')
+      return age(this.date, 'today', 'ago')
     }
   })
   switch (journal.entryType) {
@@ -582,7 +577,7 @@ export default {
         formData.set('fragOf', this.frag.fragId)
         formData.set('ownerId', this.recipient.id)
         // Convert the local date (only) to a full date/time with TZ information
-        formData.set('dateAcquired', formatISO(parseISO(this.dateGiven)))
+        formData.set('dateAcquired', utcIsoStringFromString(this.dateGiven))
         if (this.picture) {
           formData.set('picture', this.picture)
         }

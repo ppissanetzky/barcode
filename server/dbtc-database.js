@@ -1,6 +1,8 @@
 
 const {Database} = require('./db');
 
+const {nowAsIsoString, utcIsoStringFromString} = require('../dates');
+
 //-----------------------------------------------------------------------------
 
 const DBTC_DB_VERSION = 1;
@@ -8,14 +10,18 @@ const DBTC_DB_VERSION = 1;
 const db = new Database('dbtc', DBTC_DB_VERSION);
 
 //-----------------------------------------------------------------------------
-// Because sqlite's CURRENT_TIMESTAMP omits the 'Z' and just assumes UTC, we
-// use this function instead, which always includes the timezone
+// Add 'timestamp' and normalize it as well as 'dateAcquired' to an ISO UTC
+// string
 //-----------------------------------------------------------------------------
 
-function addTimestamp(values) {
-    if (!values.timestamp) {
-        values.timestamp = (new Date()).toISOString();
+function fixDates(values) {
+    const {timestamp, dateAcquired} = values;
+    values.timestamp = timestamp ? utcIsoStringFromString(timestamp) : nowAsIsoString();
+    if (dateAcquired) {
+        values.dateAcquired = utcIsoStringFromString(dateAcquired);
     }
+    console.log('TIMESTAMP', timestamp, values.timestamp);
+    console.log('DATE ACQUIRED', dateAcquired, values.dateAcquired);
     return values;
 }
 
@@ -194,17 +200,17 @@ const INSERT_ITEM_NULLABLE_VALUES = {
 
 function insertItem(values) {
     return db.transaction(({run}) => {
-        const bindings = {
+        const bindings = fixDates({
             ...INSERT_ITEM_NULLABLE_VALUES,
             ...values
-        };
-        const motherId = run(INSERT_MOTHER, addTimestamp(bindings));
+        });
+        const motherId = run(INSERT_MOTHER, bindings);
         const fragBindings = {
             ...bindings,
             motherId,
             fragOf: null
         };
-        const fragId = run(INSERT_FRAG, addTimestamp(fragBindings));
+        const fragId = run(INSERT_FRAG, fragBindings);
         return fragId;
     });
 }
@@ -248,7 +254,7 @@ function giveAFrag(userId, values) {
             ...values,
             fragsAvailable: 0
         };
-        const fragId = run(INSERT_FRAG, addTimestamp(fragBindings));
+        const fragId = run(INSERT_FRAG, fixDates(fragBindings));
 
         // Decrement available frags on the source frag
         run(DECREMENT_FRAGS_AVAILABLE, {
@@ -355,7 +361,7 @@ const JOURNAL_NULLABLE_VALUES = {
 
 function addJournal(values) {
     return db.transaction(({run, all}) => {
-        const journalId = run(INSERT_JOURNAL, addTimestamp({
+        const journalId = run(INSERT_JOURNAL, fixDates({
             ...JOURNAL_NULLABLE_VALUES,
             ...values
         }));

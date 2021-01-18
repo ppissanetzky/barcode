@@ -10,10 +10,7 @@
     <v-row>
       <v-col>
         <v-container fluid>
-          <v-data-iterator
-            :items="filteredMothers"
-          >
-
+          <v-data-iterator :items="filteredMothers">
             <!-- Controls for filtering -->
 
             <template v-slot:header>
@@ -79,7 +76,7 @@
                   :key="m.motherId"
                   cols="auto"
                 >
-                  <bc-frag-card :fragOrMother="m" :user="user">
+                  <bc-frag-card :frag-or-mother="m" :user="user">
                     <template>
                       <div v-if="m.haves.length">
                         <v-divider />
@@ -209,6 +206,23 @@ export default {
       availableFilter: true
     }
   },
+  watch: {
+    typeFilter () {
+      this.filter()
+    },
+    memberFilter (value) {
+      this.filter()
+    },
+    haveFilter () {
+      this.filter()
+    },
+    nameFilter () {
+      this.filter()
+    },
+    availableFilter () {
+      this.filter()
+    }
+  },
 
   methods: {
     filter () {
@@ -233,25 +247,6 @@ export default {
         }
         return true
       })
-    }
-  },
-
-  watch: {
-    typeFilter () {
-      this.filter()
-    },
-    memberFilter (value) {
-      console.log(value)
-      this.filter()
-    },
-    haveFilter () {
-      this.filter()
-    },
-    nameFilter () {
-      this.filter()
-    },
-    availableFilter () {
-      this.filter()
     }
   }
 }
