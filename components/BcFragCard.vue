@@ -225,6 +225,41 @@
         </div>
       </v-expand-transition>
     </div>
+
+    <div v-if="!to">
+      <v-divider />
+      <v-card-actions>
+        <h3>Lineage</h3>
+        <v-spacer />
+        <v-btn
+          icon
+          @click="showLineage = !showLineage"
+        >
+          <v-icon>{{ showLineage ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+        </v-btn>
+      </v-card-actions>
+
+      <v-expand-transition>
+        <div v-show="showLineage">
+          <v-divider />
+          <div v-if="lineage.length === 0" class="text-center">
+            <v-progress-linear
+              indeterminate
+              color="primary"
+            />
+          </div>
+          <div v-else>
+            <v-treeview
+              :items="lineage"
+              item-key="fragId"
+              item-text="text"
+              open-all
+            />
+          </div>
+        </div>
+      </v-expand-transition>
+    </div>
+
     <slot />
   </v-card>
 </template>
@@ -259,9 +294,31 @@ export default {
     fragsAvailable: 0,
     isAlive: false,
 
+    lineage: [],
+    gotLineage: false,
+
     // Controls showing the notes
-    showNotes: false
+    showNotes: false,
+    // Showing the lineage
+    showLineage: false
   }),
+  watch: {
+    async showLineage (value) {
+      function addAge (node) {
+        node.text = `${node.owner.name} - ${age(node.dateAcquired, 'today', 'ago')}`
+        if (node.children) {
+          node.children.forEach(addAge)
+        }
+      }
+
+      if (value && !this.gotLineage) {
+        const { root } = await this.$axios.$get(`/bc/api/dbtc/tree/${this.fragOrMother.motherId}`)
+        addAge(root)
+        this.lineage = [root]
+        this.gotLineage = true
+      }
+    }
+  },
   mounted () {
     const thing = this.fragOrMother
     const user = this.user

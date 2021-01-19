@@ -489,6 +489,23 @@ function selectCollection(userId) {
 
 //-----------------------------------------------------------------------------
 
+const SELECT_FRAGS_FOR_MOTHER = `
+    SELECT
+        *
+    FROM
+        frags
+    WHERE
+        motherId = $motherId
+    ORDER BY
+        dateAcquired
+`
+
+function selectFragsForMother(motherId) {
+    return db.all(SELECT_FRAGS_FOR_MOTHER, {motherId});
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     selectAllFragsForUser,
     selectMothers,
@@ -503,5 +520,6 @@ module.exports = {
     selectCollection,
     getTypes,
     getType,
-    getEnums
+    getEnums,
+    selectFragsForMother
 }

@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 
-const {findUsersWithPrefix, lookupUser, getThreadsForItemType} = require('./xenforo');
+const {findUsersWithPrefix, lookupUser, getThreadsForItemType, switchUser} = require('./xenforo');
 
 //-----------------------------------------------------------------------------
 // Function to get runtime configuration from the environment
@@ -19,7 +19,8 @@ const db = require('./dbtc-database');
 // Errors
 //-----------------------------------------------------------------------------
 
-const {INVALID_FRAG, INVALID_INCREMENT, INVALID_RECIPIENT} = require('./errors');
+const { AUTHENTICATION_FAILED, INVALID_FRAG, INVALID_INCREMENT, INVALID_RECIPIENT } = require('./errors');
+const { BC_PRODUCTION } = require('../barcode.config');
 
 //-----------------------------------------------------------------------------
 // The destinaton for uploaded files (pictures)
@@ -299,6 +300,39 @@ router.get('/mothers', async (req, res) => {
 });
 
 //-----------------------------------------------------------------------------
+// Get a lineage tree for a mother
+//-----------------------------------------------------------------------------
+
+router.get('/tree/:motherId', async (req, res, next) => {
+    const {user, params: {motherId}} = req;
+    const frags = db.selectFragsForMother(motherId);
+    if (frags.length === 0) {
+        return next(INVALID_FRAG());
+    }
+    const map = new Map(frags.map((frag) => [frag.fragId, frag]));
+    await Promise.all(frags.map(async (frag) => {
+        frag.owner = await lookupUser(frag.ownerId);
+    }));
+    const [root] = frags.filter((frag) => {
+        if (frag.fragOf) {
+            const parent = map.get(frag.fragOf);
+            if (parent.children) {
+                parent.children.push(frag);
+            }
+            else {
+                parent.children = [frag];
+            }
+            return false;
+        }
+        return true;
+    });
+    if (!root.children) {
+        root.children = [];
+    }
+    res.json({root});
+});
+
+//-----------------------------------------------------------------------------
 // Get enums (types and rules for now)
 //-----------------------------------------------------------------------------
 
@@ -322,6 +356,15 @@ router.get('/threads-for-type', async (req, res) => {
 //-----------------------------------------------------------------------------
 // TODO: Belongs in a '/user' API
 //-----------------------------------------------------------------------------
+
+router.put('/switch/:userId', (req, res, next) => {
+    if (BC_PRODUCTION) {
+        return next(AUTHENTICATION_FAILED());
+    }
+    const {params:{userId}} = req;
+    switchUser(userId);
+    res.json({});
+})
 
 router.get('/find-users', async (req, res) => {
     const {query} = req;

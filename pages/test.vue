@@ -38,8 +38,9 @@ export default {
     }
   },
   watch: {
-    user (value) {
-      // console.warn('USER IS', value ? value.name : 'NONE')
+    async user (value) {
+      await this.$axios.$put(`/bc/api/dbtc/switch/${value.id}`)
+      this.$router.replace('/')
     },
     myDate (value) {
       // console.warn('DATE IS', this.myDate)

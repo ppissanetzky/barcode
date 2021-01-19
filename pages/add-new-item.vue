@@ -156,9 +156,11 @@
                 <v-row>
                   <v-col>
                     <div v-if="rules === 'DBTC'">
-                      <p>Choose whether you would like BARcode to create a new thread to
+                      <p>
+                        Choose whether you would like BARcode to create a new thread to
                         track this item or use an existing thread. You should use an
-                        existing thread if the item is already in DBTC.</p>
+                        existing thread if the item is already in DBTC.
+                      </p>
                       <div v-if="!type">
                         <p
                           class="red--text"
@@ -206,8 +208,10 @@
                     </v-card-actions>
 
                     <v-expand-transition>
-                      <v-container fluid v-show="showAdditionalDetails">
-
+                      <v-container
+                        v-show="showAdditionalDetails"
+                        fluid
+                      >
                         <!-- Size -->
                         <v-row>
                           <v-col>
@@ -306,7 +310,8 @@
                     </v-expand-transition>
                   </v-col>
                 </v-row>
-                    <!-- Source -->
+
+                <!-- Source -->
 
                 <v-row>
                   <v-col>
@@ -323,57 +328,58 @@
                     </v-card-actions>
 
                     <v-expand-transition>
-                      <v-container fluid v-show="showSourceDetails">
+                      <v-container
+                        v-show="showSourceDetails"
+                        fluid
+                      >
+                        <!-- Source type and name -->
 
-                          <!-- Source type and name -->
+                        <v-row>
+                          <v-col>
+                            <v-select
+                              id="sourceType"
+                              v-model="sourceType"
+                              outlined
+                              label="Source type"
+                              name="sourceType"
+                              :items="['Member','LFS','Online', 'Other']"
+                              hint="Where you got it"
+                              persistent-hint
+                            />
+                          </v-col>
+                          <v-col>
+                            <v-text-field
+                              id="source"
+                              v-model="source"
+                              outlined
+                              label="Source name"
+                              name="source"
+                            />
+                          </v-col>
+                        </v-row>
 
-                          <v-row>
-                            <v-col>
-                              <v-select
-                                id="sourceType"
-                                v-model="sourceType"
-                                outlined
-                                label="Source type"
-                                name="sourceType"
-                                :items="['Member','LFS','Online', 'Other']"
-                                hint="Where you got it"
-                                persistent-hint
-                              />
-                            </v-col>
-                            <v-col>
+                        <!-- Cost -->
+
+                        <v-row>
+                          <v-col>
+                            <validation-provider
+                              v-slot="{ errors }"
+                              rules="double"
+                              name="cost"
+                            >
                               <v-text-field
-                                id="source"
-                                v-model="source"
+                                id="cost"
+                                v-model="cost"
                                 outlined
-                                label="Source name"
-                                name="source"
-                              />
-                            </v-col>
-                          </v-row>
-
-                          <!-- Cost -->
-
-                          <v-row>
-                            <v-col>
-                              <validation-provider
-                                v-slot="{ errors }"
-                                rules="double"
+                                label="Cost"
                                 name="cost"
-                              >
-                                <v-text-field
-                                  id="cost"
-                                  v-model="cost"
-                                  outlined
-                                  label="Cost"
-                                  name="cost"
-                                  hint="How much you paid for it"
-                                  persistent-hint
-                                  :error-messages="errors"
-                                />
-                              </validation-provider>
-                            </v-col>
-                          </v-row>
-
+                                hint="How much you paid for it"
+                                persistent-hint
+                                :error-messages="errors"
+                              />
+                            </validation-provider>
+                          </v-col>
+                        </v-row>
                       </v-container>
                     </v-expand-transition>
                   </v-col>
