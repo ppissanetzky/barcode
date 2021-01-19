@@ -9,7 +9,7 @@
     <!-- The card with the form -->
 
     <v-row>
-      <v-col cols="auto">
+      <v-col>
         <v-card>
           <!-- Watches over the form and disables the button if validation fails -->
           <validation-observer ref="observer" v-slot="{ invalid }">
@@ -155,44 +155,38 @@
 
                 <v-row>
                   <v-col>
-                    <v-divider />
-                  </v-col>
-                </v-row>
-
-                <v-row>
-                  <v-col><h3>Forum linking</h3></v-col>
-                </v-row>
-
-                <v-row>
-                  <v-col>
-                    <p>Choose whether you would like BARcode to create a new thread to track this item or use an existing thread.</p>
-                    <div v-if="!type">
-                      <p
-                        class="red--text"
-                      >
-                        Please select the item's "type" above.
-                      </p>
-                    </div>
-                    <div v-else>
-                      <validation-provider
-                        v-slot="{ errors }"
-                        rules="required"
-                        name="thread"
-                      >
-                        <v-autocomplete
-                          id="type"
-                          v-model="threadId"
-                          label="Thread"
+                    <div v-if="rules === 'DBTC'">
+                      <p>Choose whether you would like BARcode to create a new thread to
+                        track this item or use an existing thread. You should use an
+                        existing thread if the item is already in DBTC.</p>
+                      <div v-if="!type">
+                        <p
+                          class="red--text"
+                        >
+                          Please select the item's "type" above.
+                        </p>
+                      </div>
+                      <div v-else>
+                        <validation-provider
+                          v-slot="{ errors }"
+                          rules="required"
                           name="thread"
-                          :items="threadsByType[type]"
-                          item-value="threadId"
-                          item-text="title"
-                          :error-messages="errors"
-                          required
-                          outlined
-                          clearable
-                        />
-                      </validation-provider>
+                        >
+                          <v-autocomplete
+                            id="type"
+                            v-model="threadId"
+                            label="Thread"
+                            name="thread"
+                            :items="threadsByType[type]"
+                            item-value="threadId"
+                            item-text="title"
+                            :error-messages="errors"
+                            required
+                            outlined
+                            clearable
+                          />
+                        </validation-provider>
+                      </div>
                     </div>
                   </v-col>
                 </v-row>
@@ -200,169 +194,195 @@
                 <v-row>
                   <v-col>
                     <v-divider />
+                    <v-card-actions>
+                      <h3>Additional details - optional</h3>
+                      <v-spacer />
+                      <v-btn
+                        icon
+                        @click="showAdditionalDetails = !showAdditionalDetails"
+                      >
+                        <v-icon>{{ showAdditionalDetails ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                      </v-btn>
+                    </v-card-actions>
+
+                    <v-expand-transition>
+                      <v-container fluid v-show="showAdditionalDetails">
+
+                        <!-- Size -->
+                        <v-row>
+                          <v-col>
+                            <v-text-field
+                              id="size"
+                              v-model="size"
+                              label="Size"
+                              name="size"
+                              hint="Polyps, heads or inches"
+                              persistent-hint
+                              outlined
+                            />
+                          </v-col>
+                        </v-row>
+
+                        <!-- Scientific name -->
+
+                        <v-row>
+                          <v-col>
+                            <v-text-field
+                              id="scientificName"
+                              v-model="scientificName"
+                              outlined
+                              label="Scientific name"
+                              name="scientificName"
+                            />
+                          </v-col>
+                        </v-row>
+
+                        <!-- Notes -->
+
+                        <v-row>
+                          <v-col>
+                            <v-textarea
+                              id="notes"
+                              v-model="notes"
+                              outlined
+                              label="Notes"
+                              name="notes"
+                              auto-grow
+                              rows="1"
+                            />
+                          </v-col>
+                        </v-row>
+
+                        <!-- Light and flow -->
+
+                        <v-row>
+                          <v-col>
+                            <v-select
+                              id="light"
+                              v-model="light"
+                              outlined
+                              label="Light"
+                              name="light"
+                              :items="['Low','Medium','High']"
+                            />
+                          </v-col>
+                          <v-col>
+                            <v-select
+                              id="flow"
+                              v-model="flow"
+                              outlined
+                              label="Flow"
+                              name="flow"
+                              :items="['Low','Medium','High']"
+                            />
+                          </v-col>
+                        </v-row>
+
+                        <!-- Hardiness and growth rate -->
+
+                        <v-row>
+                          <v-col>
+                            <v-select
+                              id="hardiness"
+                              v-model="hardiness"
+                              outlined
+                              label="Hardiness"
+                              name="hardiness"
+                              :items="['Sensitive','Normal','Hardy']"
+                            />
+                          </v-col>
+                          <v-col>
+                            <v-select
+                              id="growthRate"
+                              v-model="growthRate"
+                              outlined
+                              label="Growth rate"
+                              name="growthRate"
+                              :items="['Slow','Normal','Fast']"
+                            />
+                          </v-col>
+                        </v-row>
+                      </v-container>
+                    </v-expand-transition>
                   </v-col>
                 </v-row>
+                    <!-- Source -->
 
                 <v-row>
-                  <v-col><h3>Additional details - optional</h3></v-col>
-                </v-row>
-
-                <!-- Size -->
-                <v-row>
                   <v-col>
-                    <v-text-field
-                      id="size"
-                      v-model="size"
-                      label="Size"
-                      name="size"
-                      hint="Polyps, heads or inches"
-                      persistent-hint
-                      outlined
-                    />
+                    <v-divider />
+                    <v-card-actions>
+                      <h3>Source details - optional</h3>
+                      <v-spacer />
+                      <v-btn
+                        icon
+                        @click="showSourceDetails = !showSourceDetails"
+                      >
+                        <v-icon>{{ showSourceDetails ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                      </v-btn>
+                    </v-card-actions>
+
+                    <v-expand-transition>
+                      <v-container fluid v-show="showSourceDetails">
+
+                          <!-- Source type and name -->
+
+                          <v-row>
+                            <v-col>
+                              <v-select
+                                id="sourceType"
+                                v-model="sourceType"
+                                outlined
+                                label="Source type"
+                                name="sourceType"
+                                :items="['Member','LFS','Online', 'Other']"
+                                hint="Where you got it"
+                                persistent-hint
+                              />
+                            </v-col>
+                            <v-col>
+                              <v-text-field
+                                id="source"
+                                v-model="source"
+                                outlined
+                                label="Source name"
+                                name="source"
+                              />
+                            </v-col>
+                          </v-row>
+
+                          <!-- Cost -->
+
+                          <v-row>
+                            <v-col>
+                              <validation-provider
+                                v-slot="{ errors }"
+                                rules="double"
+                                name="cost"
+                              >
+                                <v-text-field
+                                  id="cost"
+                                  v-model="cost"
+                                  outlined
+                                  label="Cost"
+                                  name="cost"
+                                  hint="How much you paid for it"
+                                  persistent-hint
+                                  :error-messages="errors"
+                                />
+                              </validation-provider>
+                            </v-col>
+                          </v-row>
+
+                      </v-container>
+                    </v-expand-transition>
                   </v-col>
                 </v-row>
-
-                <!-- Scientific name -->
-
-                <v-row>
-                  <v-col>
-                    <v-text-field
-                      id="scientificName"
-                      v-model="scientificName"
-                      outlined
-                      label="Scientific name"
-                      name="scientificName"
-                    />
-                  </v-col>
-                </v-row>
-
-                <!-- Notes -->
-
-                <v-row>
-                  <v-col>
-                    <v-textarea
-                      id="notes"
-                      v-model="notes"
-                      outlined
-                      label="Notes"
-                      name="notes"
-                      auto-grow
-                      rows="1"
-                    />
-                  </v-col>
-                </v-row>
-
-                <!-- Light and flow -->
-
-                <v-row>
-                  <v-col>
-                    <v-select
-                      id="light"
-                      v-model="light"
-                      outlined
-                      label="Light"
-                      name="light"
-                      :items="['Low','Medium','High']"
-                    />
-                  </v-col>
-                  <v-col>
-                    <v-select
-                      id="flow"
-                      v-model="flow"
-                      outlined
-                      label="Flow"
-                      name="flow"
-                      :items="['Low','Medium','High']"
-                    />
-                  </v-col>
-                </v-row>
-
-                <!-- Hardiness and growth rate -->
-
-                <v-row>
-                  <v-col>
-                    <v-select
-                      id="hardiness"
-                      v-model="hardiness"
-                      outlined
-                      label="Hardiness"
-                      name="hardiness"
-                      :items="['Sensitive','Normal','Hardy']"
-                    />
-                  </v-col>
-                  <v-col>
-                    <v-select
-                      id="growthRate"
-                      v-model="growthRate"
-                      outlined
-                      label="Growth rate"
-                      name="growthRate"
-                      :items="['Slow','Normal','Fast']"
-                    />
-                  </v-col>
-                </v-row>
-
-                <!-- Source -->
-
                 <v-row>
                   <v-col>
                     <v-divider />
                   </v-col>
                 </v-row>
-
-                <v-row>
-                  <v-col><h3>Source details - optional</h3></v-col>
-                </v-row>
-
-                <!-- Source type and name -->
-
-                <v-row>
-                  <v-col>
-                    <v-select
-                      id="sourceType"
-                      v-model="sourceType"
-                      outlined
-                      label="Source type"
-                      name="sourceType"
-                      :items="['Member','LFS','Online', 'Other']"
-                      hint="Where you got it"
-                      persistent-hint
-                    />
-                  </v-col>
-                  <v-col>
-                    <v-text-field
-                      id="source"
-                      v-model="source"
-                      outlined
-                      label="Source name"
-                      name="source"
-                    />
-                  </v-col>
-                </v-row>
-
-                <!-- Cost -->
-
-                <v-row>
-                  <v-col>
-                    <validation-provider
-                      v-slot="{ errors }"
-                      rules="double"
-                      name="cost"
-                    >
-                      <v-text-field
-                        id="cost"
-                        v-model="cost"
-                        outlined
-                        label="Cost"
-                        name="cost"
-                        hint="How much you paid for it"
-                        persistent-hint
-                        :error-messages="errors"
-                      />
-                    </validation-provider>
-                  </v-col>
-                </v-row>
-
                 <v-row>
                   <v-col>
                     <v-btn
@@ -428,7 +448,9 @@ export default {
       threadsByType: {},
 
       // For the loading animation on the add it now button
-      loading: false
+      loading: false,
+      showAdditionalDetails: false,
+      showSourceDetails: false
     }
   },
   watch: {
