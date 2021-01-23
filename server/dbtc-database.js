@@ -452,15 +452,16 @@ const SELECT_COLLECTION = `
         frags
     WHERE
         mothers.motherId = frags.motherId AND
-        frags.isAlive = 1
+        frags.isAlive = 1 AND
+        mothers.rules = $rules
     GROUP BY
         1
     ORDER BY
         mothers.name
 `;
 
-function selectCollection(userId) {
-    const rows = db.all(SELECT_COLLECTION, {});
+function selectCollection(userId, rules) {
+    const rows = db.all(SELECT_COLLECTION, {rules});
     // Now, go through them and parse the JSON parts
     rows.forEach((row) => {
         // Remove the null pictures

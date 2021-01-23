@@ -135,16 +135,16 @@
                     <validation-provider
                       v-slot="{ errors }"
                       rules="required"
-                      name="rules"
+                      name="collection"
                     >
                       <v-select
                         id="type"
                         v-model="rules"
-                        label="Rules"
-                        name="rules"
+                        label="Collection"
+                        name="collection"
                         :items="allRules"
                         item-value="rule"
-                        item-text="rule"
+                        item-text="description"
                         :error-messages="errors"
                         required
                         outlined
@@ -155,7 +155,7 @@
 
                 <v-row>
                   <v-col>
-                    <div v-if="rules === 'DBTC'">
+                    <div v-if="rules === 'dbtc'">
                       <p>
                         Choose whether you would like BARcode to create a new thread to
                         track this item or use an existing thread. You should use an
@@ -445,7 +445,7 @@ export default {
       sourceType: 'Other',
       source: undefined,
       cost: '0.00',
-      rules: 'DBTC',
+      rules: 'dbtc',
       threadId: undefined,
 
       // Enums

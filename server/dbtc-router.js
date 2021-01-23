@@ -263,12 +263,13 @@ router.post('/frag/:fragId/rip', upload.none(), (req, res, next) => {
 });
 
 //-----------------------------------------------------------------------------
-// Returns the DBTC mothers
+// Returns a collection of mothers for the given rules
 //-----------------------------------------------------------------------------
 
-router.get('/mothers', async (req, res) => {
-    const {user} = req;
-    const mothers = db.selectCollection(user.id);
+router.get('/collection/:rules', async (req, res) => {
+    const {user, params} = req;
+    const {rules} = params;
+    const mothers = db.selectCollection(user.id, rules);
     // Now, get full user information about all of the
     // owners. This could get expensive
     await Promise.all(mothers.map(async (mother) => {

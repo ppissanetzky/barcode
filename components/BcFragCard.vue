@@ -43,17 +43,21 @@
     <v-card-text>
       <!-- A chip for the type -->
 
-      <v-chip label color="primary" v-text="fragOrMother.type" />
+      <v-chip small color="primary" v-text="fragOrMother.type" />
 
       <!-- A chip for the age, if it has one -->
 
-      <v-chip v-if="age" label v-text="age" />
+      <v-chip v-if="age" small v-text="age" />
+
+      <!-- A chip for the collection it is in, only when it is a frag -->
+
+      <v-chip v-if="isFrag" small v-text="fragOrMother.rules.toUpperCase()" />
 
       <!-- If it is a mother and this user owns it, a chip to that effect -->
 
       <v-chip
         v-if="isMother && ownsIt"
-        label
+        small
         color="warning"
       >
         You have it
@@ -61,14 +65,14 @@
 
       <!-- A chip to show the total number of available frags -->
 
-      <v-chip v-if="fragsAvailable" label v-text="`${fragsAvailable} available`" />
+      <v-chip v-if="fragsAvailable" small v-text="`${fragsAvailable} available`" />
 
       <!-- A chip that shows it is dead -->
 
       <v-chip
         v-if="!isAlive"
+        small
         color="error"
-        label
       >
         RIP
       </v-chip>
@@ -226,7 +230,7 @@
       </v-expand-transition>
     </div>
 
-    <div v-if="!to">
+    <div v-if="!to && !isPrivate">
       <v-divider />
       <v-card-actions>
         <h3>Lineage</h3>
@@ -254,7 +258,43 @@
               item-key="fragId"
               item-text="text"
               open-all
-            />
+              dense
+            >
+              <template v-slot:prepend="{ item }">
+                <v-avatar
+                  v-if="item.original"
+                  size="23"
+                  color="primary lighten-1"
+                >
+                  <span
+                    v-if="item.text && item.children.length"
+                    class="white--text"
+                    v-text="item.children.length"
+                  />
+                </v-avatar>
+                <v-avatar
+                  v-else-if="item.children.length > 1"
+                  size="23"
+                  color="orange darken-4"
+                >
+                  <span class="white--text" v-text="item.children.length" />
+                </v-avatar>
+
+                <v-avatar
+                  v-else-if="item.children.length > 0"
+                  size="23"
+                  color="teal lighten-1"
+                >
+                  <span class="white--text" v-text="item.children.length" />
+                </v-avatar>
+                <v-avatar
+                  v-else
+                  size="23"
+                  color="teal lighten-4"
+                />
+                <strong v-text="user.id === item.owner.id ? 'You' : item.owner.name" />
+              </template>
+            </v-treeview>
           </div>
         </div>
       </v-expand-transition>
@@ -286,14 +326,6 @@ export default {
     initialized: false,
     renderKey: 0,
 
-    pictures: [],
-    isFrag: false,
-    isMother: false,
-    ownsIt: false,
-    age: '',
-    fragsAvailable: 0,
-    isAlive: false,
-
     lineage: [],
     gotLineage: false,
 
@@ -302,54 +334,97 @@ export default {
     // Showing the lineage
     showLineage: false
   }),
+  computed: {
+    isFrag () {
+      return !!this.fragOrMother.fragId
+    },
+    isMother () {
+      return !this.isFrag
+    },
+    isAlive () {
+      if (this.isFrag) {
+        return this.fragOrMother.isAlive
+      }
+      return true
+    },
+    isPrivate () {
+      return this.fragOrMother.rules === 'private'
+    },
+    fragsAvailable () {
+      const thing = this.fragOrMother
+      if (thing.rules === 'private') {
+        return 0
+      }
+      if (thing.fragId) {
+        return thing.isAlive ? thing.fragsAvailable : 0
+      }
+      return thing.fragsAvailable
+    },
+    pictures () {
+      const thing = this.fragOrMother
+      if (thing.fragId) {
+        return thing.picture ? [thing.picture] : []
+      }
+      return thing.pictures
+    },
+    ownsIt () {
+      if (this.isFrag) {
+        return this.user.id === this.fragOrMother.ownerId
+      }
+      return this.fragOrMother.ownsIt
+    },
+    age () {
+      if (this.isFrag) {
+        return this.isAlive ? age(this.fragOrMother.dateAcquired, '', 'old') : null
+      }
+      return null
+    }
+  },
   watch: {
-    async showLineage (value) {
+    showLineage (value) {
+      this.updateLineage(false)
+    },
+    fragsAvailable (value) {
+      this.updateLineage(true)
+    }
+  },
+  methods: {
+    updateLineage (force) {
       function addAge (node) {
-        node.text = `${node.owner.name} - ${age(node.dateAcquired, 'today', 'ago')}`
+        node.text = `${age(node.dateAcquired, 'today', 'ago')}`
         if (node.children) {
           node.children.forEach(addAge)
+        } else {
+          node.children = []
         }
       }
 
-      if (value && !this.gotLineage) {
+      if (this.gotLineage && !force) {
+        return
+      }
+
+      this.lineage = []
+
+      this.$nextTick(async () => {
+        await new Promise(resolve => setTimeout(resolve, 250))
         const { root } = await this.$axios.$get(`/bc/api/dbtc/tree/${this.fragOrMother.motherId}`)
         addAge(root)
-        this.lineage = [root]
+        root.original = true
+        if (this.fragOrMother.source) {
+          this.lineage = [{
+            fragId: 'source',
+            text: '',
+            owner: {
+              name: this.fragOrMother.source
+            },
+            original: true,
+            children: [root]
+          }]
+        } else {
+          this.lineage = [root]
+        }
         this.gotLineage = true
-      }
-    }
-  },
-  mounted () {
-    const thing = this.fragOrMother
-    const user = this.user
-    // If it has a fragId, it is a frag
-    const isFrag = thing.fragId
-    // Save that information
-    this.isFrag = isFrag
-    this.isMother = !isFrag
-    // Now, normalize
-    if (isFrag) {
-      // If it is a frag, it only has one picture
-      this.pictures = thing.picture ? [thing.picture] : []
-      // The user owns it
-      this.ownsIt = user.id === thing.ownerId
-      // Alive
-      this.isAlive = thing.isAlive
-      // It has an age
-      this.age = this.isAlive ? age(thing.dateAcquired, '', 'old') : null
-      // The available frags
-      this.fragsAvailable = this.isAlive ? thing.fragsAvailable : 0
-    } else {
-      // Otherwise, it may have several pictures
-      this.pictures = thing.pictures
-      // Whether this user owns it comes from the server
-      this.ownsIt = thing.ownsIt
-      // Alive
-      this.isAlive = true
-      // It has no age...kinda
-      this.age = null
-      // The total number of available frags
-      this.fragsAvailable = thing.fragsAvailable
+      })
     }
   }
 }

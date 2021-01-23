@@ -9,24 +9,36 @@
 
     <v-navigation-drawer
       v-model="drawer"
-      absolute
       temporary
+      app
     >
       <v-list>
         <v-list-item>
           <v-list-item-title>BARcode</v-list-item-title>
         </v-list-item>
         <v-divider />
+        <v-list-item to="/add-new-item">
+          <v-list-item-icon><v-icon>mdi-plus-circle-outline</v-icon></v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Add a new item</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item to="/">
           <v-list-item-icon><v-icon>mdi-fishbowl-outline</v-icon></v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>Your collection</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item to="/dbtc">
+        <v-list-item to="/collection/dbtc">
           <v-list-item-icon><v-icon>mdi-sitemap</v-icon></v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>DBTC collection</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item to="/collection/pif">
+          <v-list-item-icon><v-icon>mdi-cash-remove</v-icon></v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>PIF collection</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-list-item to="/equipment">

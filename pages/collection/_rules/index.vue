@@ -2,7 +2,7 @@
   <v-container fluid>
     <v-row>
       <v-col>
-        <h1>DBTC Collection</h1>
+        <h1>{{ this.$route.params.rules.toUpperCase() }} Collection</h1>
       </v-col>
     </v-row>
 
@@ -167,7 +167,8 @@ import BcFragCard from '~/components/BcFragCard.vue'
 export default {
   components: { BcFragCard },
   async fetch () {
-    const { user, mothers } = await this.$axios.$get('/bc/api/dbtc/collection/dbtc')
+    const rules = this.$route.params.rules
+    const { user, mothers } = await this.$axios.$get(`/bc/api/dbtc/collection/${encodeURIComponent(rules)}`)
 
     this.user = user
     this.mothers = mothers

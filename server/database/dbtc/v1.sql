@@ -35,21 +35,21 @@ CREATE TABLE IF NOT EXISTS rules (
 
 INSERT OR IGNORE INTO rules (rule, description, url)
 VALUES (
+    'dbtc',
     'DBTC',
-    'Don''t break the chain',
     'https://www.bareefers.org/forum/threads/dbtc-info-rules.23030/'
 );
 
 INSERT OR IGNORE INTO rules (rule, description, url)
 VALUES (
-    'PIF',
+    'pif',
     'Pay it forward (free stuff)',
     NULL
 );
 
 INSERT OR IGNORE INTO rules (rule, description, url)
 VALUES (
-    'Private',
+    'private',
     'Only visibile to you',
     NULL
 );

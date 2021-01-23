@@ -20,9 +20,9 @@
           <template v-if="canMakeChanges">
             <!--
                 A line item that expands to show a small form to make frags available
-                only if the user owns this frag
+                only if the user owns this frag and it is not private
             -->
-            <div>
+            <div v-if="!isPrivate">
               <v-divider />
               <v-card-actions>
                 <h3>Update available frags</h3>
@@ -95,9 +95,9 @@
 
             <!--
                 A line item that expands to show a small form to give a frag to
-                someone else
+                someone else if the item is not private
             -->
-            <div>
+            <div v-if="!isPrivate">
               <v-divider />
               <v-card-actions>
                 <h3>Give a frag</h3>
@@ -543,6 +543,10 @@ export default {
     // we will show them
     shouldShowJournal () {
       return this.canMakeChanges || this.journals.length
+    },
+
+    isPrivate () {
+      return this.frag.rules === 'private'
     }
   },
 
@@ -556,6 +560,7 @@ export default {
       try {
         const { journal } = await this.$axios.$put(`/bc/api/dbtc/frag/${this.frag.fragId}/available/${this.editedFragsAvailable}`)
         this.fragsAvailable = this.editedFragsAvailable
+        this.frag.fragsAvailable = this.fragsAvailable
         this.journals.unshift(augment(journal))
         this.snackbarText = `${this.fragsAvailable} made available`
         this.snackbar = true
@@ -588,6 +593,7 @@ export default {
         // Update available frags from the response
         this.fragsAvailable = fragsAvailable
         this.editedFragsAvailable = fragsAvailable
+        this.frag.fragsAvailable = fragsAvailable
 
         // Augment and add the journal
         this.journals.unshift(augment(journal))
@@ -663,6 +669,7 @@ export default {
         this.journals.unshift(augment(journal))
         this.frag.isAlive = false
         this.frag.isAvailable = false
+        this.frag.fragsAvailable = 0
         // Show the snack bar
         this.snackbarText = 'Sorry for your loss'
         this.snackbar = true
