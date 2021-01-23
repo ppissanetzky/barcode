@@ -359,8 +359,37 @@
       </v-col>
 
       <!-- Another column and card to show journal information -->
-      <v-col v-if="journals.length" cols="auto">
-        <v-row>
+      <v-col v-if="journals.length">
+        <v-card
+          class="overflow-y-auto"
+          max-height="1500px"
+          max-width="375px"
+        >
+          <v-card-title>Journal</v-card-title>
+          <v-timeline
+            align-top
+            dense
+          >
+            <v-timeline-item
+              v-for="j in journals"
+              :key="j.journalId"
+              :icon="j.icon"
+            >
+              <v-card max-width="230px">
+                <v-card-subtitle>
+                  <div v-text="j.age" />
+                  <div class="caption" v-text="j.date.toLocaleDateString()" />
+                </v-card-subtitle>
+                <v-card-text>
+                  <strong v-if="j.notes" v-text="j.notes" />
+                  <strong v-else>Uploaded a picture </strong>
+                </v-card-text>
+              </v-card>
+            </v-timeline-item>
+          </v-timeline>
+        </v-card>
+
+        <!-- <v-row>
           <v-col>
             <h2>Journal</h2>
           </v-col>
@@ -408,7 +437,8 @@
               </template>
             </v-data-iterator>
           </v-col>
-        </v-row>
+        </v-row> -->
+
       </v-col>
     </v-row>
 
