@@ -16,6 +16,7 @@
     "@nuxtjs/proxy": "^2.1.0",
     "better-sqlite3": "^7.1.2",
     "cookie": "^0.4.1",
+    "cookie-parser": "^1.4.5",
     "core-js": "^3.6.5",
     "date-fns": "^2.16.1",
     "date-fns-tz": "^1.0.12",

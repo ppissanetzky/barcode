@@ -4,7 +4,6 @@ const qs = require('querystring');
 const cookieParser = require('cookie');
 
 const {BC_TEST_USER, BC_XF_API_KEY, BC_PRODUCTION} = require('../barcode.config');
-const usersDatabase = require('./users-database');
 const dbtcDatabase = require('./dbtc-database');
 
 const {AUTHENTICATION_FAILED, MEMBER_NEEDS_UPGRADE} = require('./errors');
@@ -53,6 +52,10 @@ const BARCODE_USER = 16211;
 // Supporting members are in group 5
 
 const ALLOWED_GROUPS = new Set([3, 5]);
+
+// Anyone that belongs to these groups can impersonate another user
+
+const IMPERSONATE_GROUPS = new Set([3]);
 
 //-----------------------------------------------------------------------------
 // Utility function to make HTTPS requests
@@ -116,6 +119,11 @@ function isXfUserAllowed(xfUser) {
     return secondary_group_ids.some((id) => ALLOWED_GROUPS.has(id));
 }
 
+function canXfUserImpersonate(xfUser) {
+    const {secondary_group_ids = []} = xfUser;
+    return secondary_group_ids.some((id) => IMPERSONATE_GROUPS.has(id));
+}
+
 //-----------------------------------------------------------------------------
 // Construct our own user object from a XenForo user
 //-----------------------------------------------------------------------------
@@ -136,6 +144,7 @@ function makeUser(xfUser) {
         id: parseInt(user_id, 10),
         name: username,
         allowed: isXfUserAllowed(xfUser),
+        canImpersonate: canXfUserImpersonate(xfUser),
         title: user_title,
         location: location,
         age: age,
@@ -231,17 +240,10 @@ async function validateXenForoUser(headers) {
 
 const USER_CACHE = new Map();
 
-// Add a user to the cache if it is not already there. Return a user object.
-// Also add the user to the database out of band.
+// Add a user to the cache
 
 function cacheUser(user, skipDatabase) {
-    if (!USER_CACHE.get(user.id)) {
-        USER_CACHE.set(user.id, user);
-        if (!skipDatabase) {
-            console.log('Adding', user.id, 'to database');
-        }
-        Promise.resolve().then(() => usersDatabase.addUser(user));
-    }
+    USER_CACHE.set(user.id, user);
     return user;
 }
 
@@ -269,12 +271,6 @@ async function lookupUser(userId) {
     if (result) {
         console.log('Found user', id, 'in cache')
         return result;
-    }
-    // Look it up in the database
-    const inDatabase = usersDatabase.getUser(id);
-    if (inDatabase) {
-        console.log('Found user', id, 'in database');
-        return cacheUser(inDatabase, true);
     }
     // Otherwise, look the user up in XenForo
     try {

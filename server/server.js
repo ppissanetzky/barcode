@@ -1,4 +1,5 @@
 const express = require('express');
+const cookieParser = require('cookie-parser');
 
 //-----------------------------------------------------------------------------
 // Configuration
@@ -20,13 +21,25 @@ const dbtcRouter = require('./dbtc-router');
 // The XenForo stuff
 //-----------------------------------------------------------------------------
 
-const {validateXenForoUser} = require('./xenforo');
+const {validateXenForoUser, lookupUser} = require('./xenforo');
+
+//-----------------------------------------------------------------------------
+// The name of the impersonate cookie
+//-----------------------------------------------------------------------------
+
+const IMPERSONATE_COOKIE = 'bc-imp';
 
 //-----------------------------------------------------------------------------
 // Create the express app
 //-----------------------------------------------------------------------------
 
 const app = express();
+
+//-----------------------------------------------------------------------------
+// To parse cookies
+//-----------------------------------------------------------------------------
+
+app.use(cookieParser());
 
 //-----------------------------------------------------------------------------
 // To parse application/x-www-form-urlencoded in posts
@@ -44,18 +57,32 @@ app.use(express.urlencoded({extended: true}));
 
 app.use((req, res, next) => {
     Promise.resolve().then(async () => {
-        try {
-            const [user, setCookies] = await validateXenForoUser(req.headers);
-            req.user = user;
-            // If cookies came back, set them on the response
-            if (setCookies) {
-                setCookies.forEach((cookie) => res.cookie(cookie));
+        let [user] = await validateXenForoUser(req.headers);
+        // See if there is an impersonate cookie
+        const impersonateUserId = parseInt(req.cookies[IMPERSONATE_COOKIE], 10);
+        // We start out not impersonating
+        let impersonating = false
+        if (user.canImpersonate) {
+            res.setHeader('bc-can-impersonate', true);
+            if (impersonateUserId) {
+                const impersonateUser = await lookupUser(impersonateUserId);
+                if (impersonateUser) {
+                    req.originalUser = user;
+                    user = impersonateUser;
+                    impersonating = true;
+                    res.setHeader('bc-impersonating', user.id);
+                }
             }
-            next();
         }
-        catch(error) {
-            next(error);
+        if (impersonateUserId && !impersonating) {
+            res.cookie(IMPERSONATE_COOKIE, 0);
         }
+        // Set the user on the request
+        req.user = user;
+        // Reply with the user's name in a response header
+        res.setHeader('bc-user', user.name);
+        // Done
+        next();
     })
     .catch(next);
 });
@@ -70,6 +97,32 @@ if (!BC_PRODUCTION) {
         next();
     });
 }
+
+//-----------------------------------------------------------------------------
+
+app.put('/bc/api/impersonate/:userId', async (req, res) => {
+    const {user, params} = req;
+    const {userId} = params;
+    if (user.canImpersonate) {
+        const otherUser = await lookupUser(userId);
+        if (otherUser) {
+            res.cookie(IMPERSONATE_COOKIE, otherUser.id);
+            res.setHeader('bc-user', otherUser.name);
+            res.setHeader('bc-impersonating', otherUser.id);
+        }
+    }
+    res.json({});
+});
+
+//-----------------------------------------------------------------------------
+
+app.delete('/bc/api/impersonate', (req, res) => {
+    const {originalUser = {}} = req;
+    res.cookie(IMPERSONATE_COOKIE, 0);
+    res.setHeader('bc-user', originalUser.name);
+    res.setHeader('bc-impersonating', 0);
+    res.json({});
+});
 
 //-----------------------------------------------------------------------------
 // The dbtc routes

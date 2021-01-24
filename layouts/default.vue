@@ -5,6 +5,59 @@
     <v-app-bar app>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <v-toolbar-title>BARcode</v-toolbar-title>
+      <v-spacer />
+      <v-dialog
+        v-model="showImpersonate"
+        :disabled="!canImpersonate"
+        max-width="375px"
+      >
+        <template v-slot:activator="{ on, attrs }">
+          <v-chip
+            label
+            outlined
+            :color="impersonating ? 'red' : ''"
+            v-bind="attrs"
+            v-on="on"
+          >
+            <v-icon left>
+              mdi-account-circle-outline
+            </v-icon>
+            {{ user }}
+          </v-chip>
+        </template>
+
+        <v-card v-if="impersonating">
+          <v-card-title>Stop impersonating {{ user }}</v-card-title>
+          <v-card-actions>
+            <v-btn text @click="showImpersonate=false">Cancel</v-btn>
+            <v-btn text @click="stopImpersonating">Stop</v-btn>
+          </v-card-actions>
+        </v-card>
+
+        <v-card v-else>
+          <v-card-title>Select a user to impersonate</v-card-title>
+          <v-card-actions>
+            <bc-user-autocomplete
+              v-model="impersonateUser"
+            />
+          </v-card-actions>
+          <v-card-actions>
+            <v-btn
+              text
+              @click="showImpersonate=false"
+            >
+              Cancel
+            </v-btn>
+            <v-btn
+              text
+              @click="impersonate"
+              :disabled="!impersonateUser"
+            >
+              Impersonate
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+    </v-dialog>
     </v-app-bar>
 
     <v-navigation-drawer
@@ -69,7 +122,33 @@
 export default {
   data () {
     return {
-      drawer: false
+      drawer: false,
+      showImpersonate: false,
+      impersonateUser: undefined
+    }
+  },
+  computed: {
+    user () {
+      return this.$store.state.user.name
+    },
+    impersonating () {
+      return this.$store.state.user.impersonating
+    },
+    canImpersonate () {
+      return this.$store.state.user.canImpersonate
+    }
+  },
+  methods: {
+    async stopImpersonating () {
+      this.showImpersonate = false
+      await this.$axios.$delete('/bc/api/impersonate')
+      this.$router.go()
+    },
+    async impersonate () {
+      this.showImpersonate = false
+      const { id } = this.impersonateUser
+      await this.$axios.$put(`/bc/api/impersonate/${id}`)
+      this.$router.go()
     }
   }
 }
