@@ -30,12 +30,6 @@ mkdir -p ${SITE_DIR}
 
 npm i
 
-# Export these for the Nuxt build
-# TODO: NODE_ENV=production
-
-export BC_API_URL=${BASE_URL}
-export BC_UPLOADS_URL=${BASE_URL}/bc/uploads
-
 # Build it
 
 npx nuxt generate
