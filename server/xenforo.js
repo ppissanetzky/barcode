@@ -12,11 +12,7 @@ const {AUTHENTICATION_FAILED, MEMBER_NEEDS_UPGRADE} = require('./errors');
 // A user for testing
 //-----------------------------------------------------------------------------
 
-let TEST_USER = BC_TEST_USER
-
-if (TEST_USER) {
-    console.warn('Running as user', TEST_USER);
-}
+BC_TEST_USER && console.warn('Running as user', BC_TEST_USER);
 
 //-----------------------------------------------------------------------------
 // TEST USERS
@@ -172,8 +168,8 @@ async function validateXenForoUser(headers) {
     }
 
     // During development, use a test user
-    if (TEST_USER) {
-        const user = await lookupUser(TEST_USER);
+    if (BC_TEST_USER) {
+        const user = await lookupUser(BC_TEST_USER);
         if (user) {
             return [user];
         }
@@ -389,15 +385,6 @@ async function getThreadsForItemType(userId, type) {
 
 //-----------------------------------------------------------------------------
 
-function switchUser(userId) {
-    if (!BC_PRODUCTION) {
-        TEST_USER = userId;
-        console.warn('Switched to user', userId);
-    }
-}
-
-//-----------------------------------------------------------------------------
-
 module.exports = {
     validateXenForoUser,
     lookupUser,
@@ -406,7 +393,6 @@ module.exports = {
     sendAlert,
     findUsersWithPrefix,
     getThreadsForItemType,
-    switchUser
 };
 
 // (async function() {

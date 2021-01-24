@@ -411,14 +411,12 @@
                     aspect-ratio="1"
                   />
                   <v-card-subtitle v-text="item.text" />
-
                 </v-card>
               </v-col>
             </v-row>
           </v-container>
         </v-card>
       </v-col>
-
     </v-row>
 
     <!-- Temporary alert we show at the bottom when changes are made -->

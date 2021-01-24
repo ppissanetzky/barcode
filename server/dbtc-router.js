@@ -383,15 +383,6 @@ router.get('/threads-for-type', async (req, res) => {
 // TODO: Belongs in a '/user' API
 //-----------------------------------------------------------------------------
 
-router.put('/switch/:userId', (req, res, next) => {
-    if (BC_PRODUCTION) {
-        return next(AUTHENTICATION_FAILED());
-    }
-    const {params:{userId}} = req;
-    switchUser(userId);
-    res.json({});
-})
-
 router.get('/find-users', async (req, res) => {
     const {query} = req;
     const {prefix} = query;

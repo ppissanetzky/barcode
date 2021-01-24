@@ -29,8 +29,18 @@
         <v-card v-if="impersonating">
           <v-card-title>Stop impersonating {{ user }}</v-card-title>
           <v-card-actions>
-            <v-btn text @click="showImpersonate=false">Cancel</v-btn>
-            <v-btn text @click="stopImpersonating">Stop</v-btn>
+            <v-btn
+              text
+              @click="showImpersonate=false"
+            >
+              Cancel
+            </v-btn>
+            <v-btn
+              text
+              @click="stopImpersonating"
+            >
+              Stop
+            </v-btn>
           </v-card-actions>
         </v-card>
 
@@ -50,14 +60,14 @@
             </v-btn>
             <v-btn
               text
-              @click="impersonate"
               :disabled="!impersonateUser"
+              @click="impersonate"
             >
               Impersonate
             </v-btn>
           </v-card-actions>
         </v-card>
-    </v-dialog>
+      </v-dialog>
     </v-app-bar>
 
     <v-navigation-drawer
