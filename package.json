@@ -1,6 +1,6 @@
 {
   "name": "barcode",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "dev": "nuxt",
@@ -12,7 +12,6 @@
     "server": "nodemon server/server.js",
     "preversion": "git checkout main && git pull origin main",
     "postversion": "git push origin main --tags"
-
   },
   "dependencies": {
     "@nuxtjs/axios": "^5.12.5",
