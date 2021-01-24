@@ -19,7 +19,13 @@ const db = require('./dbtc-database');
 // Errors
 //-----------------------------------------------------------------------------
 
-const { AUTHENTICATION_FAILED, INVALID_FRAG, INVALID_INCREMENT, INVALID_RECIPIENT } = require('./errors');
+const {
+    AUTHENTICATION_FAILED,
+    INVALID_FRAG,
+    INVALID_INCREMENT,
+    INVALID_RECIPIENT,
+    INVALID_RULES,
+    NOT_YOURS} = require('./errors');
 const { BC_PRODUCTION } = require('../barcode.config');
 
 //-----------------------------------------------------------------------------
@@ -57,6 +63,11 @@ router.get('/frag/:fragId', async (req, res, next) => {
     const {fragId} = params;
     const [frag, journals] = db.selectFrag(fragId);
     if (!frag) {
+        return next(INVALID_FRAG());
+    }
+    // If the frag is private and the caller is not the owner,
+    // we don't expose it
+    if (frag.rules === 'private' && user.id !== frag.ownerId) {
         return next(INVALID_FRAG());
     }
     frag.owner = await lookupUser(frag.ownerId);
@@ -117,6 +128,10 @@ router.put('/frag/:fragId/available/:fragsAvailable', (req, res, next) => {
     if (!frag) {
         return next(INVALID_FRAG());
     }
+    // If the frag is private, you cannot make frags available
+    if (frag.rules === 'private') {
+        return next(INVALID_FRAG());
+    }
     // Validate fragsAvailable
     const value = parseInt(fragsAvailable, 10);
     if (isNaN(value) || value < 0) {
@@ -153,6 +168,10 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
     // have > 0 frags available
     const frag = db.validateFrag(user.id, fragOf, true, 0);
     if (!frag) {
+        return next(INVALID_FRAG());
+    }
+    // If the frag is private, you cannot give a frag
+    if (frag.rules === 'private') {
         return next(INVALID_FRAG());
     }
     // Now make sure the new owner is allowed
@@ -266,9 +285,12 @@ router.post('/frag/:fragId/rip', upload.none(), (req, res, next) => {
 // Returns a collection of mothers for the given rules
 //-----------------------------------------------------------------------------
 
-router.get('/collection/:rules', async (req, res) => {
+router.get('/collection/:rules', async (req, res, next) => {
     const {user, params} = req;
     const {rules} = params;
+    if (rules === 'private') {
+        return next(INVALID_RULES());
+    }
     const mothers = db.selectCollection(user.id, rules);
     // Now, get full user information about all of the
     // owners. This could get expensive
@@ -309,6 +331,9 @@ router.get('/tree/:motherId', async (req, res, next) => {
     const frags = db.selectFragsForMother(motherId);
     if (frags.length === 0) {
         return next(INVALID_FRAG());
+    }
+    if (frags.some((frag) => frag.rules === 'private' && frag.ownerId !== user.id)) {
+        return next(NOT_YOURS());
     }
     const map = new Map(frags.map((frag) => [frag.fragId, frag]));
     await Promise.all(frags.map(async (frag) => {

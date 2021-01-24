@@ -83,13 +83,16 @@ app.use((error, req, res, next) => {
     if (res.headersSent) {
       return next(error)
     }
-    console.error(req.originalUrl, error);
     // Always a 500
     res.status(500);
     // If it is one of our application errors, put the error JSON in the
     // response body
     if (error instanceof ExplicitError) {
+        console.error(req.user, req.originalUrl, error.code);
         res.json(error.asJSON());
+    }
+    else {
+        console.error(req.user, req.originalUrl, error);
     }
     // End it
     res.end();

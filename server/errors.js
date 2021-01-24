@@ -66,6 +66,9 @@ module.exports = {
 
     // When the user tries to drop out of line but they are not in line
     NOT_IN_QUEUE:           error.bind(null, 'UNL'),
+
+    // When bad 'rules' are given
+    INVALID_RULES:          error.bind(null, 'IRU'),
 };
 
 //-----------------------------------------------------------------------------

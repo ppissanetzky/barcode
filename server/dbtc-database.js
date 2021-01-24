@@ -492,14 +492,17 @@ function selectCollection(userId, rules) {
 
 const SELECT_FRAGS_FOR_MOTHER = `
     SELECT
-        *
+        mothers.rules as rules,
+        frags.*
     FROM
+        mothers,
         frags
     WHERE
-        motherId = $motherId
+        mothers.motherId = $motherId AND
+        frags.motherId = mothers.motherId
     ORDER BY
         dateAcquired
-`
+`;
 
 function selectFragsForMother(motherId) {
     return db.all(SELECT_FRAGS_FOR_MOTHER, {motherId});

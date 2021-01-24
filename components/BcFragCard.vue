@@ -403,10 +403,7 @@ export default {
         return
       }
 
-      this.lineage = []
-
       this.$nextTick(async () => {
-        await new Promise(resolve => setTimeout(resolve, 250))
         const { root } = await this.$axios.$get(`/bc/api/dbtc/tree/${this.fragOrMother.motherId}`)
         addAge(root)
         root.original = true
