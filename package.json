@@ -9,7 +9,10 @@
     "generate": "nuxt generate",
     "lint:js": "eslint --ext .js,.vue --ignore-path .gitignore .",
     "lint": "npm run lint:js",
-    "server": "nodemon server/server.js"
+    "server": "nodemon server/server.js",
+    "preversion": "git checkout main && git pull origin main",
+    "postversion": "git push origin main --tags"
+
   },
   "dependencies": {
     "@nuxtjs/axios": "^5.12.5",
