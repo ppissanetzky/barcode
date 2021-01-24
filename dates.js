@@ -64,10 +64,18 @@ function age (isoStringDateOrDate, textForToday, suffix) {
 
 // ----------------------------------------------------------------------------
 
+function differenceBetween (isoStringDateThen, isoStringDateNow) {
+  return formatDistance(dateFromIsoString(isoStringDateNow),
+    dateFromIsoString(isoStringDateThen))
+}
+
+// ----------------------------------------------------------------------------
+
 module.exports = {
   age,
   utcIsoStringFromDate,
   utcIsoStringFromString,
   dateFromIsoString,
-  nowAsIsoString
+  nowAsIsoString,
+  differenceBetween
 }

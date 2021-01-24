@@ -8,8 +8,8 @@
     </v-row>
 
     <!-- The card -->
-    <v-row>
-      <v-col cols="auto">
+    <v-row justify="start">
+      <v-col class="flex-shrink-0 flex-grow-0">
         <bc-frag-card
           v-if="frag"
           :frag-or-mother="frag"
@@ -359,11 +359,11 @@
       </v-col>
 
       <!-- Another column and card to show journal information -->
-      <v-col v-if="journals.length">
+      <v-col v-if="journals.length" class="flex-shrink-0 flex-grow-0">
         <v-card
           class="overflow-y-auto"
-          max-height="1500px"
-          max-width="375px"
+          max-height="808px"
+          width="375px"
         >
           <v-card-title>Journal</v-card-title>
           <v-timeline
@@ -388,57 +388,37 @@
             </v-timeline-item>
           </v-timeline>
         </v-card>
-
-        <!-- <v-row>
-          <v-col>
-            <h2>Journal</h2>
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <v-data-iterator
-              v-if="journals.length"
-              :items="journals"
-              item-key="journalId"
-              :items-per-page="5"
-              sort-by="order"
-              hide-default-footer
-              disable-pagination
-            >
-              <template v-slot:default="{ items }">
-                <v-row
-                  v-for="j in items"
-                  :key="j.journalId"
-                >
-                  <v-col>
-                    <v-card
-                      max-width="375px"
-                      width="100%"
-                    >
-                      <v-card-title>
-                        {{ j.age }}
-                        <v-spacer />
-                        <v-icon right>
-                          {{ j.icon }}
-                        </v-icon>
-                      </v-card-title>
-                      <v-card-subtitle v-text="j.date.toLocaleDateString()" />
-
-                      <v-img
-                        v-if="j.picture"
-                        :src="`${$config.BC_UPLOADS_URL}/${j.picture}`"
-                        max-width="375px"
-                        max-height="200px"
-                      />
-                      <v-card-text v-text="j.notes" />
-                    </v-card>
-                  </v-col>
-                </v-row>
-              </template>
-            </v-data-iterator>
-          </v-col>
-        </v-row> -->
       </v-col>
+
+      <!-- Another column for pictures -->
+      <v-col>
+        <v-card min-width="375px">
+          <v-card-title>Pictures</v-card-title>
+          <v-container fluid>
+            <v-row>
+              <v-col
+                v-for="(item, i) in pictures"
+                :key="i"
+              >
+                <v-card
+                  tile
+                  outlined
+                  min-width="180px"
+                  max-width="360px"
+                >
+                  <v-img
+                    :src="`${$config.BC_UPLOADS_URL}/${item.picture}`"
+                    aspect-ratio="1"
+                  />
+                  <v-card-subtitle v-text="item.text" />
+
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card>
+      </v-col>
+
     </v-row>
 
     <!-- Temporary alert we show at the bottom when changes are made -->
@@ -457,7 +437,7 @@
 // This imports the validation observer, provider and all the
 // rules with their messages
 import { ValidationObserver, ValidationProvider } from 'vee-validate/dist/vee-validate.full.esm'
-import { age, utcIsoStringFromString, dateFromIsoString } from '~/dates'
+import { age, utcIsoStringFromString, dateFromIsoString, differenceBetween } from '~/dates'
 import BcUserAutocomplete from '~/components/BcUserAutocomplete.vue'
 import BcDatePicker from '~/components/BcDatePicker.vue'
 import BcFragCard from '~/components/BcFragCard.vue'
@@ -576,6 +556,25 @@ export default {
 
     isPrivate () {
       return this.frag.rules === 'private'
+    },
+
+    pictures () {
+      const result = this.journals
+        .map(({ timestamp, picture }) => ({ timestamp, picture }))
+        .filter(({ picture }) => picture)
+        .reverse()
+
+      result.reduce((lastTimestamp, item) => {
+        if (!lastTimestamp) {
+          item.text = dateFromIsoString(item.timestamp).toLocaleDateString() + ' - ' +
+            age(item.timestamp, 'today', 'ago')
+        } else {
+          item.text = differenceBetween(lastTimestamp, item.timestamp) + ' later'
+        }
+        return item.timestamp
+      }, null)
+
+      return result
     }
   },
 
