@@ -9,14 +9,10 @@ module.exports = {
         time: true,
         watch: false,
         env: {
-          "BC_UPLOADS_DIR": "/home/admin3/barcode-data/uploads/bc/uploads",
-          "BC_DATABASE_DIR": "/home/admin3/barcode-data/databases",
-          "NODE_ENV": "development"
+          NODE_ENV: "development"
         },
         env_production: {
-          "BC_UPLOADS_DIR": "/home/admin3/barcode-data/uploads/bc/uploads",
-          "BC_DATABASE_DIR": "/home/admin3/barcode-data/databases",
-          "NODE_ENV": "production"
+          NODE_ENV: "production"
         }
       },
   ]
