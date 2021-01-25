@@ -108,16 +108,17 @@ async function apiRequest(endpoint, method, params, headers) {
 
 //-----------------------------------------------------------------------------
 
+function getUserGroups(xfUser) {
+    const {user_group_id = -1, secondary_group_ids = []} = xfUser;
+    return [user_group_id, ...secondary_group_ids];
+}
+
 function isXfUserAllowed(xfUser) {
-    // This should be an array of group IDs (numbers). Check to make sure
-    // the user is in one of the groups allowed to participate.
-    const {secondary_group_ids = []} = xfUser;
-    return secondary_group_ids.some((id) => ALLOWED_GROUPS.has(id));
+    return getUserGroups(xfUser).some((id) => ALLOWED_GROUPS.has(id));
 }
 
 function canXfUserImpersonate(xfUser) {
-    const {secondary_group_ids = []} = xfUser;
-    return secondary_group_ids.some((id) => IMPERSONATE_GROUPS.has(id));
+    return getUserGroups(xfUser).some((id) => IMPERSONATE_GROUPS.has(id));
 }
 
 //-----------------------------------------------------------------------------
