@@ -48,6 +48,13 @@ function getEnums() {
     return {types, rules};
 }
 
+const VALIDATE_RULES = 'SELECT rule FROM rules WHERE rule = $rules';
+
+function validateRules(rules) {
+    const [found] = db.all(VALIDATE_RULES, {rules});
+    return Boolean(found);
+}
+
 //-----------------------------------------------------------------------------
 // All frags for a given user - joined with species
 //-----------------------------------------------------------------------------
@@ -443,7 +450,8 @@ const SELECT_COLLECTION = `
             json_object(
                 'ownerId', ownerId,
                 'fragId', fragId,
-                'fragsAvailable', fragsAvailable
+                'fragsAvailable', fragsAvailable,
+                'fragOf', fragOf
             )
         ) AS owners,
         json_group_array(picture) AS pictures
@@ -467,7 +475,11 @@ function selectCollection(userId, rules) {
         // Remove the null pictures
         row.pictures = JSON.parse(row.pictures).filter((picture) => picture);
         // Parse the owners and filter them
-        row.owners = JSON.parse(row.owners).filter(({ownerId}) => {
+        row.owners = JSON.parse(row.owners).filter(({ownerId, fragOf}) => {
+            // If this row has no fragOf, it is the original contribution
+            if (!fragOf) {
+                row.contributor = ownerId;
+            }
             // If this owner is the same as the calling user, remove it
             // from the array.
             if (ownerId === userId) {
@@ -525,5 +537,6 @@ module.exports = {
     getTypes,
     getType,
     getEnums,
-    selectFragsForMother
+    selectFragsForMother,
+    validateRules
 }

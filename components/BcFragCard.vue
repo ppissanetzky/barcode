@@ -38,7 +38,14 @@
     -->
 
     <v-card-title v-text="fragOrMother.name" />
-    <v-card-subtitle v-text="fragOrMother.scientificName" />
+    <v-card-subtitle>
+      <div>{{ fragOrMother.scientificName }}</div>
+      <div
+        v-if="contributorName"
+      >
+        <strong>Contributed by {{ contributorName }}</strong>
+      </div>
+    </v-card-subtitle>
 
     <v-card-text>
       <!-- A chip for the type -->
@@ -341,6 +348,12 @@ export default {
     isMother () {
       return !this.isFrag
     },
+    frag () {
+      return this.isFrag ? this.fragOrMother : null
+    },
+    mother () {
+      return this.isMother ? this.fragOrMother : null
+    },
     isAlive () {
       if (this.isFrag) {
         return this.fragOrMother.isAlive
@@ -376,6 +389,17 @@ export default {
     age () {
       if (this.isFrag) {
         return this.isAlive ? age(this.fragOrMother.dateAcquired, '', 'old') : null
+      }
+      return null
+    },
+    contributorName () {
+      const mother = this.mother
+      if (mother) {
+        if (mother.contributor) {
+          return mother.contributor.id === this.user.id
+            ? 'you'
+            : mother.contributor.name
+        }
       }
       return null
     }

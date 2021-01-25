@@ -288,6 +288,9 @@ router.post('/frag/:fragId/rip', upload.none(), (req, res, next) => {
 router.get('/collection/:rules', async (req, res, next) => {
     const {user, params} = req;
     const {rules} = params;
+    if (!db.validateRules(rules)) {
+        return next(INVALID_RULES());
+    }
     if (rules === 'private') {
         return next(INVALID_RULES());
     }
@@ -304,6 +307,9 @@ router.get('/collection/:rules', async (req, res, next) => {
         mother.haves = [];
         mother.haveNots = [];
         mother.fragsAvailable = 0;
+        if (mother.contributor) {
+            mother.contributor = await lookupUser(mother.contributor);
+        }
         await Promise.all(owners.map(async (owner) => {
             const fullUser = await lookupUser(owner.ownerId);
             Object.assign(owner, fullUser);

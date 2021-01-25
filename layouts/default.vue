@@ -7,6 +7,7 @@
       <v-toolbar-title>BARcode</v-toolbar-title>
       <v-spacer />
       <v-dialog
+        v-if="user"
         v-model="showImpersonate"
         :disabled="!canImpersonate"
         max-width="375px"
@@ -111,14 +112,14 @@
             <v-list-item-title>PIF collection</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item to="/equipment">
+        <v-list-item to="/equipment" disabled>
           <v-list-item-icon><v-icon>mdi-toolbox-outline</v-icon></v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>Equipment</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-divider />
-        <v-list-item href="https://bareefers.org/">
+        <v-list-item href="https://bareefers.org/" target="_blank">
           <v-list-item-icon><v-icon>mdi-forum-outline</v-icon></v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>Bay Area Reefers</v-list-item-title>
