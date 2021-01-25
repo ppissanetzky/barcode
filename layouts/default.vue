@@ -69,7 +69,11 @@
         </v-card>
       </v-dialog>
       <v-col cols="auto">
-        <div class="caption">v{{ $config.version}}</div>
+        <div
+          class="caption"
+        >
+          v{{ $config.version }}
+        </div>
       </v-col>
     </v-app-bar>
 

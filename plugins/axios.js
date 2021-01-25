@@ -1,5 +1,5 @@
 
-export default function ({ $axios, store, redirect }, inject) {
+export default function ({ $axios, store, redirect }) {
   // Catch 500 errors and redirect to our custom error page
   // when they are explicit errors.
   $axios.onError((error) => {

@@ -53,7 +53,7 @@ export default {
     const { query } = this.$route
     this.code = query.code
     this.message = query.message
-    this.link = query.link || '/'
+    this.link = query.link || this.$router.options.base
     this.button = query.button || 'OK'
   }
 }
