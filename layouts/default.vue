@@ -68,6 +68,9 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-col cols="auto">
+        <div class="caption">v{{ $config.version}}</div>
+      </v-col>
     </v-app-bar>
 
     <v-navigation-drawer
@@ -123,8 +126,6 @@
     <v-main>
       <nuxt />
     </v-main>
-
-    <v-footer app />
   </v-app>
 </template>
 

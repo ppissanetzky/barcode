@@ -6,6 +6,8 @@ import colors from 'vuetify/es5/util/colors'
 
 import BarcodeConfig from './barcode.config.js'
 
+const {version} = require('./package.json')
+
 //-----------------------------------------------------------------------------
 
 export default {
@@ -76,6 +78,7 @@ export default {
   // the base URL for uploaded images
   publicRuntimeConfig: {
     BC_UPLOADS_URL: BarcodeConfig.BC_UPLOADS_URL,
+    version
   },
 
   // Vuetify module configuration (https://go.nuxtjs.dev/config-vuetify)
