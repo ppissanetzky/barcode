@@ -33,13 +33,15 @@
       src="/picture-placeholder.png"
     />
 
-    <!--
-      Now, the name and scientific name
-    -->
+    <!-- The name -->
 
     <v-card-title v-text="fragOrMother.name" />
+
     <v-card-subtitle>
+      <!-- Scientific name -->
       <div>{{ fragOrMother.scientificName }}</div>
+
+      <!-- The contributor name (the person who added it to this collection) -->
       <div
         v-if="contributorName"
       >

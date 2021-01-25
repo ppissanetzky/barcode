@@ -2,419 +2,435 @@
   <v-container fluid>
     <v-row>
       <v-col>
-        <h1 v-if="frag" v-text="frag.name" />
-        <h3 v-if="frag && !isOwner" v-text="frag.owner.name" />
+        <v-card flat max-width="375px">
+          <h1 v-if="frag" class="text-center" v-text="frag.name" />
+          <h3 v-if="frag && !isOwner" class="text-center" v-text="frag.owner.name" />
+        </v-card>
       </v-col>
     </v-row>
 
-    <!-- The card -->
-    <v-row justify="start">
-      <v-col class="flex-shrink-0 flex-grow-0">
-        <bc-frag-card
-          v-if="frag"
-          :frag-or-mother="frag"
-          :user="user"
-        >
-          <!-- All the things that can be changed about this frag are wrapped in this div -->
-
-          <template v-if="canMakeChanges">
-            <!--
-                A line item that expands to show a small form to make frags available
-                only if the user owns this frag and it is not private
-            -->
-            <div v-if="!isPrivate">
-              <v-divider />
-              <v-card-actions>
-                <h3>Update available frags</h3>
-                <v-spacer />
-                <v-btn
-                  icon
-                  @click="showMakeFragsAvailable = !showMakeFragsAvailable"
-                >
-                  <v-icon>{{ showMakeFragsAvailable ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-                </v-btn>
-              </v-card-actions>
-
-              <v-expand-transition>
-                <div v-show="showMakeFragsAvailable">
-                  <v-divider />
-                  <v-card-text>
-                    You can change the number of available frags here. If you increase it,
-                    users that are interested will be notified. You can also decrease it
-                    if you no longer have all of those frags.
-                  </v-card-text>
-
-                  <validation-observer ref="fragsAvailableObserver" v-slot="{ invalid }">
-                    <v-form
-                      id="update-frags-available"
-                      @submit.prevent="submitPreventFragsAvailable"
-                      @submit="submitFragsAvailable"
-                    >
-                      <v-container>
-                        <v-row>
-                          <v-col>
-                            <validation-provider
-                              v-slot="{ errors }"
-                              rules="required|integer|min_value:0"
-                              name="frags available"
-                            >
-                              <v-text-field
-                                id="fragsAvailable"
-                                v-model="editedFragsAvailable"
-                                label="Frags available"
-                                name="fragsAvailable"
-                                type="number"
-                                min="0"
-                                :error-messages="errors"
-                                required
-                                outlined
-                                hide-details="auto"
-                              />
-                            </validation-provider>
-                          </v-col>
-                        </v-row>
-                        <v-row>
-                          <v-col>
-                            <v-btn
-                              color="secondary"
-                              type="submit"
-                              :disabled="invalid || fragsAvailable == editedFragsAvailable"
-                              :loading="loadingMakeFragsAvailable"
-                              @click="loader = 'loading'"
-                            >
-                              Update
-                            </v-btn>
-                          </v-col>
-                        </v-row>
-                      </v-container>
-                    </v-form>
-                  </validation-observer>
-                </div>
-              </v-expand-transition>
-            </div>
-
-            <!--
-                A line item that expands to show a small form to give a frag to
-                someone else if the item is not private
-            -->
-            <div v-if="!isPrivate">
-              <v-divider />
-              <v-card-actions>
-                <h3>Give a frag</h3>
-                <v-spacer />
-                <v-btn
-                  icon
-                  @click="showGiveAFrag = !showGiveAFrag"
-                >
-                  <v-icon>{{ showGiveAFrag ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-                </v-btn>
-              </v-card-actions>
-
-              <v-expand-transition>
-                <div v-show="showGiveAFrag">
-                  <v-divider />
-                  <div v-if="!fragsAvailable">
-                    <v-card-text>
-                      You cannot give a frag because there are none available. Update
-                      the number of available frags first.
-                    </v-card-text>
-                  </div>
-                  <div v-else>
-                    <validation-observer ref="giveAFragObserver" v-slot="{ invalid }">
-                      <v-form
-                        id="give-a-frag"
-                        @submit.prevent="submitPreventGiveAFrag"
-                        @submit="submitGiveAFrag"
-                      >
-                        <v-container>
-                          <!-- The user that is getting the frag -->
-                          <v-row>
-                            <v-col>
-                              <validation-provider
-                                rules="required"
-                                name="recipient"
-                              >
-                                <bc-user-autocomplete
-                                  v-model="recipient"
-                                  label="Recipient"
-                                  :exclude-user="user.id"
-                                />
-                              </validation-provider>
-                            </v-col>
-                          </v-row>
-
-                          <!-- The date the user got the frag -->
-                          <v-row>
-                            <v-col>
-                              <bc-date-picker
-                                v-model="dateGiven"
-                                label="Date given"
-                                name="date given"
-                                rules="required"
-                              />
-                            </v-col>
-                          </v-row>
-
-                          <!-- An optional picture of the frag -->
-                          <v-row>
-                            <v-col>
-                              <v-file-input
-                                v-model="picture"
-                                outlined
-                                label="Picture of the frag"
-                                accept="image/*"
-                                prepend-icon=""
-                                hide-details="auto"
-                              />
-                            </v-col>
-                          </v-row>
-
-                          <!-- Notes about the frag -->
-                          <v-row>
-                            <v-col>
-                              <v-textarea
-                                id="notes"
-                                v-model="notes"
-                                outlined
-                                label="Notes about the frag"
-                                auto-grow
-                                rows="1"
-                                hide-details="auto"
-                              />
-                            </v-col>
-                          </v-row>
-
-                          <!-- The button to post it -->
-                          <v-row>
-                            <v-col>
-                              <v-btn
-                                color="secondary"
-                                type="submit"
-                                :disabled="invalid"
-                                :loading="loadingGiveAFrag"
-                                @click="loader = 'loading'"
-                              >
-                                Give
-                              </v-btn>
-                            </v-col>
-                          </v-row>
-                        </v-container>
-                      </v-form>
-                    </validation-observer>
-                  </div>
-                </div>
-              </v-expand-transition>
-            </div>
-
-            <!-- A line item that expands to show a form to add a journal entry -->
-            <div>
-              <v-divider />
-              <v-card-actions>
-                <h3>Add a journal entry</h3>
-                <v-spacer />
-                <v-btn
-                  icon
-                  @click="showAddJournal = !showAddJournal"
-                >
-                  <v-icon>{{ showAddJournal ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-                </v-btn>
-              </v-card-actions>
-              <v-expand-transition>
-                <div v-show="showAddJournal">
-                  <v-divider />
-                  <v-form
-                    id="journal"
-                    @submit="submitJournal"
-                    @submit.prevent="submitPreventJournal"
-                  >
-                    <v-container>
-                      <v-row>
-                        <v-col>
-                          <v-btn-toggle
-                            v-model="journalType"
-                            mandatory
-                          >
-                            <v-btn value="update">
-                              <v-icon>mdi-progress-check</v-icon>
-                            </v-btn>
-                            <v-btn value="good">
-                              <v-icon>mdi-thumb-up-outline</v-icon>
-                            </v-btn>
-                            <v-btn value="bad">
-                              <v-icon>mdi-thumb-down-outline</v-icon>
-                            </v-btn>
-                          </v-btn-toggle>
-                        </v-col>
-                      </v-row>
-                      <v-row>
-                        <v-col>
-                          <v-file-input
-                            v-model="journalPicture"
-                            outlined
-                            label="Picture"
-                            accept="image/*"
-                            prepend-icon=""
-                            hide-details="auto"
-                          />
-                          <v-checkbox
-                            v-model="journalMakeCoverPicture"
-                            label="Make this the cover picture"
-                            :disabled="!journalPicture"
-                            hide-details="auto"
-                          />
-                        </v-col>
-                      </v-row>
-                      <v-row>
-                        <v-col>
-                          <v-textarea
-                            v-model="journalText"
-                            outlined
-                            label="How's it doing?"
-                            auto-grow
-                            rows="2"
-                            hide-details="auto"
-                          />
-                        </v-col>
-                      </v-row>
-                      <v-row>
-                        <v-col>
-                          <v-spacer />
-                          <v-btn
-                            color="secondary"
-                            type="submit"
-                            :disabled="!(journalPicture || journalText)"
-                            :loading="loadingJournal"
-                            @click="loader = 'loading'"
-                          >
-                            Submit
-                          </v-btn>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-form>
-                </div>
-              </v-expand-transition>
-            </div>
-
-            <!--
-                A line item that expands to show a small form to mark the frag as dead -->
-            <div>
-              <v-divider />
-              <v-card-actions>
-                <h3>RIP</h3>
-                <v-spacer />
-                <v-btn
-                  icon
-                  @click="showRIP = !showRIP"
-                >
-                  <v-icon>{{ showRIP ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-                </v-btn>
-              </v-card-actions>
-
-              <v-expand-transition>
-                <div v-show="showRIP">
-                  <v-divider />
-                  <v-card-text>
-                    They don't always make it and that's OK. If you mark the {{ frag.name }} as lost
-                    you won't be able to make any more changes to it.
-                  </v-card-text>
-
-                  <v-form
-                    @submit.prevent="submitPreventRIP"
-                    @submit="submitRIP"
-                  >
-                    <v-container>
-                      <v-row>
-                        <v-col>
-                          <v-textarea
-                            id="ripNotes"
-                            v-model="ripNotes"
-                            outlined
-                            label="What happened?"
-                            auto-grow
-                            rows="3"
-                            hide-details="auto"
-                          />
-                        </v-col>
-                      </v-row>
-                      <v-row>
-                        <v-col>
-                          <v-btn
-                            color="secondary"
-                            type="submit"
-                            :loading="loadingRIP"
-                            @click="loader = 'loading'"
-                          >
-                            RIP
-                          </v-btn>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-form>
-                </div>
-              </v-expand-transition>
-            </div>
-          </template>
-        </bc-frag-card>
-      </v-col>
-
-      <!-- Another column and card to show journal information -->
-      <v-col v-if="journals.length" class="flex-shrink-0 flex-grow-0">
-        <v-card
-          class="overflow-y-auto"
-          max-height="808px"
-          width="375px"
-        >
-          <v-card-title>Journal</v-card-title>
-          <v-timeline
-            align-top
-            dense
-          >
-            <v-timeline-item
-              v-for="j in journals"
-              :key="j.journalId"
-              :icon="j.icon"
-            >
-              <v-card max-width="230px">
-                <v-card-subtitle>
-                  <div v-text="j.age" />
-                  <div class="caption" v-text="j.date.toLocaleDateString()" />
-                </v-card-subtitle>
-                <v-card-text>
-                  <strong v-if="j.notes" v-text="j.notes" />
-                  <strong v-else>Uploaded a picture </strong>
-                </v-card-text>
-              </v-card>
-            </v-timeline-item>
-          </v-timeline>
-        </v-card>
-      </v-col>
-
-      <!-- Another column for pictures -->
+    <v-row>
       <v-col>
-        <v-card min-width="375px">
-          <v-card-title>Pictures</v-card-title>
-          <v-container fluid>
-            <v-row>
-              <v-col
-                v-for="(item, i) in pictures"
-                :key="i"
+        <v-card
+          max-width="375px"
+          flat
+        >
+          <v-divider />
+          <v-tabs v-model="tab" grow class="mb-3">
+            <v-tab>Details</v-tab>
+            <v-tab>Journal</v-tab>
+            <v-tab>Pictures</v-tab>
+          </v-tabs>
+
+          <v-tabs-items v-model="tab">
+            <!-- First tab is for the frag card -->
+            <v-tab-item eager class="ma-1">
+              <bc-frag-card
+                v-if="frag"
+                :frag-or-mother="frag"
+                :user="user"
               >
-                <v-card
-                  tile
-                  outlined
-                  min-width="180px"
-                  max-width="360px"
+                <!-- All the things that can be changed about this frag are wrapped in this div -->
+                <template v-if="canMakeChanges">
+                  <!--
+                      A line item that expands to show a small form to make frags available
+                      only if the user owns this frag and it is not private
+                  -->
+                  <div v-if="!isPrivate">
+                    <v-divider />
+                    <v-card-actions>
+                      <h3>Update available frags</h3>
+                      <v-spacer />
+                      <v-btn
+                        icon
+                        @click="showMakeFragsAvailable = !showMakeFragsAvailable"
+                      >
+                        <v-icon>{{ showMakeFragsAvailable ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                      </v-btn>
+                    </v-card-actions>
+
+                    <v-expand-transition>
+                      <div v-show="showMakeFragsAvailable">
+                        <v-divider />
+                        <v-card-text>
+                          You can change the number of available frags here. If you increase it,
+                          users that are interested will be notified. You can also decrease it
+                          if you no longer have all of those frags.
+                        </v-card-text>
+
+                        <validation-observer ref="fragsAvailableObserver" v-slot="{ invalid }">
+                          <v-form
+                            id="update-frags-available"
+                            @submit.prevent="submitPreventFragsAvailable"
+                            @submit="submitFragsAvailable"
+                          >
+                            <v-container>
+                              <v-row>
+                                <v-col>
+                                  <validation-provider
+                                    v-slot="{ errors }"
+                                    rules="required|integer|min_value:0"
+                                    name="frags available"
+                                  >
+                                    <v-text-field
+                                      id="fragsAvailable"
+                                      v-model="editedFragsAvailable"
+                                      label="Frags available"
+                                      name="fragsAvailable"
+                                      type="number"
+                                      min="0"
+                                      :error-messages="errors"
+                                      required
+                                      outlined
+                                      hide-details="auto"
+                                    />
+                                  </validation-provider>
+                                </v-col>
+                              </v-row>
+                              <v-row>
+                                <v-col>
+                                  <v-btn
+                                    color="secondary"
+                                    type="submit"
+                                    :disabled="invalid || fragsAvailable == editedFragsAvailable"
+                                    :loading="loadingMakeFragsAvailable"
+                                    @click="loader = 'loading'"
+                                  >
+                                    Update
+                                  </v-btn>
+                                </v-col>
+                              </v-row>
+                            </v-container>
+                          </v-form>
+                        </validation-observer>
+                      </div>
+                    </v-expand-transition>
+                  </div>
+
+                  <!--
+                      A line item that expands to show a small form to give a frag to
+                      someone else if the item is not private
+                  -->
+                  <div v-if="!isPrivate">
+                    <v-divider />
+                    <v-card-actions>
+                      <h3>Give a frag</h3>
+                      <v-spacer />
+                      <v-btn
+                        icon
+                        @click="showGiveAFrag = !showGiveAFrag"
+                      >
+                        <v-icon>{{ showGiveAFrag ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                      </v-btn>
+                    </v-card-actions>
+
+                    <v-expand-transition>
+                      <div v-show="showGiveAFrag">
+                        <v-divider />
+                        <div v-if="!fragsAvailable">
+                          <v-card-text>
+                            You cannot give a frag because there are none available. Update
+                            the number of available frags first.
+                          </v-card-text>
+                        </div>
+                        <div v-else>
+                          <validation-observer ref="giveAFragObserver" v-slot="{ invalid }">
+                            <v-form
+                              id="give-a-frag"
+                              @submit.prevent="submitPreventGiveAFrag"
+                              @submit="submitGiveAFrag"
+                            >
+                              <v-container>
+                                <!-- The user that is getting the frag -->
+                                <v-row>
+                                  <v-col>
+                                    <validation-provider
+                                      rules="required"
+                                      name="recipient"
+                                    >
+                                      <bc-user-autocomplete
+                                        v-model="recipient"
+                                        label="Recipient"
+                                        :exclude-user="user.id"
+                                      />
+                                    </validation-provider>
+                                  </v-col>
+                                </v-row>
+
+                                <!-- The date the user got the frag -->
+                                <v-row>
+                                  <v-col>
+                                    <bc-date-picker
+                                      v-model="dateGiven"
+                                      label="Date given"
+                                      name="date given"
+                                      rules="required"
+                                    />
+                                  </v-col>
+                                </v-row>
+
+                                <!-- An optional picture of the frag -->
+                                <v-row>
+                                  <v-col>
+                                    <v-file-input
+                                      v-model="picture"
+                                      outlined
+                                      label="Picture of the frag"
+                                      accept="image/*"
+                                      prepend-icon=""
+                                      hide-details="auto"
+                                    />
+                                  </v-col>
+                                </v-row>
+
+                                <!-- Notes about the frag -->
+                                <v-row>
+                                  <v-col>
+                                    <v-textarea
+                                      id="notes"
+                                      v-model="notes"
+                                      outlined
+                                      label="Notes about the frag"
+                                      auto-grow
+                                      rows="1"
+                                      hide-details="auto"
+                                    />
+                                  </v-col>
+                                </v-row>
+
+                                <!-- The button to post it -->
+                                <v-row>
+                                  <v-col>
+                                    <v-btn
+                                      color="secondary"
+                                      type="submit"
+                                      :disabled="invalid"
+                                      :loading="loadingGiveAFrag"
+                                      @click="loader = 'loading'"
+                                    >
+                                      Give
+                                    </v-btn>
+                                  </v-col>
+                                </v-row>
+                              </v-container>
+                            </v-form>
+                          </validation-observer>
+                        </div>
+                      </div>
+                    </v-expand-transition>
+                  </div>
+
+                  <!-- A line item that expands to show a form to add a journal entry -->
+                  <div>
+                    <v-divider />
+                    <v-card-actions>
+                      <h3>Add a journal entry</h3>
+                      <v-spacer />
+                      <v-btn
+                        icon
+                        @click="showAddJournal = !showAddJournal"
+                      >
+                        <v-icon>{{ showAddJournal ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                      </v-btn>
+                    </v-card-actions>
+                    <v-expand-transition>
+                      <div v-show="showAddJournal">
+                        <v-divider />
+                        <v-form
+                          id="journal"
+                          @submit="submitJournal"
+                          @submit.prevent="submitPreventJournal"
+                        >
+                          <v-container>
+                            <v-row>
+                              <v-col>
+                                <v-btn-toggle
+                                  v-model="journalType"
+                                  mandatory
+                                >
+                                  <v-btn value="update">
+                                    <v-icon>mdi-progress-check</v-icon>
+                                  </v-btn>
+                                  <v-btn value="good">
+                                    <v-icon>mdi-thumb-up-outline</v-icon>
+                                  </v-btn>
+                                  <v-btn value="bad">
+                                    <v-icon>mdi-thumb-down-outline</v-icon>
+                                  </v-btn>
+                                </v-btn-toggle>
+                              </v-col>
+                            </v-row>
+                            <v-row>
+                              <v-col>
+                                <v-file-input
+                                  v-model="journalPicture"
+                                  outlined
+                                  label="Picture"
+                                  accept="image/*"
+                                  prepend-icon=""
+                                  hide-details="auto"
+                                />
+                                <v-checkbox
+                                  v-model="journalMakeCoverPicture"
+                                  label="Make this the cover picture"
+                                  :disabled="!journalPicture"
+                                  hide-details="auto"
+                                />
+                              </v-col>
+                            </v-row>
+                            <v-row>
+                              <v-col>
+                                <v-textarea
+                                  v-model="journalText"
+                                  outlined
+                                  label="How's it doing?"
+                                  auto-grow
+                                  rows="2"
+                                  hide-details="auto"
+                                />
+                              </v-col>
+                            </v-row>
+                            <v-row>
+                              <v-col>
+                                <v-spacer />
+                                <v-btn
+                                  color="secondary"
+                                  type="submit"
+                                  :disabled="!(journalPicture || journalText)"
+                                  :loading="loadingJournal"
+                                  @click="loader = 'loading'"
+                                >
+                                  Submit
+                                </v-btn>
+                              </v-col>
+                            </v-row>
+                          </v-container>
+                        </v-form>
+                      </div>
+                    </v-expand-transition>
+                  </div>
+
+                  <!--
+                      A line item that expands to show a small form to mark the frag as dead -->
+                  <div>
+                    <v-divider />
+                    <v-card-actions>
+                      <h3>RIP</h3>
+                      <v-spacer />
+                      <v-btn
+                        icon
+                        @click="showRIP = !showRIP"
+                      >
+                        <v-icon>{{ showRIP ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                      </v-btn>
+                    </v-card-actions>
+
+                    <v-expand-transition>
+                      <div v-show="showRIP">
+                        <v-divider />
+                        <v-card-text>
+                          They don't always make it and that's OK. If you mark the {{ frag.name }} as lost
+                          you won't be able to make any more changes to it.
+                        </v-card-text>
+
+                        <v-form
+                          @submit.prevent="submitPreventRIP"
+                          @submit="submitRIP"
+                        >
+                          <v-container>
+                            <v-row>
+                              <v-col>
+                                <v-textarea
+                                  id="ripNotes"
+                                  v-model="ripNotes"
+                                  outlined
+                                  label="What happened?"
+                                  auto-grow
+                                  rows="3"
+                                  hide-details="auto"
+                                />
+                              </v-col>
+                            </v-row>
+                            <v-row>
+                              <v-col>
+                                <v-btn
+                                  color="secondary"
+                                  type="submit"
+                                  :loading="loadingRIP"
+                                  @click="loader = 'loading'"
+                                >
+                                  RIP
+                                </v-btn>
+                              </v-col>
+                            </v-row>
+                          </v-container>
+                        </v-form>
+                      </div>
+                    </v-expand-transition>
+                  </div>
+                </template>
+              </bc-frag-card>
+            </v-tab-item>
+
+            <!-- Second tab for the journal -->
+            <v-tab-item class="ma-1">
+              <v-card max-width="375px">
+                <v-timeline
+                  align-top
+                  dense
                 >
-                  <v-img
-                    :src="`${$config.BC_UPLOADS_URL}/${item.picture}`"
-                    aspect-ratio="1"
-                  />
-                  <v-card-subtitle v-text="item.text" />
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-container>
+                  <v-timeline-item
+                    v-for="j in journals"
+                    :key="j.journalId"
+                    :icon="j.icon"
+                  >
+                    <v-card max-width="230px">
+                      <v-card-subtitle>
+                        <div v-text="j.age" />
+                        <div class="caption" v-text="j.date.toLocaleDateString()" />
+                      </v-card-subtitle>
+                      <v-card-text>
+                        <strong v-if="j.notes" v-text="j.notes" />
+                        <strong v-else>Uploaded a picture </strong>
+                      </v-card-text>
+                    </v-card>
+                  </v-timeline-item>
+                </v-timeline>
+              </v-card>
+            </v-tab-item>
+
+            <!-- Third tab for pictures -->
+            <v-tab-item class="ma-1">
+              <v-card max-width="375px">
+                <v-card-subtitle
+                  v-if="!pictures.length"
+                >
+                  No pictures yet
+                </v-card-subtitle>
+                <v-container v-else fluid>
+                  <v-row>
+                    <v-col
+                      v-for="(item, i) in pictures"
+                      :key="i"
+                      cols="12"
+                    >
+                      <v-card color="black">
+                        <v-card-actions>
+                          <v-img
+                            :src="`${$config.BC_UPLOADS_URL}/${item.picture}`"
+                            aspect-ratio="1"
+                          />
+                        </v-card-actions>
+                        <v-card-subtitle class="text-center white--text">
+                          <div>{{ item.date }} ꞏ {{ item.text }}</div>
+                        </v-card-subtitle>
+                      </v-card>
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </v-card>
+            </v-tab-item>
+          </v-tabs-items>
         </v-card>
       </v-col>
     </v-row>
@@ -487,6 +503,8 @@ export default {
       isOwner: false,
       frag: undefined,
       journals: [],
+
+      tab: null,
 
       // To show the panel to make frags
       showMakeFragsAvailable: false,
@@ -563,16 +581,16 @@ export default {
         .reverse()
 
       result.reduce((lastTimestamp, item) => {
+        item.date = dateFromIsoString(item.timestamp).toLocaleDateString()
         if (!lastTimestamp) {
-          item.text = dateFromIsoString(item.timestamp).toLocaleDateString() + ' - ' +
-            age(item.timestamp, 'today', 'ago')
-        } else {
-          item.text = differenceBetween(lastTimestamp, item.timestamp) + ' later'
+          item.text = age(item.timestamp, 'today', 'ago')
+          return item.timestamp
         }
-        return item.timestamp
+        item.text = 'after ' + differenceBetween(lastTimestamp, item.timestamp)
+        return lastTimestamp
       }, null)
 
-      return result
+      return result.reverse()
     }
   },
 
