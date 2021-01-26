@@ -386,6 +386,21 @@ router.get('/threads-for-type', async (req, res) => {
 });
 
 //-----------------------------------------------------------------------------
+// DBTC top 10 lists
+//-----------------------------------------------------------------------------
+
+router.get('/top10', async (req, res) => {
+    const result = db.getDbtcTop10s();
+    await Promise.all(Object.keys(result).map(async (key) => {
+        await Promise.all(result[key].map(async (row) => {
+            const {name} = await lookupUser(row.ownerId);
+            row.ownerName = name;
+        }));
+    }));
+    res.json({...result});
+});
+
+//-----------------------------------------------------------------------------
 // TODO: Belongs in a '/user' API
 //-----------------------------------------------------------------------------
 

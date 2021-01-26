@@ -521,6 +521,103 @@ function selectFragsForMother(motherId) {
 }
 
 //-----------------------------------------------------------------------------
+// Top 10 lists
+//-----------------------------------------------------------------------------
+
+const TOP_10 = {
+
+    contributors: `
+        SELECT
+            ownerId AS ownerId,
+            COUNT(fragId) AS count
+        FROM
+            mothers,
+            frags
+        WHERE
+            mothers.rules = 'dbtc' AND
+            mothers.motherId = frags.motherId AND
+            fragOf IS NULL
+        GROUP BY 1
+        ORDER BY 2 DESC
+        LIMIT 10`,
+
+    givers: `
+        SELECT
+            f2.ownerId AS ownerId,
+            COUNT(f1.fragId) AS count
+        FROM
+            mothers,
+            frags AS f1,
+            frags AS f2
+        WHERE
+            mothers.rules = 'dbtc' AND
+            f1.motherId = mothers.motherId AND
+            f1.fragOf IS NOT NULL AND
+            f2.fragId = f1.fragOf
+        GROUP BY 1
+        ORDER BY 2 DESC
+        LIMIT 10`,
+
+    linkers: `
+        SELECT
+            f2.ownerId AS ownerId,
+            COUNT(f1.fragId) AS count
+        FROM
+            mothers,
+            frags AS f1,
+            frags AS f2
+        WHERE
+            mothers.rules = 'dbtc' AND
+            f1.motherId = mothers.motherId AND
+            f1.fragOf IS NOT NULL AND
+            f2.fragOf IS NOT NULL AND
+            f2.fragId = f1.fragOf
+        GROUP BY 1
+        ORDER BY 2 DESC
+        LIMIT 10`,
+
+    journalers: `
+        SELECT
+            ownerId AS ownerId,
+            COUNT(journalId) AS count
+        FROM
+            mothers,
+            frags,
+            journals
+        WHERE
+            mothers.rules = 'dbtc' AND
+            mothers.motherId = frags.motherId AND
+            journals.fragId = frags.fragId AND
+            journals.entryType IN ('good', 'bad', 'update')
+        GROUP BY 1
+        ORDER BY 2 DESC
+        LIMIT 10`,
+
+    collectors: `
+        SELECT
+            ownerId AS ownerId,
+            COUNT(fragId) AS count
+        FROM
+            mothers,
+            frags
+        WHERE
+            mothers.rules = 'dbtc' AND
+            mothers.motherId = frags.motherId AND
+            frags.isAlive = 1 AND
+            frags.fragOf IS NOT NULL
+        GROUP BY 1
+        ORDER BY 2 DESC
+        LIMIT 10`
+}
+
+function getDbtcTop10s() {
+    return Object.keys(TOP_10).reduce((result, key) => {
+        result[key] = db.all(TOP_10[key], {});
+        return result;
+    }, {});
+}
+
+//-----------------------------------------------------------------------------
 
 module.exports = {
     selectAllFragsForUser,
@@ -538,5 +635,6 @@ module.exports = {
     getType,
     getEnums,
     selectFragsForMother,
-    validateRules
+    validateRules,
+    getDbtcTop10s
 }

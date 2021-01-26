@@ -106,6 +106,12 @@
             <v-list-item-title>DBTC collection</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item to="/top10">
+          <v-list-item-icon><v-icon>mdi-trophy-variant-outline</v-icon></v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>DBTC Top 10</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item to="/collection/pif">
           <v-list-item-icon><v-icon>mdi-cash-remove</v-icon></v-list-item-icon>
           <v-list-item-content>
