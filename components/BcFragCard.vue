@@ -33,9 +33,22 @@
       src="/picture-placeholder.png"
     />
 
-    <!-- The name -->
-
-    <v-card-title v-text="fragOrMother.name" />
+    <!-- The name and a button to edit it-->
+    <v-card-title>
+      {{ fragOrMother.name }}
+      <v-spacer
+        v-if="showEdit"
+      />
+      <v-btn
+        v-if="showEdit"
+        x-small
+        fab
+        color="primary"
+        :to="`/add-new-item?fragId=${fragOrMother.fragId}`"
+      >
+        <v-icon>mdi-pencil</v-icon>
+      </v-btn>
+    </v-card-title>
 
     <v-card-subtitle>
       <!-- Scientific name -->
@@ -141,82 +154,6 @@
         </tbody>
       </template>
     </v-simple-table>
-
-    <!--
-    <div v-if="m.haves.length">
-      <v-divider />
-      <v-list>
-        <v-card-title>These members have frags</v-card-title>
-        <v-list-item
-          v-for="owner in m.haves"
-          :key="owner.ownerId"
-        >
-          <v-list-item-avatar>
-            <v-img
-              v-if="owner.avatarUrl"
-              :src="owner.avatarUrl"
-            />
-            <v-icon
-              v-else
-              size="48px"
-            >
-              mdi-account-circle
-            </v-icon>
-          </v-list-item-avatar>
-
-          <v-list-item-content>
-            <v-list-item-title>
-              <a :href="owner.viewUrl" target="_blank">{{ owner.name }}</a>
-              {{ owner.fragsAvailable ? ' has ' + owner.fragsAvailable : 'doesn\'t have any frags' }}
-              {{ owner.location && owner.fragsAvailable ? ' in ' + owner.location : '' }}
-            </v-list-item-title>
-          </v-list-item-content>
-
-          <v-list-item-action>
-            <v-btn icon :to="'/frag/' + owner.fragId">
-              <v-icon>mdi-information</v-icon>
-            </v-btn>
-          </v-list-item-action>
-        </v-list-item>
-      </v-list>
-    </div>
-
-    <div v-if="m.haveNots.length">
-      <v-divider />
-      <v-list>
-        <v-card-subtitle>These members don't have frags right now</v-card-subtitle>
-        <v-list-item
-          v-for="owner in m.haveNots"
-          :key="owner.ownerId"
-        >
-          <v-list-item-avatar>
-            <v-img
-              v-if="owner.avatarUrl"
-              :src="owner.avatarUrl"
-            />
-            <v-icon
-              v-else
-              size="48px"
-            >
-              mdi-account-circle
-            </v-icon>
-          </v-list-item-avatar>
-
-          <v-list-item-content>
-            <v-list-item-title>
-              <a :href="owner.viewUrl" target="_blank">{{ owner.name }}</a>
-              {{ owner.location ? ' in ' + owner.location : '' }}
-            </v-list-item-title>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-btn icon :to="'/frag/' + owner.fragId">
-              <v-icon>mdi-information</v-icon>
-            </v-btn>
-          </v-list-item-action>
-        </v-list-item>
-      </v-list>
-    </div>
-    -->
 
     <div v-if="fragOrMother.notes && !to">
       <v-divider />
@@ -404,6 +341,9 @@ export default {
         }
       }
       return null
+    },
+    showEdit () {
+      return !this.to && this.isFrag && this.ownsIt
     }
   },
   watch: {

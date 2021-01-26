@@ -91,13 +91,17 @@ export default {
 
   data () {
     return {
-      // Initialize our date with the 'value' property, which will
-      // default to today if it is undefined
       theDate: this.value,
       // To initialize the date and max dates on the date picker
       today,
       // The date picker menu
       menu: false
+    }
+  },
+
+  watch: {
+    value (val) {
+      this.theDate = val
     }
   },
 

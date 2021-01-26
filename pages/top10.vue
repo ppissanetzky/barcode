@@ -18,8 +18,7 @@
             v-for="(list, i) in lists"
             :key="list.key"
           >
-
-            <v-divider v-if="i"/>
+            <v-divider v-if="i" />
             <v-card-title
               :class="`${list.color}--text`"
               v-bind="attrs"
@@ -36,8 +35,16 @@
                       v-for="item in list.data"
                       :key="item.ownerId"
                     >
-                      <td class="text-left">{{ item.ownerName }}</td>
-                      <td class="text-right">{{ item.count }}</td>
+                      <td
+                        class="text-left"
+                      >
+                        {{ item.ownerName }}
+                      </td>
+                      <td
+                        class="text-right"
+                      >
+                        {{ item.count }}
+                      </td>
                     </tr>
                   </tbody>
                 </template>
@@ -71,7 +78,7 @@ export default {
           key: 'linkers',
           name: 'Linkers',
           desc: 'Have put back the most frags',
-          color: 'blue-grey',
+          color: 'orange',
           data: []
         },
         {

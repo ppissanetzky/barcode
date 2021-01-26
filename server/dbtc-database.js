@@ -20,8 +20,6 @@ function fixDates(values) {
     if (dateAcquired) {
         values.dateAcquired = utcIsoStringFromString(dateAcquired);
     }
-    console.log('TIMESTAMP', timestamp, values.timestamp);
-    console.log('DATE ACQUIRED', dateAcquired, values.dateAcquired);
     return values;
 }
 
@@ -619,6 +617,54 @@ function getDbtcTop10s() {
 
 //-----------------------------------------------------------------------------
 
+const UPDATE_MOTHER = `
+    UPDATE
+        mothers
+    SET
+        timestamp = $timestamp,
+        name = $name,
+        type = $type,
+        scientificName = $scientificName,
+        flow = $flow,
+        light = $light,
+        hardiness = $hardiness,
+        growthRate = $growthRate,
+        sourceType = $sourceType,
+        source = $source,
+        cost = $cost,
+        size = $size
+    WHERE
+        motherId = $motherId
+`;
+
+function updateMother(values) {
+    db.run(UPDATE_MOTHER, fixDates({
+        ...INSERT_ITEM_NULLABLE_VALUES,
+        ...values
+    }));
+}
+
+const UPDATE_FRAG = `
+    UPDATE
+        frags
+    SET
+        timestamp = $timestamp,
+        dateAcquired = $dateAcquired,
+        notes = $notes
+    WHERE
+        fragId = $fragId
+`;
+
+function updateFrag(values) {
+    db.run(UPDATE_FRAG, fixDates({
+        ...INSERT_ITEM_NULLABLE_VALUES,
+        ...values
+    }));
+}
+
+//-----------------------------------------------------------------------------
+
+
 module.exports = {
     selectAllFragsForUser,
     selectMothers,
@@ -636,5 +682,7 @@ module.exports = {
     getEnums,
     selectFragsForMother,
     validateRules,
-    getDbtcTop10s
+    getDbtcTop10s,
+    updateMother,
+    updateFrag
 }

@@ -405,7 +405,7 @@
                 <v-card-subtitle
                   v-if="!pictures.length"
                 >
-                  No pictures yet
+                  Add a journal entry with a picture to see it here.
                 </v-card-subtitle>
                 <v-container v-else fluid>
                   <v-row>
@@ -474,6 +474,7 @@ function augment (journal) {
     case 'acquired': journal.icon = 'mdi-emoticon-happy-outline'; break
     case 'fragged': journal.icon = 'mdi-hand-saw'; break
     case 'rip': journal.icon = 'mdi-emoticon-dead-outline'; break
+    case 'changed': journal.icon = 'mdi-pencil-outline'; break
     default: journal.icon = 'mdi-progress-check'
   }
   return journal

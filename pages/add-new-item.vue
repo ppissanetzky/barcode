@@ -2,7 +2,22 @@
   <v-container fluid>
     <v-row>
       <v-col>
-        <h1>Add a new item</h1>
+        <v-card
+          v-if="!loadingCard"
+          flat
+        >
+          <h1
+            v-if="isUpdating"
+            class="text-center"
+            v-text="'Update ' + frag.name"
+          />
+          <h1
+            v-else
+            class="text-center"
+          >
+            Add a new item
+          </h1>
+        </v-card>
       </v-col>
     </v-row>
 
@@ -10,16 +25,25 @@
 
     <v-row>
       <v-col>
-        <v-card>
+        <v-card
+          :loading="loadingCard"
+        >
+          <template slot="progress">
+            <v-progress-linear indeterminate />
+          </template>
+
           <!-- Watches over the form and disables the button if validation fails -->
-          <validation-observer ref="observer" v-slot="{ invalid }">
+          <validation-observer
+            ref="observer"
+            v-slot="{ invalid }"
+          >
             <v-form
               id="add-new-item"
               @submit.prevent="submitPrevent"
               @submit="submit"
             >
-              <!-- Required information -->
-              <v-container>
+              <v-container v-if="!loadingCard">
+                <!-- Required information -->
                 <v-row>
                   <v-col><h3>Required information</h3></v-col>
                 </v-row>
@@ -43,6 +67,7 @@
                         :error-messages="errors"
                         required
                         outlined
+                        :disabled="!canEditMother"
                       />
                     </validation-provider>
                   </v-col>
@@ -66,6 +91,7 @@
                         :error-messages="errors"
                         required
                         outlined
+                        :disabled="!canEditMother"
                       />
                     </validation-provider>
                   </v-col>
@@ -103,6 +129,7 @@
                         :error-messages="errors"
                         required
                         outlined
+                        :disabled="isUpdating"
                       />
                     </validation-provider>
                   </v-col>
@@ -112,7 +139,16 @@
 
                 <v-row>
                   <v-col>
+                    <v-text-field
+                      v-if="isUpdating"
+                      label="Picture"
+                      hint="Add a journal entry to update the picture"
+                      persistent-hint
+                      outlined
+                      disabled
+                    />
                     <validation-provider
+                      v-else
                       v-slot="{ errors, validate }"
                       rules="required|image"
                       name="picture"
@@ -148,6 +184,7 @@
                         :error-messages="errors"
                         required
                         outlined
+                        :disabled="isUpdating"
                       />
                     </validation-provider>
                   </v-col>
@@ -155,7 +192,7 @@
 
                 <v-row>
                   <v-col>
-                    <div v-if="rules === 'dbtc'">
+                    <div v-if="!isUpdating && rules === 'dbtc'">
                       <p>
                         Choose whether you would like BARcode to create a new thread to
                         track this item or use an existing thread. You should use an
@@ -213,7 +250,7 @@
                         fluid
                       >
                         <!-- Size -->
-                        <v-row>
+                        <v-row v-if="canEditMother">
                           <v-col>
                             <v-text-field
                               id="size"
@@ -223,13 +260,14 @@
                               hint="Polyps, heads or inches"
                               persistent-hint
                               outlined
+                              :disabled="!canEditMother"
                             />
                           </v-col>
                         </v-row>
 
                         <!-- Scientific name -->
 
-                        <v-row>
+                        <v-row v-if="canEditMother">
                           <v-col>
                             <v-text-field
                               id="scientificName"
@@ -237,6 +275,7 @@
                               outlined
                               label="Scientific name"
                               name="scientificName"
+                              :disabled="!canEditMother"
                             />
                           </v-col>
                         </v-row>
@@ -259,7 +298,7 @@
 
                         <!-- Light and flow -->
 
-                        <v-row>
+                        <v-row v-if="canEditMother">
                           <v-col>
                             <v-select
                               id="light"
@@ -268,6 +307,7 @@
                               label="Light"
                               name="light"
                               :items="['Low','Medium','High']"
+                              :disabled="!canEditMother"
                             />
                           </v-col>
                           <v-col>
@@ -278,13 +318,14 @@
                               label="Flow"
                               name="flow"
                               :items="['Low','Medium','High']"
+                              :disabled="!canEditMother"
                             />
                           </v-col>
                         </v-row>
 
                         <!-- Hardiness and growth rate -->
 
-                        <v-row>
+                        <v-row v-if="canEditMother">
                           <v-col>
                             <v-select
                               id="hardiness"
@@ -293,6 +334,7 @@
                               label="Hardiness"
                               name="hardiness"
                               :items="['Sensitive','Normal','Hardy']"
+                              :disabled="!canEditMother"
                             />
                           </v-col>
                           <v-col>
@@ -303,6 +345,7 @@
                               label="Growth rate"
                               name="growthRate"
                               :items="['Slow','Normal','Fast']"
+                              :disabled="!canEditMother"
                             />
                           </v-col>
                         </v-row>
@@ -313,7 +356,7 @@
 
                 <!-- Source -->
 
-                <v-row>
+                <v-row v-if="canEditMother">
                   <v-col>
                     <v-divider />
                     <v-card-actions>
@@ -345,6 +388,7 @@
                               :items="['Member','LFS','Online', 'Other']"
                               hint="Where you got it"
                               persistent-hint
+                              :disabled="!canEditMother"
                             />
                           </v-col>
                           <v-col>
@@ -354,6 +398,7 @@
                               outlined
                               label="Source name"
                               name="source"
+                              :disabled="!canEditMother"
                             />
                           </v-col>
                         </v-row>
@@ -362,22 +407,16 @@
 
                         <v-row>
                           <v-col>
-                            <validation-provider
-                              v-slot="{ errors }"
-                              rules="double"
+                            <v-text-field
+                              id="cost"
+                              v-model="cost"
+                              outlined
+                              label="Cost"
                               name="cost"
-                            >
-                              <v-text-field
-                                id="cost"
-                                v-model="cost"
-                                outlined
-                                label="Cost"
-                                name="cost"
-                                hint="How much you paid for it"
-                                persistent-hint
-                                :error-messages="errors"
-                              />
-                            </validation-provider>
+                              hint="How much you paid for it"
+                              persistent-hint
+                              :disabled="!canEditMother"
+                            />
                           </v-col>
                         </v-row>
                       </v-container>
@@ -398,7 +437,7 @@
                       :loading="loading"
                       @click="loader = 'loading'"
                     >
-                      Add it now
+                      {{ isUpdating ? 'Update' : 'Add it now' }}
                     </v-btn>
                   </v-col>
                 </v-row>
@@ -417,6 +456,10 @@ import { ValidationObserver, ValidationProvider } from 'vee-validate/dist/vee-va
 import { utcIsoStringFromString } from '~/dates'
 import BcDatePicker from '~/components/BcDatePicker.vue'
 
+function undefinedIfNull (value) {
+  return value === null ? undefined : value
+}
+
 export default {
   components: {
     ValidationObserver,
@@ -424,12 +467,43 @@ export default {
     BcDatePicker
   },
   async fetch () {
-    const { types, rules } = await this.$axios.$get('/bc/api/dbtc/enums')
-    this.types = types
-    this.allRules = rules
+    this.loadingCard = true
+    try {
+      const { types, rules } = await this.$axios.$get('/bc/api/dbtc/enums')
+      this.types = types
+      this.allRules = rules
+
+      // If a frag ID is passed in, we are editing an existing item
+      const { fragId } = this.$route.query
+      if (fragId) {
+        const { frag } = await this.$axios.$get(`/bc/api/dbtc/frag/${fragId}`)
+        this.frag = frag
+        this.name = frag.name
+        this.type = frag.type
+        this.dateAcquired = frag.dateAcquired.substr(0, 10)
+        this.fragsAvailable = frag.fragsAvailable
+        this.size = undefinedIfNull(frag.size)
+        this.scientificName = undefinedIfNull(frag.scientificName)
+        this.notes = undefinedIfNull(frag.notes)
+        this.light = undefinedIfNull(frag.light)
+        this.flow = undefinedIfNull(frag.flow)
+        this.hardiness = undefinedIfNull(frag.hardiness)
+        this.growthRate = undefinedIfNull(frag.growthRate)
+        this.sourceType = undefinedIfNull(frag.sourceType)
+        this.source = undefinedIfNull(frag.source)
+        this.cost = undefinedIfNull(frag.cost)
+        this.rules = frag.rules
+      }
+    } finally {
+      this.loadingCard = false
+    }
   },
   data () {
     return {
+      // When we are editing, this is the original data
+      frag: undefined,
+
+      // This is what we're editing
       name: undefined,
       type: undefined,
       dateAcquired: undefined,
@@ -444,7 +518,7 @@ export default {
       growthRate: 'Normal',
       sourceType: 'Other',
       source: undefined,
-      cost: '0.00',
+      cost: 0,
       rules: 'dbtc',
       threadId: undefined,
 
@@ -453,10 +527,25 @@ export default {
       allRules: [],
       threadsByType: {},
 
+      // For the main card
+      loadingCard: true,
+
       // For the loading animation on the add it now button
       loading: false,
+
+      // For the drop-down sections
       showAdditionalDetails: false,
       showSourceDetails: false
+    }
+  },
+  computed: {
+    isUpdating () {
+      return !!this.frag
+    },
+    canEditMother () {
+      // Can only edit 'mother' fields when adding a new item
+      // or updating a frag that doesn't have a parent frag
+      return !this.frag || (this.frag && !this.frag.fragOf)
     }
   },
   watch: {
@@ -510,11 +599,14 @@ export default {
         // Convert the local date (only) to a full date/time with TZ information
         formData.set('dateAcquired', utcIsoStringFromString(this.dateAcquired))
 
-        const { fragId } = await this.$axios.$post('/bc/api/dbtc/add-new-item', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        })
+        let fragId
+        if (this.isUpdating) {
+          fragId = this.frag.fragId
+          await this.$axios.$post(`/bc/api/dbtc/update/${fragId}`, formData)
+        } else {
+          const response = await this.$axios.$post('/bc/api/dbtc/add-new-item', formData)
+          fragId = response.fragId
+        }
         // Navigate to the details page for this frag, replacing
         // this page in the history, so that going back from the
         // details takes us back to the previous page and not this

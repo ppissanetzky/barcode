@@ -116,6 +116,60 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
 });
 
 //-----------------------------------------------------------------------------
+// Update a frag and, optionally, its mother
+//-----------------------------------------------------------------------------
+
+// Function to de-camelize, taken from
+// https://ourcodeworld.com/articles/read/608/how-to-camelize-and-decamelize-strings-in-javascript
+
+function decamelize(str){
+	return str
+        .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+        .replace(/([A-Z]+)([A-Z][a-z\d]+)/g, '$1 $2')
+        .toLowerCase();
+}
+
+router.post('/update/:fragId', upload.none(), (req, res, next) => {
+    const {user, body, params: {fragId}} = req;
+    // Make sure this frag exists, is alive and belongs to this user
+    const frag = db.validateFrag(user.id, fragId, true, -1);
+    if (!frag) {
+        return next(INVALID_FRAG());
+    }
+    // If the frag is a mother frag, we can update the mother
+    if (!frag.fragOf) {
+        db.updateMother({
+            ...body,
+            cost: parseFloat(body.cost),
+            motherId: frag.motherId
+        });
+    }
+    // Update the frag itself
+    db.updateFrag({
+        ...body,
+        fragId
+    });
+    // Get the frag's updated values so we can compare
+    const updatedFrag = db.validateFrag(user.id, fragId, true, -1);
+    // Build a string of the names of fields that changed, excluding
+    // the timestamp
+    const changed = Object.keys(frag)
+        .filter((key) => frag[key] !== updatedFrag[key] && key != 'timestamp')
+        .map((key) => decamelize(key))
+        .join(', ');
+    // If something changed, add a journal
+    if (changed) {
+        // Add a journal entry
+        db.addJournal({
+            fragId,
+            entryType: 'changed',
+            notes: 'Changed ' + changed
+        });
+    }
+    res.json({});
+});
+
+//-----------------------------------------------------------------------------
 // Changing the number of available frags
 //-----------------------------------------------------------------------------
 

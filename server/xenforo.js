@@ -377,7 +377,6 @@ async function getThreadsForItemType(userId, type) {
         page: 1,
         starter_id: userId
     });
-    console.log(pagination);
     return threads.map(({thread_id, title}) => ({
         threadId: thread_id,
         title
