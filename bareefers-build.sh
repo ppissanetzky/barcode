@@ -37,3 +37,7 @@ npx nuxt generate
 # Copy the build to the site directory
 
 cp -r -v ./dist/* ${SITE_DIR}/
+
+# Restart the server
+
+pm2 restart ./pm2-ecosystem.config.js
