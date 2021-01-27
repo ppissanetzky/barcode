@@ -37,9 +37,18 @@ const SUPPORTING_MEMBER_LINK = 'https://www.bareefers.org/forum/threads/how-do-i
 const NON_SUPPORTING_MEMBER_MESSAGE =
     'To use this app, you need to become a supporting member. Click the button below to learn how.';
 
+//-----------------------------------------------------------------------------
 // This is the user we impersonate when we need to - when creating alerts
 // or conversations
+//-----------------------------------------------------------------------------
+
 const BARCODE_USER = 16211;
+
+//-----------------------------------------------------------------------------
+// A custom thread prefix for all threads started by BARcode
+//-----------------------------------------------------------------------------
+
+const BARCODE_PREFIX = 3;
 
 //-----------------------------------------------------------------------------
 // XenForo custom groups
@@ -385,6 +394,21 @@ async function getThreadsForItemType(userId, type) {
 
 //-----------------------------------------------------------------------------
 
+async function startForumThread(forumId, title, message) {
+    const {thread: {thread_id}} = await apiRequest('threads/', 'POST', {
+        node_id: forumId,
+        title: title,
+        message: message,
+        api_bypass_permissions: 1
+    },
+    {
+        'XF-Api-User': BARCODE_USER
+    });
+    return thread_id;
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     validateXenForoUser,
     lookupUser,
@@ -393,6 +417,7 @@ module.exports = {
     sendAlert,
     findUsersWithPrefix,
     getThreadsForItemType,
+    startForumThread
 };
 
 // (async function() {

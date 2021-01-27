@@ -86,6 +86,20 @@ module.exports = {
 
     get BC_TEST_USER () { return PRODUCTION ? undefined : process.env.BC_TEST_USER },
 
+    //-------------------------------------------------------------------------
+    // This has to be set to the string 'production' in order for forum
+    // posting to be enabled and use the forums in the 'types' table of the
+    // database. If it is set to anything else, that will be used as the forum
+    // ID for all forum posts. If it is zero, the application will not attempt
+    // to post to any forum. This is to prevent posting to the real forums
+    // while testing.
+    //
+    // Our official test forum ID is 102
+    //-------------------------------------------------------------------------
+
+    get BC_FORUM_MODE () { return get('BC_FORUM_MODE') },
+
+    //-------------------------------------------------------------------------
 };
 
 //-----------------------------------------------------------------------------
