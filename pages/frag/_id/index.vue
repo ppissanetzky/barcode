@@ -422,7 +422,7 @@
                           />
                         </v-card-actions>
                         <v-card-subtitle class="text-center white--text">
-                          <div>{{ item.date }} ꞏ {{ item.text }}</div>
+                          <div>{{ item.date }} - {{ item.text }}</div>
                         </v-card-subtitle>
                       </v-card>
                     </v-col>

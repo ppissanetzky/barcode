@@ -93,7 +93,7 @@ app.use((req, res, next) => {
 
 if (!BC_PRODUCTION) {
     app.use((req, res, next) => {
-        console.log(`(${req.user.name}:${req.user.id}) :`, req.url);
+        console.log(`(${req.user.name}:${req.user.id}) :`, req.method, req.url);
         next();
     });
 }

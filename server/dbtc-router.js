@@ -419,6 +419,21 @@ router.get('/tree/:motherId', async (req, res, next) => {
 });
 
 //-----------------------------------------------------------------------------
+// Become a fan or stop being a fan
+
+router.put('/fan/:motherId', (req, res) => {
+    const {user, params: {motherId}} = req;
+    db.addFan(user.id, motherId);
+    res.json({});
+});
+
+router.delete('/fan/:motherId', (req, res) => {
+    const {user, params: {motherId}} = req;
+    db.removeFan(user.id, motherId);
+    res.json({});
+});
+
+//-----------------------------------------------------------------------------
 // Get enums (types and rules for now)
 //-----------------------------------------------------------------------------
 

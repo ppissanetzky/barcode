@@ -85,6 +85,18 @@
         You have it
       </v-chip>
 
+      <!-- A chip that shows the user is a fan -->
+
+      <v-chip
+        v-if="isAFan"
+        small
+        color="success"
+        close
+        @click:close="removeFan"
+      >
+        You're a fan
+      </v-chip>
+
       <!-- A chip to show the total number of available frags -->
 
       <v-chip v-if="fragsAvailable" small v-text="`${fragsAvailable} available`" />
@@ -155,6 +167,8 @@
       </template>
     </v-simple-table>
 
+    <!-- An expanding panel to show notes -->
+
     <div v-if="fragOrMother.notes && !to">
       <v-divider />
       <v-card-actions>
@@ -175,6 +189,8 @@
         </div>
       </v-expand-transition>
     </div>
+
+    <!-- Another panel for lineage -->
 
     <div v-if="!to && !isPrivate">
       <v-divider />
@@ -246,6 +262,30 @@
       </v-expand-transition>
     </div>
 
+    <!-- Fan stuff -->
+
+    <div v-if="canBecomeAFan">
+      <v-divider />
+      <v-card-actions>
+        <v-col cols="auto">
+          <v-btn
+            icon
+            :loading="loadingFan"
+            @click="becomeAFan"
+          >
+            <v-icon color="primary">
+              mdi-thumb-up-outline
+            </v-icon>
+          </v-btn>
+        </v-col>
+        <v-col>
+          Become a fan to be notified when frags are available
+        </v-col>
+      </v-card-actions>
+    </div>
+
+    <!-- Slot for content -->
+
     <slot />
   </v-card>
 </template>
@@ -278,7 +318,9 @@ export default {
     // Controls showing the notes
     showNotes: false,
     // Showing the lineage
-    showLineage: false
+    showLineage: false,
+    // Loading indicator for the 'become a fan' button
+    loadingFan: false
   }),
   computed: {
     isFrag () {
@@ -344,6 +386,14 @@ export default {
     },
     showEdit () {
       return !this.to && this.isFrag && this.ownsIt
+    },
+    isAFan () {
+      const { mother } = this
+      return mother && mother.isFan
+    },
+    canBecomeAFan () {
+      const { mother } = this
+      return mother && !this.isAFan && !this.ownsIt && !this.fragsAvailable
     }
   },
   watch: {
@@ -388,6 +438,19 @@ export default {
         }
         this.gotLineage = true
       })
+    },
+    async becomeAFan () {
+      this.loadingFan = true
+      try {
+        await this.$axios.$put(`/bc/api/dbtc/fan/${this.fragOrMother.motherId}`)
+        this.fragOrMother.isFan = true
+      } finally {
+        this.loadingFan = false
+      }
+    },
+    async removeFan () {
+      await this.$axios.$delete(`/bc/api/dbtc/fan/${this.fragOrMother.motherId}`)
+      this.fragOrMother.isFan = false
     }
   }
 }

@@ -444,6 +444,7 @@ function updateFragPicture(ownerId, fragId, picture) {
 const SELECT_COLLECTION = `
     SELECT
         mothers.*,
+        fans.userId AS isFan,
         json_group_array(
             json_object(
                 'ownerId', ownerId,
@@ -456,6 +457,11 @@ const SELECT_COLLECTION = `
     FROM
         mothers,
         frags
+    LEFT OUTER JOIN
+        fans
+    ON
+        mothers.motherId = fans.motherId AND
+        fans.userId = $userId
     WHERE
         mothers.motherId = frags.motherId AND
         frags.isAlive = 1 AND
@@ -467,7 +473,7 @@ const SELECT_COLLECTION = `
 `;
 
 function selectCollection(userId, rules) {
-    const rows = db.all(SELECT_COLLECTION, {rules});
+    const rows = db.all(SELECT_COLLECTION, {rules, userId});
     // Now, go through them and parse the JSON parts
     rows.forEach((row) => {
         // Remove the null pictures
@@ -664,6 +670,25 @@ function updateFrag(values) {
 
 //-----------------------------------------------------------------------------
 
+const ADD_FAN = `
+    INSERT OR IGNORE INTO fans (motherId, userId, timestamp)
+    VALUES ($motherId, $userId, $timestamp)
+`;
+
+function addFan(userId, motherId) {
+    db.run(ADD_FAN, fixDates({userId, motherId}));
+}
+
+const DELETE_FAN = `
+    DELETE FROM fans WHERE motherId = $motherId and userId = $userId
+`;
+
+function removeFan(userId, motherId) {
+    db.run(DELETE_FAN, {userId, motherId});
+}
+
+//-----------------------------------------------------------------------------
+
 
 module.exports = {
     selectAllFragsForUser,
@@ -684,5 +709,7 @@ module.exports = {
     validateRules,
     getDbtcTop10s,
     updateMother,
-    updateFrag
+    updateFrag,
+    addFan,
+    removeFan
 }
