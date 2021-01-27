@@ -4,7 +4,13 @@
 
     <v-app-bar app>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
-      <v-toolbar-title>BARcode</v-toolbar-title>
+      <a href="/">
+        <v-img
+          to="/"
+          src="/barcode-logo-375.png"
+          max-width="150px"
+        />
+      </a>
       <v-spacer />
       <v-dialog
         v-if="user"
@@ -69,13 +75,6 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <v-col cols="auto">
-        <div
-          class="caption"
-        >
-          v{{ $config.version }}
-        </div>
-      </v-col>
     </v-app-bar>
 
     <v-navigation-drawer
@@ -86,6 +85,7 @@
       <v-list>
         <v-list-item>
           <v-list-item-title>BARcode</v-list-item-title>
+          <v-list-item-subtitle>v{{ $config.version }}</v-list-item-subtitle>
         </v-list-item>
         <v-divider />
         <v-list-item to="/add-new-item">
@@ -133,7 +133,6 @@
         </v-list-item>
       </v-list>
     </v-navigation-drawer>
-
     <v-main>
       <nuxt />
     </v-main>

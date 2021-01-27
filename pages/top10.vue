@@ -21,8 +21,6 @@
             <v-divider v-if="i" />
             <v-card-title
               :class="`${list.color}--text`"
-              v-bind="attrs"
-              v-on="on"
             >
               <strong v-text="list.name" />
             </v-card-title>
