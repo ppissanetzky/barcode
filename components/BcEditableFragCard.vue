@@ -59,7 +59,7 @@
               >
                 <v-text-field
                   id="fragsAvailable"
-                  v-model="fragsAvailable"
+                  v-model="editedFragsAvailable"
                   label="Frags available"
                   name="fragsAvailable"
                   type="number"
@@ -76,7 +76,7 @@
                 small
                 color="secondary"
                 type="submit"
-                :disabled="invalid"
+                :disabled="invalid || (editedFragsAvailable == fragsAvailable)"
                 :loading="loadingMakeFragsAvailable"
                 @click="loader = 'loading'"
               >
@@ -391,6 +391,7 @@ export default {
     }
   },
   data: () => ({
+    editedFragsAvailable: undefined,
     // Whether we have tried to load journals
     loadedJournals: false,
 
@@ -473,7 +474,9 @@ export default {
       value.forEach(augment)
     }
   },
-
+  mounted () {
+    this.editedFragsAvailable = this.fragsAvailable
+  },
   methods: {
     submitPreventFragsAvailable () {
       this.$refs.fragsAvailableObserver.validate()
@@ -482,7 +485,8 @@ export default {
     async submitFragsAvailable () {
       this.loadingMakeFragsAvailable = true
       try {
-        const { journal } = await this.$axios.$put(`/bc/api/dbtc/frag/${this.frag.fragId}/available/${this.fragsAvailable}`)
+        const { journal } = await this.$axios.$put(`/bc/api/dbtc/frag/${this.frag.fragId}/available/${this.editedFragsAvailable}`)
+        this.fragsAvailable = this.editedFragsAvailable
         this.addJournal(journal)
         this.snackbarText = `${this.fragsAvailable} made available`
         this.snackbar = true
@@ -514,6 +518,7 @@ export default {
         const { fragsAvailable, journal } = await this.$axios.$post('/bc/api/dbtc/give-a-frag', formData)
         // Update available frags from the response
         this.fragsAvailable = fragsAvailable
+        this.editedFragsAvailable = fragsAvailable
 
         // Augment and add the journal
         this.addJournal(journal)
@@ -588,8 +593,8 @@ export default {
         const { journal } = await this.$axios.$post(`/bc/api/dbtc/frag/${this.frag.fragId}/rip`, formData)
         this.addJournal(journal)
         this.frag.isAlive = false
-        this.frag.isAvailable = false
-        this.frag.fragsAvailable = 0
+        this.fragsAvailable = 0
+        this.editedFragsAvailable = 0
         // Show the snack bar
         this.snackbarText = 'Sorry for your loss'
         this.snackbar = true
