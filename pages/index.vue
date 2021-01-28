@@ -21,16 +21,20 @@
         :key="frag.fragId"
         cols="auto"
       >
-        <bc-frag-card :frag-or-mother="frag" :user="user" :to="`frag/${frag.fragId}`" />
+        <bc-editable-frag-card
+          :frag="frag"
+          :user="user"
+          :is-owner="frag.ownerId === user.id"
+        />
       </v-col>
     </v-row>
   </v-container>
 </template>
 <script>
-import BcFragCard from '~/components/BcFragCard.vue'
+import BcEditableFragCard from '~/components/BcEditableFragCard.vue'
 
 export default {
-  components: { BcFragCard },
+  components: { BcEditableFragCard },
   async fetch () {
     const { user, frags } = await this.$axios.$get('/bc/api/dbtc/your-collection')
     this.user = user

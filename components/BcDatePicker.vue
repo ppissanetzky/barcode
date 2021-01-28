@@ -24,6 +24,7 @@
           readonly
           required
           outlined
+          hide-details
           v-on="on"
         />
       </validation-provider>

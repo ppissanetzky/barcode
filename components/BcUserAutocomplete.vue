@@ -12,6 +12,7 @@
     return-object
     :label="label"
     outlined
+    hide-details
   />
 </template>
 <script>

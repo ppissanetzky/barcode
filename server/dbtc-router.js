@@ -48,7 +48,6 @@ router.get('/your-collection', (req, res) => {
     const {user} = req;
     const frags = db.selectAllFragsForUser(user);
     res.json({
-        success: true,
         user,
         frags
     });
@@ -72,10 +71,30 @@ router.get('/frag/:fragId', async (req, res, next) => {
     }
     frag.owner = await lookupUser(frag.ownerId);
     res.json({
-        success: true,
         user,
         isOwner: user.id === frag.ownerId,
         frag,
+        journals
+    });
+});
+
+//-----------------------------------------------------------------------------
+// Get journals for a frag
+//-----------------------------------------------------------------------------
+
+router.get('/journals/:fragId', (req, res, next) => {
+    const {user, params} = req;
+    const {fragId} = params;
+    const [frag, journals] = db.selectFrag(fragId);
+    if (!frag) {
+        return next(INVALID_FRAG());
+    }
+    // If the frag is private and the caller is not the owner,
+    // we don't expose it
+    if (frag.rules === 'private' && user.id !== frag.ownerId) {
+        return next(INVALID_FRAG());
+    }
+    res.json({
         journals
     });
 });
