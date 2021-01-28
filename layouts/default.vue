@@ -4,7 +4,7 @@
 
     <v-app-bar app>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
-      <a href="/">
+      <a href="/bc/">
         <v-img
           to="/"
           src="/bc/barcode-logo-375.png"
@@ -118,7 +118,7 @@
             <v-list-item-title>PIF collection</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item to="/equipment" disabled>
+        <v-list-item href="http://bareefers.org/barcode/equipment">
           <v-list-item-icon><v-icon>mdi-toolbox-outline</v-icon></v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>Equipment</v-list-item-title>
