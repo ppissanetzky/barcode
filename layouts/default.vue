@@ -7,7 +7,7 @@
       <a href="/">
         <v-img
           to="/"
-          src="/barcode-logo-375.png"
+          src="/bc/barcode-logo-375.png"
           max-width="150px"
         />
       </a>
