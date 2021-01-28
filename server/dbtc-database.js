@@ -5,7 +5,7 @@ const {nowAsIsoString, utcIsoStringFromString} = require('../dates');
 
 //-----------------------------------------------------------------------------
 
-const DBTC_DB_VERSION = 1;
+const DBTC_DB_VERSION = 2;
 
 const db = new Database('dbtc', DBTC_DB_VERSION);
 
@@ -54,14 +54,12 @@ function validateRules(rules) {
 }
 
 //-----------------------------------------------------------------------------
-// All frags for a given user - joined with species
+// All frags for a given user
 //-----------------------------------------------------------------------------
 
 const SELECT_FRAGS_FOR_USER = `
     SELECT
-        *,
-        CASE WHEN frags.isAlive AND frags.fragsAvailable > 0
-            THEN 1 ELSE 0 END AS isAvailable
+        *
     FROM
         mothers,
         frags
@@ -81,9 +79,7 @@ function selectAllFragsForUser(user) {
 
 const SELECT_A_FRAG = `
     SELECT
-        *,
-        CASE WHEN frags.isAlive AND frags.fragsAvailable > 0
-            THEN 1 ELSE 0 END AS isAvailable
+        *
     FROM
         mothers,
         frags
@@ -110,21 +106,6 @@ function selectFrag(fragId) {
     const [frag] = db.all(SELECT_A_FRAG, bindings);
     const journals = db.all(SELECT_FRAG_JOURNALS, bindings);
     return [frag, journals];
-}
-
-//-----------------------------------------------------------------------------
-
-const SELECT_MOTHERS = `
-    SELECT
-        *
-    FROM
-        mothers
-    ORDER BY
-        name ASC
-`;
-
-function selectMothers() {
-    return db.all(SELECT_MOTHERS);
 }
 
 //-----------------------------------------------------------------------------
@@ -282,9 +263,7 @@ function giveAFrag(userId, values) {
 
 const SELECT_VALID_FRAG = `
     SELECT
-        *,
-        CASE WHEN frags.isAlive AND frags.fragsAvailable > 0
-            THEN 1 ELSE 0 END AS isAvailable
+        *
     FROM
         mothers,
         frags
@@ -692,7 +671,6 @@ function removeFan(userId, motherId) {
 
 module.exports = {
     selectAllFragsForUser,
-    selectMothers,
     insertItem,
     selectFrag,
     validateFrag,
