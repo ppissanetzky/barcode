@@ -47,6 +47,9 @@ const router = express.Router();
 router.get('/your-collection', (req, res) => {
     const {user} = req;
     const frags = db.selectAllFragsForUser(user);
+    frags.forEach((frag) => {
+        frag.ownsIt = true;
+    });
     res.json({
         user,
         frags
@@ -70,9 +73,10 @@ router.get('/frag/:fragId', async (req, res, next) => {
         return next(INVALID_FRAG());
     }
     frag.owner = await lookupUser(frag.ownerId);
+    frag.ownsIt = frag.ownerId === user.id;
     res.json({
         user,
-        isOwner: user.id === frag.ownerId,
+        isFan: db.isFan(user.id, frag.motherId),
         frag,
         journals
     });
@@ -371,33 +375,40 @@ router.get('/collection/:rules', async (req, res, next) => {
     // Now, get full user information about all of the
     // owners. This could get expensive
     await Promise.all(mothers.map(async (mother) => {
-        // We're also going to split the list of owners
-        // into two lists: one for those that have frags
-        // and another for those that don't. We remove
-        // the original owners.
-        const owners = mother.owners;
-        delete mother.owners;
-        mother.haves = [];
-        mother.haveNots = [];
-        mother.fragsAvailable = 0;
-        if (mother.contributor) {
-            mother.contributor = await lookupUser(mother.contributor);
-        }
-        await Promise.all(owners.map(async (owner) => {
+        mother.owner = await lookupUser(mother.ownerId);
+        mother.ownsIt = mother.ownerId === user.id;
+        mother.inCollection = true;
+        await Promise.all(mother.owners.map(async (owner) => {
             const fullUser = await lookupUser(owner.ownerId);
             Object.assign(owner, fullUser);
-            if (owner.fragsAvailable) {
-                mother.haves.push(owner);
-                mother.fragsAvailable += owner.fragsAvailable;
-            }
-            else {
-                mother.haveNots.push(owner);
-            }
-        }))
+        }));
     }));
     res.json({
         user,
         mothers
+    });
+});
+
+//-----------------------------------------------------------------------------
+// Returns all frags for a given mother
+//-----------------------------------------------------------------------------
+
+router.get('/kids/:motherId', async (req, res, next) => {
+    const {user, params: {motherId}} = req;
+    const frags = db.selectFragsForMother(user.id, motherId);
+    const isPrivate = frags.some(({rules}) => rules === 'private');
+    if (isPrivate) {
+        return next(NOT_YOURS());
+    }
+    // Now, get full user information about all of the
+    // owners. This could get expensive
+    await Promise.all(frags.map(async (frag) => {
+        frag.owner = await lookupUser(frag.ownerId);
+        frag.ownsIt = frag.ownerId === user.id;
+    }));
+    res.json({
+        user,
+        frags
     });
 });
 
@@ -450,6 +461,12 @@ router.delete('/fan/:motherId', (req, res) => {
     const {user, params: {motherId}} = req;
     db.removeFan(user.id, motherId);
     res.json({});
+});
+
+router.get('/fan/:motherId', (req, res) => {
+    const {user, params: {motherId}} = req;
+    const isFan = db.isFan(user.id, motherId);
+    res.json({isFan});
 });
 
 //-----------------------------------------------------------------------------

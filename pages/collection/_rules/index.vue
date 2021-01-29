@@ -76,83 +76,53 @@
                   :key="m.motherId"
                   cols="auto"
                 >
-                  <bc-frag-card :frag-or-mother="m" :user="user">
-                    <template>
-                      <div v-if="m.haves.length">
-                        <v-divider />
-                        <v-list>
-                          <v-card-title>These members have frags</v-card-title>
-                          <v-list-item
-                            v-for="owner in m.haves"
-                            :key="owner.ownerId"
-                          >
-                            <v-list-item-avatar>
-                              <v-img
-                                v-if="owner.avatarUrl"
-                                :src="owner.avatarUrl"
-                              />
-                              <v-icon
-                                v-else
-                                size="48px"
-                              >
-                                mdi-account-circle
-                              </v-icon>
-                            </v-list-item-avatar>
-
-                            <v-list-item-content>
-                              <v-list-item-title>
-                                <a :href="owner.viewUrl" target="_blank">{{ owner.name }}</a>
-                                {{ owner.fragsAvailable ? ' has ' + owner.fragsAvailable : 'doesn\'t have any frags' }}
-                                {{ owner.location && owner.fragsAvailable ? ' in ' + owner.location : '' }}
-                              </v-list-item-title>
-                            </v-list-item-content>
-
-                            <v-list-item-action>
-                              <v-btn icon :to="'/frag/' + owner.fragId">
-                                <v-icon>mdi-information</v-icon>
-                              </v-btn>
-                            </v-list-item-action>
-                          </v-list-item>
-                        </v-list>
-                      </div>
-
-                      <div v-if="m.haveNots.length">
-                        <v-divider />
-                        <v-list>
-                          <v-card-subtitle>These members don't have frags right now</v-card-subtitle>
-                          <v-list-item
-                            v-for="owner in m.haveNots"
-                            :key="owner.ownerId"
-                          >
-                            <v-list-item-avatar>
-                              <v-img
-                                v-if="owner.avatarUrl"
-                                :src="owner.avatarUrl"
-                              />
-                              <v-icon
-                                v-else
-                                size="48px"
-                              >
-                                mdi-account-circle
-                              </v-icon>
-                            </v-list-item-avatar>
-
-                            <v-list-item-content>
-                              <v-list-item-title>
-                                <a :href="owner.viewUrl" target="_blank">{{ owner.name }}</a>
-                                {{ owner.location ? ' in ' + owner.location : '' }}
-                              </v-list-item-title>
-                            </v-list-item-content>
-                            <v-list-item-action>
-                              <v-btn icon :to="'/frag/' + owner.fragId">
-                                <v-icon>mdi-information</v-icon>
-                              </v-btn>
-                            </v-list-item-action>
-                          </v-list-item>
-                        </v-list>
-                      </div>
+                  <bc-editable-frag-card :frag="m" :user="user">
+                    <template v-slot:first-tabs>
+                      <v-tab>
+                        <v-icon>mdi-account-multiple-outline</v-icon>
+                      </v-tab>
                     </template>
-                  </bc-frag-card>
+                    <template v-slot:first-tabs-items>
+                      <v-tab-item>
+                        <v-card-title>Owners and frags available</v-card-title>
+                        <v-card-text v-if="!m.owners.length && m.isAlive">
+                          Only <a :href="m.owner.viewUrl" target="_blank">{{ you(m.owner) }}</a>
+                        </v-card-text>
+                        <v-card-text v-else-if="!m.owners.length && !m.isAlive">
+                          Only <a :href="m.owner.viewUrl" target="_blank">{{ you(m.owner) }}</a>, but it is dead
+                        </v-card-text>
+                        <v-card-text v-else>
+                          <v-simple-table>
+                            <tbody>
+                              <tr
+                                v-for="owner in m.owners"
+                                :key="owner.ownerId"
+                              >
+                                <td>
+                                  <a :href="owner.viewUrl" target="_blank">{{ you(owner, true) }}</a>
+                                  {{ owner.location ? ' in ' + owner.location : '' }}
+                                </td>
+                                <td
+                                  class="text-right"
+                                >
+                                  {{ owner.fragsAvailable }}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </v-simple-table>
+                        </v-card-text>
+                        <v-card-text v-if="m.owners.length > 1">
+                          <v-btn
+                            small
+                            color="secondary"
+                            :to="`/kids/${m.motherId}`"
+                          >
+                            See all frags
+                          </v-btn>
+                        </v-card-text>
+                      </v-tab-item>
+                    </template>
+                  </bc-editable-frag-card>
                 </v-col>
               </v-row>
             </template>
@@ -163,9 +133,9 @@
   </v-container>
 </template>
 <script>
-import BcFragCard from '~/components/BcFragCard.vue'
+import BcEditableFragCard from '~/components/BcEditableFragCard.vue'
 export default {
-  components: { BcFragCard },
+  components: { BcEditableFragCard },
   async fetch () {
     const rules = this.$route.params.rules
     const { user, mothers } = await this.$axios.$get(`/bc/api/dbtc/collection/${encodeURIComponent(rules)}`)
@@ -175,9 +145,8 @@ export default {
     this.filteredMothers = mothers
 
     const members = []
-    mothers.forEach(({ haves, haveNots, name, type }) => {
-      haves.forEach(owner => members.push(owner))
-      haveNots.forEach(owner => members.push(owner))
+    mothers.forEach(({ owners, name, type }) => {
+      owners.forEach(owner => members.push(owner))
       this.names.push(name)
       this.types.push(type)
     })
@@ -248,6 +217,12 @@ export default {
         }
         return true
       })
+    },
+    you (owner, caps) {
+      if (owner.id === this.user.id) {
+        return caps ? 'You' : 'you'
+      }
+      return owner.name
     }
   }
 }

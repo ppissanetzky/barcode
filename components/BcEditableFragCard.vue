@@ -4,6 +4,9 @@
     :frag-or-mother="frag"
     :user="user"
   >
+    <template v-slot:first-tabs>
+      <slot name="first-tabs" />
+    </template>
     <template v-slot:tabs>
       <!-- Make frags available -->
       <v-tab v-if="canMakeChanges && !isPrivate">
@@ -36,6 +39,9 @@
       </v-tab>
     </template>
 
+    <template v-slot:first-tabs-items>
+      <slot name="first-tabs-items" />
+    </template>
     <template v-slot:tabs-items>
       <!-- Make frags available -->
       <v-tab-item v-if="canMakeChanges && !isPrivate">
@@ -236,7 +242,7 @@
       <v-tab-item>
         <v-card-title>Journal</v-card-title>
         <div
-          v-for="j in journals || []"
+          v-for="j in loadedJournals || []"
           :key="j.journalId"
         >
           <v-card-text>
@@ -381,10 +387,6 @@ export default {
       type: Object,
       default: null
     },
-    isOwner: {
-      type: Boolean,
-      default: false
-    },
     journals: {
       type: Array,
       default: null
@@ -393,7 +395,7 @@ export default {
   data: () => ({
     editedFragsAvailable: undefined,
     // Whether we have tried to load journals
-    loadedJournals: false,
+    loadedJournals: null,
 
     // The loading animation on the button
     loadingMakeFragsAvailable: false,
@@ -436,7 +438,7 @@ export default {
     },
 
     canMakeChanges () {
-      return this.isOwner && this.frag && this.frag.isAlive
+      return this.frag.ownsIt && this.frag.isAlive
     },
 
     hasAvailableFrags () {
@@ -448,10 +450,10 @@ export default {
     },
 
     pictures () {
-      if (!this.journals) {
+      if (!this.loadedJournals) {
         return []
       }
-      const result = this.journals
+      const result = this.loadedJournals
         .map(({ timestamp, picture }) => ({ timestamp, picture }))
         .filter(({ picture }) => picture)
         .reverse()
@@ -471,7 +473,9 @@ export default {
   },
   watch: {
     journals (value) {
-      value.forEach(augment)
+      if (value) {
+        this.loadedJournals = value.map(journal => augment(journal))
+      }
     }
   },
   mounted () {
@@ -604,16 +608,16 @@ export default {
     },
 
     addJournal (journal) {
-      if (this.journals) {
-        this.journals.unshift(augment(journal))
+      if (this.loadedJournals) {
+        this.loadedJournals.unshift(augment(journal))
       }
     },
 
     async loadJournals () {
       if (!this.loadedJournals) {
-        this.loadedJournals = true
+        this.loadedJournals = []
         const { journals } = await this.$axios.$get(`/bc/api/dbtc/journals/${this.frag.fragId}`)
-        this.journals = journals.map(journal => augment(journal))
+        this.loadedJournals = journals.map(journal => augment(journal))
       }
     }
   }

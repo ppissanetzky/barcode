@@ -36,6 +36,12 @@ const IMPERSONATE_COOKIE = 'bc-imp';
 const app = express();
 
 //-----------------------------------------------------------------------------
+// Disable e-tag since it interfers with our headers
+//-----------------------------------------------------------------------------
+
+app.set('etag', false);
+
+//-----------------------------------------------------------------------------
 // To parse cookies
 //-----------------------------------------------------------------------------
 
@@ -117,9 +123,14 @@ app.put('/bc/api/impersonate/:userId', async (req, res) => {
 //-----------------------------------------------------------------------------
 
 app.delete('/bc/api/impersonate', (req, res) => {
-    const {originalUser = {}} = req;
+    const {originalUser} = req;
     res.cookie(IMPERSONATE_COOKIE, 0);
-    res.setHeader('bc-user', originalUser.name);
+    if (originalUser) {
+        res.setHeader('bc-user', originalUser.name);
+    }
+    else {
+        console.error('No original user for', req.headers);
+    }
     res.setHeader('bc-impersonating', 0);
     res.json({});
 });

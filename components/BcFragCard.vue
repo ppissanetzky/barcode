@@ -1,38 +1,22 @@
 <template>
   <v-card max-width="375">
-    <!--
-      Start with a carousel for the pictures
-      If there is only one picture, we will hide the arrows
-      and delimiters so it doesn't look like a carousel
-    -->
-    <v-carousel
-      v-if="pictures.length"
-      :show-arrows="pictures.length > 1"
-      :hide-delimiters="pictures.length == 1"
-      show-arrows-on-hover
-      height="300"
-    >
-      <v-carousel-item
-        v-for="(picture, i) in pictures"
-        :key="i"
-        :src="`${$config.BC_UPLOADS_URL}/${picture}`"
-      />
-    </v-carousel>
-
-    <!--
-      If there are no pictures at all, we just show the placeholder image
-    -->
-
+    <!-- Picture or placeholder -->
+    <v-img
+      v-if="frag.picture"
+      max-width="375px"
+      max-height="300px"
+      :src="`${$config.BC_UPLOADS_URL}/${frag.picture}`"
+    />
     <v-img
       v-else
       max-width="375px"
       max-height="300px"
-      src="/picture-placeholder.png"
+      src="/bc/picture-placeholder.png"
     />
 
     <!-- The name and a button to edit it-->
     <v-card-title>
-      {{ fragOrMother.name }}
+      {{ frag.name }}
       <v-spacer
         v-if="showEdit"
       />
@@ -41,7 +25,7 @@
         x-small
         fab
         color="primary"
-        :to="`/add-new-item?fragId=${fragOrMother.fragId}`"
+        :to="`/add-new-item?fragId=${frag.fragId}`"
       >
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
@@ -49,33 +33,49 @@
 
     <v-card-subtitle>
       <!-- Scientific name -->
-      <div>{{ fragOrMother.scientificName }}</div>
+      <div>{{ frag.scientificName }}</div>
 
       <!-- The contributor name (the person who added it to this collection) -->
-      <div v-if="contributorName">
-        <strong>Contributed by {{ contributorName }}</strong>
+      <div v-if="frag.inCollection">
+        <strong>Contributed by {{ ownsIt ? 'you' : frag.owner.name }}</strong>
       </div>
     </v-card-subtitle>
 
     <v-card-text>
       <!-- A chip for the type -->
 
-      <v-chip small color="primary" v-text="fragOrMother.type" />
+      <v-chip
+        small
+        color="primary"
+        class="my-1 mr-1"
+        v-text="frag.type"
+      />
 
       <!-- A chip for the age, if it has one -->
 
-      <v-chip v-if="age" small v-text="age" />
+      <v-chip
+        v-if="age"
+        small
+        class="my-1 mr-1"
+        v-text="age"
+      />
 
-      <!-- A chip for the collection it is in, only when it is a frag -->
+      <!-- A chip for the collection it is in, only when we're not already showing a collection -->
 
-      <v-chip v-if="isFrag" small v-text="fragOrMother.rules.toUpperCase()" />
+      <v-chip
+        v-if="!frag.inCollection"
+        small
+        class="my-1 mr-1"
+        v-text="frag.rules.toUpperCase()"
+      />
 
       <!-- If it is a mother and this user owns it, a chip to that effect -->
 
       <v-chip
-        v-if="isMother && ownsIt"
+        v-if="ownsIt && isAlive"
         small
         color="warning"
+        class="my-1 mr-1"
       >
         You have it
       </v-chip>
@@ -87,6 +87,7 @@
         small
         color="success"
         close
+        class="my-1 mr-1"
         @click:close="removeFan"
       >
         You're a fan
@@ -94,7 +95,12 @@
 
       <!-- A chip to show the total number of available frags -->
 
-      <v-chip v-if="fragsAvailable" small v-text="`${fragsAvailable} available`" />
+      <v-chip
+        v-if="fragsAvailable"
+        small
+        class="my-1 mr-1"
+        v-text="`${fragsAvailable} available`"
+      />
 
       <!-- A chip that shows it is dead -->
 
@@ -102,6 +108,7 @@
         v-if="!isAlive"
         small
         color="error"
+        class="my-1 mr-1"
       >
         RIP
       </v-chip>
@@ -113,6 +120,7 @@
       center-active
       show-arrows
     >
+      <slot name="first-tabs" />
       <v-tab>
         <v-icon>mdi-wall-sconce-flat</v-icon>
       </v-tab>
@@ -128,6 +136,8 @@
       <slot name="tabs" />
     </v-tabs>
     <v-tabs-items v-model="tabs">
+      <slot name="first-tabs-items" />
+
       <!-- A table to show light, flow, hardiness and growth rate -->
 
       <v-tab-item>
@@ -163,22 +173,22 @@
                 <td
                   class="text-center"
                 >
-                  {{ fragOrMother.light.toLowerCase() }}
+                  {{ frag.light.toLowerCase() }}
                 </td>
                 <td
                   class="text-center"
                 >
-                  {{ fragOrMother.flow.toLowerCase() }}
+                  {{ frag.flow.toLowerCase() }}
                 </td>
                 <td
                   class="text-center"
                 >
-                  {{ fragOrMother.hardiness.toLowerCase() }}
+                  {{ frag.hardiness.toLowerCase() }}
                 </td>
                 <td
                   class="text-center"
                 >
-                  {{ fragOrMother.growthRate.toLowerCase() }}
+                  {{ frag.growthRate.toLowerCase() }}
                 </td>
               </tr>
             </tbody>
@@ -216,7 +226,12 @@
           >
             <template v-slot:prepend="{ item }">
               <v-avatar
-                v-if="item.original"
+                v-if="item.isSource"
+                size="23"
+                color="amber"
+              />
+              <v-avatar
+                v-else-if="item.original"
                 size="23"
                 color="primary lighten-1"
               >
@@ -323,87 +338,42 @@ export default {
     loadingFan: false
   }),
   computed: {
-    isFrag () {
-      return !!this.fragOrMother.fragId
-    },
-    isMother () {
-      return !this.isFrag
-    },
     frag () {
-      return this.isFrag ? this.fragOrMother : null
-    },
-    mother () {
-      return this.isMother ? this.fragOrMother : null
+      return this.fragOrMother
     },
     notes () {
-      const { frag } = this
-      return frag && frag.notes
+      return this.frag.notes
     },
     shouldShowLineage () {
       return !this.isPrivate
     },
     isAlive () {
-      if (this.isFrag) {
-        return this.fragOrMother.isAlive
-      }
-      return true
+      return this.frag.isAlive
     },
     isPrivate () {
-      return this.fragOrMother.rules === 'private'
+      return this.frag.rules === 'private'
     },
     fragsAvailable () {
-      const thing = this.fragOrMother
+      const thing = this.frag
       if (thing.rules === 'private') {
         return 0
       }
-      if (thing.fragId) {
-        return thing.isAlive ? thing.fragsAvailable : 0
-      }
-      return thing.fragsAvailable
-    },
-    pictures () {
-      const thing = this.fragOrMother
-      if (thing.fragId) {
-        return thing.picture ? [thing.picture] : []
-      }
-      return thing.pictures
+      return thing.fragsAvailable + (thing.otherFragsAvailable || 0)
     },
     ownsIt () {
-      if (this.isFrag) {
-        return this.user.id === this.fragOrMother.ownerId
-      }
-      return this.fragOrMother.ownsIt
+      return this.frag.ownsIt
     },
     age () {
-      if (this.isFrag) {
-        return this.isAlive ? age(this.fragOrMother.dateAcquired, '', 'old') : null
-      }
-      return null
-    },
-    contributorName () {
-      const mother = this.mother
-      if (mother) {
-        if (mother.contributor) {
-          return mother.contributor.id === this.user.id
-            ? 'you'
-            : mother.contributor.name
-        }
-      }
-      return null
+      return this.isAlive ? age(this.frag.dateAcquired, '', 'old') : null
     },
     showEdit () {
-      return this.isFrag && this.ownsIt
+      return this.ownsIt
     },
     isAFan () {
-      const { mother } = this
-      return mother && mother.isFan
+      return this.frag.isFan
     },
     canBecomeAFan () {
-      const { mother } = this
-      // TODO: could become a fan of any frag, really. We just
-      // don't have isAFan for frags and that would require an
-      // outer join
-      return mother && !this.isAFan && !this.ownsIt && !this.fragsAvailable
+      return !this.isAFan && !this.ownsIt && !this.fragsAvailable
     }
   },
   watch: {
@@ -429,17 +399,17 @@ export default {
         return
       }
       this.$nextTick(async () => {
-        const { root } = await this.$axios.$get(`/bc/api/dbtc/tree/${this.fragOrMother.motherId}`)
+        const { root } = await this.$axios.$get(`/bc/api/dbtc/tree/${this.frag.motherId}`)
         addAge(root)
         root.original = true
-        if (this.fragOrMother.source) {
+        if (this.frag.source) {
           this.lineage = [{
             fragId: 'source',
             text: '',
             owner: {
-              name: this.fragOrMother.source
+              name: this.frag.source
             },
-            original: true,
+            isSource: true,
             children: [root]
           }]
         } else {
@@ -451,16 +421,16 @@ export default {
     async becomeAFan () {
       this.loadingFan = true
       try {
-        await this.$axios.$put(`/bc/api/dbtc/fan/${this.fragOrMother.motherId}`)
-        this.fragOrMother.isFan = true
+        await this.$axios.$put(`/bc/api/dbtc/fan/${this.frag.motherId}`)
+        this.frag.isFan = true
       } finally {
         this.loadingFan = false
       }
     },
     async removeFan () {
       this.loadingFan = true
-      await this.$axios.$delete(`/bc/api/dbtc/fan/${this.fragOrMother.motherId}`)
-      this.fragOrMother.isFan = false
+      await this.$axios.$delete(`/bc/api/dbtc/fan/${this.frag.motherId}`)
+      this.frag.isFan = false
       this.loadingFan = false
     }
   }

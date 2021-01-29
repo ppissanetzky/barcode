@@ -422,73 +422,57 @@ function updateFragPicture(ownerId, fragId, picture) {
 
 const SELECT_COLLECTION = `
     SELECT
-        mothers.*,
+        motherFrags.*,
         fans.userId AS isFan,
+        SUM(IFNULL(frags.fragsAvailable, 0)) - motherFrags.fragsAvailable AS otherFragsAvailable,
         json_group_array(
-            json_object(
-                'ownerId', ownerId,
-                'fragId', fragId,
-                'fragsAvailable', fragsAvailable,
-                'fragOf', fragOf
-            )
-        ) AS owners,
-        json_group_array(picture) AS pictures
+            CASE WHEN frags.ownerId IS NULL
+            THEN NULL
+            ELSE
+                json_object(
+                    'ownerId',          frags.ownerId,
+                    'fragId',           frags.fragId,
+                    'fragsAvailable',   frags.fragsAvailable
+                )
+            END
+        ) AS owners
     FROM
-        mothers,
+        motherFrags
+    LEFT OUTER JOIN
         frags
+    ON
+        motherFrags.motherId = frags.motherId AND
+        frags.isAlive = 1
     LEFT OUTER JOIN
         fans
     ON
-        mothers.motherId = fans.motherId AND
+        motherFrags.motherId = fans.motherId AND
         fans.userId = $userId
     WHERE
-        mothers.motherId = frags.motherId AND
-        frags.isAlive = 1 AND
-        mothers.rules = $rules
+        motherFrags.rules = $rules
     GROUP BY
-        1
-    ORDER BY
-        mothers.name
+        motherFrags.motherId
 `;
 
 function selectCollection(userId, rules) {
     const rows = db.all(SELECT_COLLECTION, {rules, userId});
     // Now, go through them and parse the JSON parts
     rows.forEach((row) => {
-        // Remove the null pictures
-        row.pictures = JSON.parse(row.pictures).filter((picture) => picture);
-        // Parse the owners and filter them
-        row.owners = JSON.parse(row.owners).filter(({ownerId, fragOf}) => {
-            // If this row has no fragOf, it is the original contribution
-            if (!fragOf) {
-                row.contributor = ownerId;
-            }
-            // If this owner is the same as the calling user, remove it
-            // from the array.
-            if (ownerId === userId) {
-                // Mark the row with the fact that the calling user
-                // owns it
-                row.ownsIt = true;
-                return false;
-            }
-            return true;
-        })
-        // Also sort the list in descending order by frags available,
-        // so the ones with the most frags are first
-        .sort((a, b) => b.fragsAvailable - a.fragsAvailable);
+        // Parse the owners and remove nulls
+        row.owners = JSON.parse(row.owners)
+            .filter((owner) => owner)
+            // Also sort the list in descending order by frags available,
+            // so the ones with the most frags are first
+            .sort((a, b) => b.fragsAvailable - a.fragsAvailable);
     });
-    // Return only the ones that have at least one owner. This gets rid
-    // of any that only userId owns - because those will be in their
-    // collection and shouldn't be displayed here
-    return rows.filter(({owners}) => owners.length > 0);
+    return rows;
 }
 
 //-----------------------------------------------------------------------------
 
 const SELECT_FRAGS_FOR_MOTHER = `
     SELECT
-        mothers.rules as rules,
-        frags.*
+        *
     FROM
         mothers,
         frags
@@ -496,11 +480,12 @@ const SELECT_FRAGS_FOR_MOTHER = `
         mothers.motherId = $motherId AND
         frags.motherId = mothers.motherId
     ORDER BY
+        fragOf,
         dateAcquired
 `;
 
-function selectFragsForMother(motherId) {
-    return db.all(SELECT_FRAGS_FOR_MOTHER, {motherId});
+function selectFragsForMother(userId, motherId) {
+    return db.all(SELECT_FRAGS_FOR_MOTHER, {userId, motherId});
 }
 
 //-----------------------------------------------------------------------------
@@ -666,6 +651,15 @@ function removeFan(userId, motherId) {
     db.run(DELETE_FAN, {userId, motherId});
 }
 
+const SELECT_FAN = `
+    SELECT motherId FROM fans WHERE userId = $userId AND motherId = $motherId
+`;
+
+function isFan(userId, motherId) {
+    const [row] = db.all(SELECT_FAN, {userId, motherId});
+    return row ? true : false;
+}
+
 //-----------------------------------------------------------------------------
 
 
@@ -689,5 +683,6 @@ module.exports = {
     updateMother,
     updateFrag,
     addFan,
-    removeFan
+    removeFan,
+    isFan
 }
