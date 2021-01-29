@@ -418,7 +418,7 @@ router.get('/kids/:motherId', async (req, res, next) => {
 
 router.get('/tree/:motherId', async (req, res, next) => {
     const {user, params: {motherId}} = req;
-    const frags = db.selectFragsForMother(motherId);
+    const frags = db.selectFragsForMother(user.id, motherId);
     if (frags.length === 0) {
         return next(INVALID_FRAG());
     }
