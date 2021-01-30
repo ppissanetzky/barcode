@@ -4,10 +4,10 @@ const multer = require('multer');
 const {findUsersWithPrefix, lookupUser, getThreadsForItemType, switchUser} = require('./xenforo');
 
 //-----------------------------------------------------------------------------
-// Function to get runtime configuration from the environment
+// Config
 //-----------------------------------------------------------------------------
 
-const BarcodeConfig = require('../barcode.config');
+const {BC_PRODUCTION, BC_UPLOADS_DIR, BC_SITE_BASE_URL} = require('../barcode.config');
 
 //-----------------------------------------------------------------------------
 // The database
@@ -20,19 +20,17 @@ const db = require('./dbtc-database');
 //-----------------------------------------------------------------------------
 
 const {
-    AUTHENTICATION_FAILED,
     INVALID_FRAG,
     INVALID_INCREMENT,
     INVALID_RECIPIENT,
     INVALID_RULES,
     NOT_YOURS} = require('./errors');
-const { BC_PRODUCTION } = require('../barcode.config');
 
 //-----------------------------------------------------------------------------
 // The destinaton for uploaded files (pictures)
 //-----------------------------------------------------------------------------
 
-const upload = multer({dest: BarcodeConfig.BC_UPLOADS_DIR});
+const upload = multer({dest: BC_UPLOADS_DIR});
 
 //-----------------------------------------------------------------------------
 // The router
@@ -80,6 +78,30 @@ router.get('/frag/:fragId', async (req, res, next) => {
         frag,
         journals
     });
+});
+
+//-----------------------------------------------------------------------------
+// Create a shareable link to a frag
+//-----------------------------------------------------------------------------
+
+router.get('/share/:fragId', async (req, res, next) => {
+    const {user, params: {fragId}} = req;
+    const [frag, journals] = db.selectFrag(fragId);
+    if (!frag) {
+        return next(INVALID_FRAG());
+    }
+    // Only the owner can share it
+    if (frag.ownerId !== user.id) {
+        return next(NOT_YOURS());
+    }
+    frag.owner = await lookupUser(frag.ownerId);
+    // We set it to false, so it will always be false in the
+    // data we save
+    frag.ownsIt = false;
+    frag.isStatic = true;
+    const shareId = db.shareFrag(frag, journals);
+    const url = `${BC_SITE_BASE_URL}/shared/${shareId}`;
+    res.json({url});
 });
 
 //-----------------------------------------------------------------------------

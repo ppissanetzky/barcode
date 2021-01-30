@@ -2,34 +2,88 @@
   <v-card max-width="375">
     <!-- Picture or placeholder -->
     <v-img
-      v-if="frag.picture"
       max-width="375px"
       max-height="300px"
-      :src="`${$config.BC_UPLOADS_URL}/${frag.picture}`"
-    />
-    <v-img
-      v-else
-      max-width="375px"
-      max-height="300px"
-      src="/bc/picture-placeholder.png"
-    />
-
-    <!-- The name and a button to edit it-->
-    <v-card-title>
-      {{ frag.name }}
-      <v-spacer
-        v-if="showEdit"
-      />
-      <v-btn
-        v-if="showEdit"
-        x-small
-        fab
-        color="primary"
-        :to="`/add-new-item?fragId=${frag.fragId}`"
+      :src="frag.picture ? `${$config.BC_UPLOADS_URL}/${frag.picture}` : '/bc/picture-placeholder.png'"
+    >
+      <v-alert
+        :value="shareAlert"
+        transition="slide-y-transition"
+        class="ma-2"
       >
-        <v-icon>mdi-pencil</v-icon>
-      </v-btn>
-    </v-card-title>
+        <v-row>
+          <v-col>
+            Here is a link to share this item. Note that all details about this item as it is now will be publicly visible.
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <v-text-field
+              v-model="shareLink"
+              :loading="!shareLink"
+              dense
+              readonly
+              hide-details
+              outlined
+              full-width
+              @focus.native="$event.target.select()"
+            />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <v-btn
+              small
+              color="secondary"
+              @click="shareAlert = false"
+            >
+              OK
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-alert>
+      <!-- A transparent bar with a 3-dot button for a menu -->
+
+      <v-app-bar v-if="ownsIt && !shareAlert" flat color="rgba(0, 0, 0, 0)">
+        <v-spacer />
+        <v-menu>
+          <template v-slot:activator="{on, attrs}">
+            <v-btn
+              color="white"
+              icon
+              v-bind="attrs"
+              v-on="on"
+            >
+              <v-icon>mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item>
+              <v-btn
+                v-if="showEdit"
+                icon
+                color="primary"
+                :to="`/add-new-item?fragId=${frag.fragId}`"
+              >
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+            </v-list-item>
+            <v-list-item>
+              <v-btn
+                icon
+                color="primary"
+                @click="getShareLink"
+              >
+                <v-icon>mdi-export-variant</v-icon>
+              </v-btn>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </v-app-bar>
+    </v-img>
+
+    <!-- The name -->
+    <v-card-title>{{ frag.name }}</v-card-title>
 
     <v-card-subtitle>
       <!-- Scientific name -->
@@ -322,11 +376,11 @@ export default {
     }
   },
   data: () => ({
-    initialized: false,
-    renderKey: 0,
-
     lineage: [],
     gotLineage: false,
+
+    shareAlert: false,
+    shareLink: undefined,
 
     // Tabs
     tabs: null,
@@ -345,7 +399,7 @@ export default {
       return this.frag.notes
     },
     shouldShowLineage () {
-      return !this.isPrivate
+      return !(this.isPrivate || this.frag.isStatic)
     },
     isAlive () {
       return this.frag.isAlive
@@ -373,7 +427,7 @@ export default {
       return this.frag.isFan
     },
     canBecomeAFan () {
-      return !this.isAFan && !this.ownsIt && !this.fragsAvailable
+      return !this.frag.isStatic && !this.isAFan && !this.ownsIt && !this.fragsAvailable
     }
   },
   watch: {
@@ -432,6 +486,12 @@ export default {
       await this.$axios.$delete(`/bc/api/dbtc/fan/${this.frag.motherId}`)
       this.frag.isFan = false
       this.loadingFan = false
+    },
+    async getShareLink () {
+      this.shareLink = undefined
+      this.shareAlert = true
+      const { url } = await this.$axios.$get(`/bc/api/dbtc/share/${this.frag.fragId}`)
+      this.shareLink = url
     }
   }
 }

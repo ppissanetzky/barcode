@@ -32,6 +32,16 @@ module.exports = {
     get BC_XF_API_KEY () { return get('BC_XF_API_KEY') },
 
     //-------------------------------------------------------------------------
+    // This is the base URL for the site.
+    //
+    // When developing, it should be 'http://localhost:3000/bc
+    //
+    // In production, it should be 'https://bareefers.org/bc
+    //-------------------------------------------------------------------------
+
+    get BC_SITE_BASE_URL () { return get('BC_SITE_BASE_URL') },
+
+    //-------------------------------------------------------------------------
     // This one has to be provided to the client BUILD. It points to the URL
     // that the BC API server is listening on.
     //

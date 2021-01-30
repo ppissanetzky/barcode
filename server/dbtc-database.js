@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+const assert = require('assert');
 
 const {Database} = require('./db');
 
@@ -5,7 +7,7 @@ const {nowAsIsoString, utcIsoStringFromString} = require('../dates');
 
 //-----------------------------------------------------------------------------
 
-const DBTC_DB_VERSION = 2;
+const DBTC_DB_VERSION = 3;
 
 const db = new Database('dbtc', DBTC_DB_VERSION);
 
@@ -469,6 +471,9 @@ function selectCollection(userId, rules) {
 }
 
 //-----------------------------------------------------------------------------
+// This is used when displaying all frags for a mother AND also to generate the
+// lineage tree. If you change it, make sure both work correctly
+//-----------------------------------------------------------------------------
 
 const SELECT_FRAGS_FOR_MOTHER = `
     SELECT
@@ -634,6 +639,16 @@ function updateFrag(values) {
 
 //-----------------------------------------------------------------------------
 
+const UPDATE_THREAD_ID = `
+    UPDATE mothers SET threadId = $threadId WHERE motherId = $motherId
+`
+
+function setMotherThreadId(motherId, threadId) {
+    db.run(UPDATE_THREAD_ID, {motherId, threadId});
+}
+
+//-----------------------------------------------------------------------------
+
 const ADD_FAN = `
     INSERT OR IGNORE INTO fans (motherId, userId, timestamp)
     VALUES ($motherId, $userId, $timestamp)
@@ -662,6 +677,62 @@ function isFan(userId, motherId) {
 
 //-----------------------------------------------------------------------------
 
+const SELECT_RANDOM_STRING = `
+    SELECT
+        LOWER(HEX(RANDOMBLOB(16))) AS shareId
+`;
+
+const SELECT_SHARE_BY_HASH = `
+    SELECT shareId FROM shares WHERE hash = $hash
+`;
+
+const INSERT_SHARE = `
+    INSERT INTO shares (
+        shareId,
+        hash,
+        timestamp,
+        shareType,
+        json
+    )
+    VALUES (
+        $shareId,
+        $hash,
+        $timestamp,
+        $shareType,
+        $json
+    )
+`;
+
+function shareFrag(frag, journals) {
+    assert(frag, `Invalid frag`);
+    const json = JSON.stringify({frag, journals});
+    // Hash the actual JSON to see if it has already been shared
+    const hash = crypto.createHash('sha256').update(json).digest('hex');
+    const [result] = db.all(SELECT_SHARE_BY_HASH, {hash});
+    if (result && result.shareId) {
+        return result.shareId;
+    }
+    const [{shareId}] = db.all(SELECT_RANDOM_STRING, {});
+    db.run(INSERT_SHARE, fixDates({
+        shareId,
+        hash,
+        shareType: 'frag',
+        json
+    }));
+    return shareId;
+}
+
+const SELECT_SHARE = `
+    SELECT shareType, json FROM shares WHERE shareId = $shareId
+`;
+
+function getShare(shareId) {
+    const [row] = db.all(SELECT_SHARE, {shareId});
+    // Can be null or undefined, rather than throwing an error
+    return row;
+}
+
+//-----------------------------------------------------------------------------
 
 module.exports = {
     selectAllFragsForUser,
@@ -684,5 +755,8 @@ module.exports = {
     updateFrag,
     addFan,
     removeFan,
-    isFan
+    isFan,
+    setMotherThreadId,
+    shareFrag,
+    getShare
 }

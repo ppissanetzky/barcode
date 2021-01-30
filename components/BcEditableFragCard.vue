@@ -480,6 +480,9 @@ export default {
   },
   mounted () {
     this.editedFragsAvailable = this.fragsAvailable
+    if (this.journals) {
+      this.loadedJournals = this.journals.map(journal => augment(journal))
+    }
   },
   methods: {
     submitPreventFragsAvailable () {

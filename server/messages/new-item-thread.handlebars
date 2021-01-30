@@ -1,0 +1,21 @@
+{{!
+This one is used to create a new thread in one of the DBTC forums, it receives:
+    user - the user object representing the owner of the frag
+    frag - all the data from 'mothers' and 'frags' for this item
+The first line is the thread title
+}}
+DBTC: {{frag.name}}
+
+@{{user.name}} contributed [URL={{fragUrl frag.fragId}}]{{frag.name}}[/URL] to DBTC.
+
+{{#if frag.picture}}
+[IMG]{{pictureUrl frag.picture}}[/IMG]
+{{/if}}
+
+{{#if frag.notes}}
+{{frag.notes}}
+{{/if}}
+
+{{#if frag.fragsAvailable}}
+There are {{frag.fragsAvailable}} frags available right now.
+{{/if}}

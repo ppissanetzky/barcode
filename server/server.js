@@ -18,6 +18,12 @@ const {ExplicitError} = require('./errors');
 const dbtcRouter = require('./dbtc-router');
 
 //-----------------------------------------------------------------------------
+// The public routes
+//-----------------------------------------------------------------------------
+
+const publicRouter = require('./public-router');
+
+//-----------------------------------------------------------------------------
 // The XenForo stuff
 //-----------------------------------------------------------------------------
 
@@ -52,6 +58,12 @@ app.use(cookieParser());
 //-----------------------------------------------------------------------------
 
 app.use(express.urlencoded({extended: true}));
+
+//-----------------------------------------------------------------------------
+// CAREFUL - THESE ROUTES DO NOT GET USER VALIDATION. THEY ARE PUBLIC
+//-----------------------------------------------------------------------------
+
+app.use('/bc/api/public', publicRouter);
 
 //-----------------------------------------------------------------------------
 // This function has to validate the incoming request's session against

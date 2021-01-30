@@ -203,8 +203,7 @@ export default {
           }
         }
         if (this.memberFilter) {
-          return mother.haves.some(({ ownerId }) => ownerId === this.memberFilter) ||
-            mother.haveNots.some(({ ownerId }) => ownerId === this.memberFilter)
+          return mother.owners.some(({ ownerId }) => ownerId === this.memberFilter)
         }
         if (this.haveFilter && mother.ownsIt) {
           return false
