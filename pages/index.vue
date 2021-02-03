@@ -14,8 +14,33 @@
       </v-col>
     </v-row>
 
-    <!-- The cards of frags -->
     <v-row>
+      <!-- A card for imports -->
+      <v-col v-if="imports.length" cols="auto">
+        <v-card max-width="375">
+          <v-img
+            max-width="375px"
+            max-height="300px"
+            src="/bc/import.jpg"
+          />
+          <v-card-title>They're waiting!</v-card-title>
+          <v-card-subtitle>
+            You have at least {{ imports.length }} DBTC thread{{ imports.length === 1 ? '' : 's' }} waiting to be imported.
+          </v-card-subtitle>
+          <v-card-text>
+            <v-btn
+              small
+              color="secondary"
+              to="/import"
+            >
+              Import one now
+            </v-btn>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- The cards of frags -->
+
       <v-col
         v-for="frag in frags"
         :key="frag.fragId"
@@ -39,11 +64,16 @@ export default {
     const { user, frags } = await this.$axios.$get('/bc/api/dbtc/your-collection')
     this.user = user
     this.frags = frags
+    // Now, fetch the imports in the background
+    this.$axios.$get('/bc/api/dbtc/imports').then(({ threads }) => {
+      this.imports = threads
+    })
   },
   data () {
     return {
       user: {},
-      frags: {}
+      frags: {},
+      imports: []
     }
   }
 }

@@ -20,6 +20,21 @@ function dateFromIsoString (string) {
 }
 
 // ----------------------------------------------------------------------------
+
+function justTheUtcDate (stringOrDate) {
+  if (stringOrDate instanceof Date) {
+    return utcIsoStringFromDate(stringOrDate).substr(0, 10)
+  }
+  return utcIsoStringFromString(stringOrDate).substr(0, 10)
+}
+
+function justTheLocalDate (stringOrDate) {
+  const date = stringOrDate instanceof Date ? stringOrDate : dateFromIsoString(stringOrDate)
+  const tzoffset = (new Date()).getTimezoneOffset() * 60000
+  return (new Date(date - tzoffset)).toISOString().substr(0, 10)
+}
+
+// ----------------------------------------------------------------------------
 // From MDN
 // ----------------------------------------------------------------------------
 // The toISOString() method returns a string in simplified extended ISO format
@@ -77,5 +92,7 @@ module.exports = {
   utcIsoStringFromString,
   dateFromIsoString,
   nowAsIsoString,
-  differenceBetween
+  differenceBetween,
+  justTheUtcDate,
+  justTheLocalDate
 }

@@ -31,7 +31,7 @@
     </template>
     <v-date-picker
       v-model="theDate"
-      :max="today"
+      :max="max"
       no-title
       scrollable
     >
@@ -85,6 +85,10 @@ export default {
     },
     // This is for v-model support
     value: {
+      type: String,
+      default: today
+    },
+    max: {
       type: String,
       default: today
     }

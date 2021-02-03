@@ -1,7 +1,13 @@
 const express = require('express');
 const multer = require('multer');
 
-const {findUsersWithPrefix, lookupUser, getThreadsForItemType, switchUser} = require('./xenforo');
+const {
+    findUsersWithPrefix,
+    lookupUser,
+    getThreadsForItemType,
+    getDBTCThreadsForUser,
+    getThreadPosts
+} = require('./xenforo');
 
 //-----------------------------------------------------------------------------
 // Config
@@ -510,6 +516,64 @@ router.get('/threads-for-type', async (req, res) => {
     res.json({
         threads
     });
+});
+
+//-----------------------------------------------------------------------------
+// Gets a page of DBTC threads for the current user excluding those that have
+// already been imported
+//-----------------------------------------------------------------------------
+
+router.get('/imports', async (req, res) => {
+    const {user} = req;
+    const imported = new Set(db.getUserThreadIds(user.id));
+    const allThreads = await getDBTCThreadsForUser(user.id);
+    const threads = allThreads.filter(({threadId}) => !imported.has(threadId));
+    res.json({user, threads});
+});
+
+router.get('/imports/:threadId', async (req, res, next) => {
+    const {user, params: {threadId}} = req;
+    const posts = await getThreadPosts(user.id, threadId);
+    if (!posts) {
+        return next(NOT_YOURS());
+    }
+    res.json({posts});
+});
+
+router.post('/import', upload.single('picture'), async (req, res, next) => {
+    const {user, body, file} = req;
+    const picture = file ? file.filename : null;
+    const {
+        threadId,
+        name,
+        type,
+        dateAcquired,
+        pictureUrl,
+        transactions: jsonTransactions
+    } = body;
+    console.log(body);
+    // TODO: validate that the threadId belongs to this user
+    // TODO: deal with pictureUrl
+    // Insert the main frag
+    const fragId = db.insertItem({
+        name,
+        type,
+        flow: 'Medium',
+        light: 'Medium',
+        hardiness: 'Normal',
+        growthRate: 'Normal',
+        cost: 0,
+        rules: 'dbtc',
+        threadId,
+        ownerId: user.id,
+        dateAcquired,
+        picture,
+        fragOf: null,
+        fragsAvailable: 0
+    });
+    const transactions = JSON.parse(jsonTransactions);
+
+    res.json({fragId});
 });
 
 //-----------------------------------------------------------------------------

@@ -733,6 +733,26 @@ function getShare(shareId) {
 }
 
 //-----------------------------------------------------------------------------
+// Returns an array of all thread IDs the given user has imported
+//-----------------------------------------------------------------------------
+
+const SELECT_USER_THREADS = `
+    SELECT
+        threadId
+    FROM
+        mothers,
+        frags
+    WHERE
+        mothers.motherId = frags.fragId AND
+        frags.ownerId = $userId AND
+        threadId > 0
+`;
+
+function getUserThreadIds(userId) {
+    return db.all(SELECT_USER_THREADS, {userId}).map(({threadId}) => threadId);
+}
+
+//-----------------------------------------------------------------------------
 
 module.exports = {
     selectAllFragsForUser,
@@ -758,5 +778,6 @@ module.exports = {
     isFan,
     setMotherThreadId,
     shareFrag,
-    getShare
+    getShare,
+    getUserThreadIds
 }

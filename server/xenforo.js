@@ -2,11 +2,17 @@
 const https = require('https');
 const qs = require('querystring');
 const cookieParser = require('cookie');
+const _ = require('lodash');
+
+// https://github.com/JiLiZART/bbob/tree/master/packages/bbob-core
+const bbob = require('@bbob/core').default;
 
 const {BC_TEST_USER, BC_XF_API_KEY, BC_PRODUCTION} = require('../barcode.config');
 const dbtcDatabase = require('./dbtc-database');
 
 const {AUTHENTICATION_FAILED, MEMBER_NEEDS_UPGRADE} = require('./errors');
+
+const {utcIsoStringFromDate, age} = require('../dates');
 
 //-----------------------------------------------------------------------------
 // A user for testing
@@ -394,6 +400,107 @@ async function getThreadsForItemType(userId, type) {
 
 //-----------------------------------------------------------------------------
 
+function nameFromThreadTitle(title) {
+    return title.replace('DBTC', '').replace(/^\W*/, '').trim();
+}
+
+async function getDBTCThreadsForUser(userId) {
+    const types = dbtcDatabase.getTypes();
+    const result = [];
+    await Promise.all(types.map(async ({type, forumId}) => {
+        const {threads} = await apiRequest(`forums/${forumId}`, 'GET', {
+            with_threads: true,
+            page: 1,
+            starter_id: userId
+        });
+        threads.forEach((thread) => {
+            startDate = utcIsoStringFromDate(new Date(thread.post_date * 1000));
+            lastPostDate = utcIsoStringFromDate(new Date(thread.last_post_date * 1000));
+            result.push({
+                type,
+                startDate,
+                lastPostDate,
+                sortKey:        thread.last_post_date,
+                threadId:       thread.thread_id,
+                startAge:       age(startDate, 'today', 'ago'),
+                lastPostAge:    age(lastPostDate, 'today', 'ago'),
+                title:          thread.title,
+                name:           nameFromThreadTitle(thread.title),
+                viewUrl:        thread.view_url
+            });
+        });
+    }));
+    return result.sort((a, b) => b.sortKey - a.sortKey);
+}
+
+//-----------------------------------------------------------------------------
+// This function takes a XenForo post body, which uses BB code and removes
+// quotes altogether. It finds mentions of users and replaces all other BB code
+// tags with just the tag. It creates a more readable message for our purposes
+//-----------------------------------------------------------------------------
+
+function redactBBCode(userId, message) {
+    let mentions = [];
+    const text = [];
+    bbob().process(message).tree.walk((thing) => {
+        if (typeof thing === 'object') {
+            if (thing.tag === 'user') {
+                mentions.push({
+                    id: parseInt(Object.keys(thing.attrs)[0], 10),
+                    name: thing.content.join('').substr(1)
+                });
+                text.push(thing.content.join(''));
+            }
+            else if (thing.tag !== 'quote') {
+                text.push(`[${thing.tag}]`);
+            }
+        }
+        else {
+            text.push(thing);
+        }
+    });
+    // Remove mentions of the original user
+    mentions = mentions.filter(({id}) => id !== userId);
+    // Sort the list of mentions by name and remove duplicates
+    const name = ({name}) => name;
+    mentions = _.sortBy(mentions, name);
+    mentions = _.sortedUniqBy(mentions, name);
+    return ({
+        text: text.join('').trim(),
+        mentions
+    });
+}
+
+async function getThreadPosts(userId, threadId) {
+    const result = [];
+    for (let page = 1; ;page++) {
+        const {thread, posts, pagination: {last_page}} = await apiRequest(`threads/${threadId}/`, 'GET', {
+            with_posts: true,
+            page
+        });
+        // Make sure the thread belongs to the given user
+        if (thread.user_id !== userId) {
+            return;
+        }
+        posts.forEach((post) => result.push({
+            attachments: (post.Attachments || []).map(({direct_url, content_type}) => direct_url),
+            viewUrl: post.view_url,
+            postDate: utcIsoStringFromDate(new Date(post.post_date * 1000)),
+            user: {
+                id: post.user_id,
+                name: post.username
+            },
+            ...redactBBCode(userId, post.message)
+        }));
+        if (page === last_page) {
+            break;
+        }
+    }
+    return result;
+}
+
+//-----------------------------------------------------------------------------
+
 async function startForumThread(forumId, title, message) {
     const {thread: {thread_id}} = await apiRequest('threads/', 'POST', {
         node_id: forumId,
@@ -417,13 +524,65 @@ module.exports = {
     sendAlert,
     findUsersWithPrefix,
     getThreadsForItemType,
-    startForumThread
+    startForumThread,
+    getDBTCThreadsForUser,
+    getThreadPosts
 };
 
-// (async function() {
-//     const response = await getThreadsForItemType(803, 'LPS');
-//     console.log(response);
-// })();
+(async function() {
+    // const response = await getThreadPosts(26097);
+    // console.log(response.length);
+
+    // const posts = JSON.parse(fs.readFileSync('./26097.json', 'utf-8'));
+    // const messages = posts.map(({message}) => message);
+    // messages.forEach((m, index) => {
+    //     console.log('============================================');
+    //     console.log(m);
+    //     console.log('--------------------------------------------');
+    //     const text = [];
+    //     const users = [];
+    //     bbob().process(m).tree.walk((thing) => {
+    //         if (typeof thing === 'object') {
+    //             if (thing.tag === 'user') {
+    //                 users.push({
+    //                     id: parseInt(Object.keys(thing.attrs)[0], 10),
+    //                     name: thing.content.join('').substr(1)
+    //                 });
+    //                 text.push(thing.content.join(''));
+    //             }
+    //             else if (thing.tag !== 'quote') {
+    //                 text.push('<' + thing.tag + '>');
+    //             }
+    //         }
+    //         else {
+    //             text.push(thing);
+    //         }
+    //     });
+
+    //     console.log(`"${text.join('').trim()}"`);
+    //     console.log(users);
+
+        // const rx = /\[USER=([0-9]*)\]@([^\[]*)/g
+        // console.log('--------------------------------------------');
+        // const s = m.replace(/\[QUOTE.*\[\/QUOTE\]/g, '')
+        // console.log(s)
+
+        /*
+        const firstQuote = m.indexOf('[QUOTE');
+        if (firstQuote >= 0) {
+            const lastQuote = m.lastIndexOf('[/QUOTE]');
+            if (lastQuote >= 0) {
+                m = (m.slice(0, firstQuote) + m.slice(lastQuote + 8)).trim();
+            }
+        }
+        console.log(m);
+
+        while((match = rx.exec(m)) !== null) {
+            console.log(match[1], match[2]);
+        }
+        */
+//    })
+})();
 
 /* ALERT EXAMPLE
 
