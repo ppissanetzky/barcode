@@ -571,6 +571,9 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
         fragOf: null,
         fragsAvailable: 0
     });
+    // TODO: Add a journal entry for it
+
+    // TODO: Process the transactions
     const transactions = JSON.parse(jsonTransactions);
 
     res.json({fragId});
