@@ -556,7 +556,7 @@ export default {
         // this page in the history, so that going back from the
         // details takes us back to the previous page and not this
         // one
-        this.$router.replace(`frag/${fragId}`)
+        this.$router.replace(`/bc/frag/${fragId}`)
       } finally {
         // Turn off the loading button
         this.loading = false

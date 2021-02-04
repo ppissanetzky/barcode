@@ -528,7 +528,7 @@ export default {
             if (this.importAnother) {
               this.$router.go()
             } else {
-              this.$router.replace(`kids/${motherId}`)
+              this.$router.replace(`/bc/kids/${motherId}`)
             }
           })
           return
