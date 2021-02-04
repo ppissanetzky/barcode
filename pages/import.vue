@@ -167,7 +167,7 @@
             <v-btn
               small
               color="primary"
-              :disabled="!selectedPicture"
+              :disabled="!(selectedPicture || uploadedPicture || sorryNoPic)"
               @click="leave(3)"
             >
               Continue
