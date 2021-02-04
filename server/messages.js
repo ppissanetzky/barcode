@@ -6,29 +6,20 @@ const handlebars = require('handlebars');
 const {BC_SITE_BASE_URL, BC_UPLOADS_URL} = require('../barcode.config');
 
 //-----------------------------------------------------------------------------
-// Another handlebars helper that returns the base portion of a site URL with
-// the given suffix.
-// So, if you do
-//  {{site frag/1}}
-// it will return
-//  https://bareefers.org/bc/frag/1
-//-----------------------------------------------------------------------------
-
-function prependSlash(suffix) {
-    return `${suffix.startsWith('/') ? '' : '/'}${suffix}`;
-}
-
-handlebars.registerHelper('fragUrl', (fragId) => {
-    return `${BC_SITE_BASE_URL}/frag/${fragId}`;
-});
-
-//-----------------------------------------------------------------------------
 // A helper for handlebars that returns the full URL to a picture, use it like
 // this: {{pictureUrl frag.picture}}
 //-----------------------------------------------------------------------------
 
 handlebars.registerHelper('pictureUrl', (picture) => {
     return `${BC_UPLOADS_URL}/${picture}`;
+});
+
+handlebars.registerHelper('fragUrl', (fragId) => {
+    return `${BC_SITE_BASE_URL}/frag/${fragId}`;
+});
+
+handlebars.registerHelper('motherUrl', (motherId) => {
+    return `${BC_SITE_BASE_URL}/kids/${motherId}`;
 });
 
 //-----------------------------------------------------------------------------

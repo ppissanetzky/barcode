@@ -4,7 +4,7 @@ const db = require('./dbtc-database');
 
 const {BC_FORUM_MODE} = require('../barcode.config');
 
-const {lookupUser, startForumThread} = require('./xenforo');
+const {lookupUser, startForumThread, postToForumThread} = require('./xenforo');
 
 const {renderMessage} = require('./messages.js');
 
@@ -71,6 +71,18 @@ async function itemAdded(fragId) {
 
 //-----------------------------------------------------------------------------
 
-//  (async function(){
-//      itemAdded(1);
-//  })();
+async function itemImported(user, threadId, motherId) {
+    const [, message] = await renderMessage('item-imported', {user, motherId});
+    console.log(`Posting to thread ${threadId}`);
+    console.log(`"${message}"`);
+    if (POSTING_ENABLED) {
+        await postToForumThread(threadId, message);
+        console.log(`Posted to thread ${threadId}`)
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+module.exports = {
+    itemImported
+};

@@ -93,6 +93,11 @@
       <div v-if="frag.inCollection">
         <strong>Contributed by {{ ownsIt ? 'you' : frag.owner.name }}</strong>
       </div>
+
+      <!-- A link to the thread that the item is tracked in -->
+      <div v-if="frag.threadUrl">
+        <a :href="frag.threadUrl" target="_blank">Forum thread</a>
+      </div>
     </v-card-subtitle>
 
     <v-card-text>
@@ -156,7 +161,7 @@
         v-text="`${fragsAvailable} available`"
       />
 
-      <!-- A chip that shows it is dead -->
+      <!-- A chip that shows it is dead or has been transferred -->
 
       <v-chip
         v-if="!isAlive"
@@ -164,7 +169,7 @@
         color="error"
         class="my-1 mr-1"
       >
-        RIP
+        {{ frag.status === 'transferred' ? 'Transferred' : 'RIP' }}
       </v-chip>
     </v-card-text>
 
@@ -315,7 +320,8 @@
                 size="23"
                 color="teal lighten-4"
               />
-              <strong v-text="user.id === item.owner.id ? 'You' : item.owner.name" />
+              <strong v-if="item.isAlive" v-text="user.id === item.owner.id ? 'You' : item.owner.name" />
+              <span v-else class="text-decoration-line-through" v-text="user.id === item.owner.id ? 'You' : item.owner.name" />
             </template>
           </v-treeview>
         </div>
@@ -463,6 +469,7 @@ export default {
             owner: {
               name: this.frag.source
             },
+            isAlive: true,
             isSource: true,
             children: [root]
           }]

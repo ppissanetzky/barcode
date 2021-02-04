@@ -281,7 +281,6 @@ async function lookupUser(userId) {
     }
     const result = USER_CACHE.get(id);
     if (result) {
-        console.log('Found user', id, 'in cache')
         return result;
     }
     // Otherwise, look the user up in XenForo
@@ -292,7 +291,6 @@ async function lookupUser(userId) {
             api_bypass_permissions: 1
         });
         if (user && isXfUserAllowed(user)) {
-            console.log('Found user', id, 'in forum');
             return cacheUser(makeUser(user));
         }
     }
@@ -381,6 +379,26 @@ async function findUsersWithPrefix(prefix) {
 }
 
 //-----------------------------------------------------------------------------
+// Converts a XenForo thread to our format, augmenting it
+//-----------------------------------------------------------------------------
+
+function convertThread(thread) {
+    const startDate = utcIsoStringFromDate(new Date(thread.post_date * 1000));
+    const lastPostDate = utcIsoStringFromDate(new Date(thread.last_post_date * 1000));
+    return ({
+        startDate,
+        lastPostDate,
+        sortKey:        thread.last_post_date,
+        threadId:       thread.thread_id,
+        startAge:       age(startDate, 'today', 'ago'),
+        lastPostAge:    age(lastPostDate, 'today', 'ago'),
+        title:          thread.title,
+        name:           nameFromThreadTitle(thread.title),
+        viewUrl:        thread.view_url
+    })
+}
+
+//-----------------------------------------------------------------------------
 
 async function getThreadsForItemType(userId, type) {
     const {forumId} = dbtcDatabase.getType(type) || {};
@@ -392,17 +410,22 @@ async function getThreadsForItemType(userId, type) {
         page: 1,
         starter_id: userId
     });
-    return threads.map(({thread_id, title}) => ({
-        threadId: thread_id,
-        title
-    }));
+    return threads.map((thread) => convertThread(thread));
 }
 
+//-----------------------------------------------------------------------------
+// Removes the 'DBTC' part and all leading non-alphanumeric characters. Then
+// trims white space on both ends.
 //-----------------------------------------------------------------------------
 
 function nameFromThreadTitle(title) {
     return title.replace('DBTC', '').replace(/^\W*/, '').trim();
 }
+
+//-----------------------------------------------------------------------------
+// Gets one page of DBTC threads per 'type' for the given user. Sorts them
+// so that the threads with the most recent post are at the top
+//-----------------------------------------------------------------------------
 
 async function getDBTCThreadsForUser(userId) {
     const types = dbtcDatabase.getTypes();
@@ -414,23 +437,24 @@ async function getDBTCThreadsForUser(userId) {
             starter_id: userId
         });
         threads.forEach((thread) => {
-            startDate = utcIsoStringFromDate(new Date(thread.post_date * 1000));
-            lastPostDate = utcIsoStringFromDate(new Date(thread.last_post_date * 1000));
             result.push({
                 type,
-                startDate,
-                lastPostDate,
-                sortKey:        thread.last_post_date,
-                threadId:       thread.thread_id,
-                startAge:       age(startDate, 'today', 'ago'),
-                lastPostAge:    age(lastPostDate, 'today', 'ago'),
-                title:          thread.title,
-                name:           nameFromThreadTitle(thread.title),
-                viewUrl:        thread.view_url
+                ...convertThread(thread)
             });
         });
     }));
     return result.sort((a, b) => b.sortKey - a.sortKey);
+}
+
+//-----------------------------------------------------------------------------
+// Make sure the thread belongs to the given user.
+//-----------------------------------------------------------------------------
+
+async function validateUserThread(userId, threadId) {
+    const {thread} = await apiRequest(`threads/${threadId}/`, 'GET');
+    if (thread && thread.user_id === userId) {
+        return convertThread(thread);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -516,6 +540,19 @@ async function startForumThread(forumId, title, message) {
 
 //-----------------------------------------------------------------------------
 
+async function postToForumThread(threadId, message) {
+    await apiRequest('posts/', 'POST', {
+        thread_id: threadId,
+        message: message,
+        api_bypass_permissions: 1
+    },
+    {
+        'XF-Api-User': BARCODE_USER
+    });
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     validateXenForoUser,
     lookupUser,
@@ -525,8 +562,10 @@ module.exports = {
     findUsersWithPrefix,
     getThreadsForItemType,
     startForumThread,
+    postToForumThread,
     getDBTCThreadsForUser,
-    getThreadPosts
+    getThreadPosts,
+    validateUserThread
 };
 
 (async function() {

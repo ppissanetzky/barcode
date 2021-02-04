@@ -1,7 +1,7 @@
 <template>
   <v-stepper v-model="step" vertical>
     <!-- Step 1 - choose a thread -->
-    <v-stepper-step step="1">
+    <v-stepper-step step="1" :complete="step > 1">
       Choose a thread to import
     </v-stepper-step>
     <v-stepper-content step="1">
@@ -42,7 +42,7 @@
     </v-stepper-content>
 
     <!-- Choose name and date acquired -->
-    <v-stepper-step step="2">
+    <v-stepper-step step="2" :complete="step > 2">
       Set the name and date acquired
     </v-stepper-step>
     <v-stepper-content step="2">
@@ -97,7 +97,7 @@
       </v-container>
     </v-stepper-content>
 
-    <v-stepper-step step="3">
+    <v-stepper-step step="3" :complete="step > 3">
       Choose a picture
     </v-stepper-step>
     <v-stepper-content step="3">
@@ -145,7 +145,7 @@
                     @click="toggle"
                   >
                     <v-btn small :color="active ? 'primary' : ''">
-                      Pick me!
+                      {{ active ? 'Good choice!' : 'Pick me!' }}
                     </v-btn>
                   </v-img>
                 </v-item>
@@ -177,7 +177,7 @@
       </v-container>
     </v-stepper-content>
 
-    <v-stepper-step step="4">
+    <v-stepper-step step="4" :complete="step > 4">
       Review posts
     </v-stepper-step>
     <v-stepper-content step="4">
@@ -298,59 +298,65 @@
       </v-container>
     </v-stepper-content>
 
-    <v-stepper-step step="5">
+    <v-stepper-step step="5" :complete="step > 5">
       The finish line
     </v-stepper-step>
     <v-stepper-content step="5">
-      <v-row>
-        <v-col>
-          <h3>
-            On {{ dateString(dateAcquired) }}, ({{ dateAcquiredAge }}), you acquired this marvelous "{{ name }}" and decided to start sharing it.
-          </h3>
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col>
-          <v-divider />
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col>
-          <p
-            v-for="d in descriptions"
-            :key="d"
-          >
-            {{ d }}
-          </p>
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="auto">
-          <v-btn
-            small
-            color="secondary"
-            @click="--step"
-          >
-            Back
-          </v-btn>
-        </v-col>
-        <v-col cols="auto">
-          <v-btn
-            small
-            color="primary"
-            @click="leave(5)"
-          >
-            Finish
-          </v-btn>
-        </v-col>
-        <v-col cols="auto">
-          <v-checkbox
-            v-model="importAnother"
-          >
-            and import another one
-          </v-checkbox>
-        </v-col>
-      </v-row>
+      <v-container fluid>
+        <v-row>
+          <v-col>
+            <h3>
+              On {{ dateString(dateAcquired) }}, ({{ dateAcquiredAge }}), you acquired this marvelous "{{ name }}" and decided to start sharing it.
+            </h3>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <v-divider />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <p
+              v-for="d in descriptions"
+              :key="d"
+            >
+              {{ d }}
+            </p>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col cols="auto">
+            <v-btn
+              small
+              color="secondary"
+              :disabled="saving"
+              @click="--step"
+            >
+              Back
+            </v-btn>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn
+              small
+              color="primary"
+              :loading="saving"
+              @click="leave(5)"
+            >
+              Finish
+            </v-btn>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <v-checkbox
+              v-model="importAnother"
+              label="and import another one"
+              :disabled="saving"
+            />
+          </v-col>
+        </v-row>
+      </v-container>
     </v-stepper-content>
   </v-stepper>
 </template>
@@ -414,14 +420,12 @@ export default {
         }
       }
       if (post.mentions) {
-        console.log(post.mentions)
         post.mentions.forEach(({ name }) => {
           if (!haves.has(name)) {
             result.push(name)
           }
         })
       }
-      console.log(result)
       return result
     },
     peopleWithFrags () {
@@ -451,7 +455,7 @@ export default {
             break
         }
       }
-      console.log('WITH FRAGS', JSON.stringify([...result.values()]))
+      // console.log('WITH FRAGS', JSON.stringify([...result.values()]))
       return [...result.values()]
     },
     dateAcquiredAge () {
@@ -504,6 +508,7 @@ export default {
         case 3: // Selected pictures
           break
         case 4: // Reviewed posts
+          this.importAnother = false
           this.descriptions = this.transactions.filter(({ type }) => type)
             .map(({ from, type, to, postIndex }) => {
               const post = this.posts[postIndex]
@@ -519,15 +524,14 @@ export default {
             })
           break
         case 5:
-          this.saveIt().then((fragId) => {
-            this.$router.replace(`frag/${fragId}`)
+          this.saveIt().then((motherId) => {
             if (this.importAnother) {
-              // back to this one, reloaded
+              this.$router.go()
             } else {
-              // replace with /frag/:fragId
+              this.$router.replace(`kids/${motherId}`)
             }
           })
-          break
+          return
       }
       // Go to the next step
       ++this.step
@@ -546,26 +550,28 @@ export default {
         formData.set('picture', this.uploadedPicture)
       }
       // Build a map of users names to IDs
-      const userMap = new Map([['you', this.user.id]])
+      const userMap = new Map([[this.user.name, this.user.id]])
       this.posts.forEach(({ user, mentions }) => {
         userMap.set(user.name, user.id)
         mentions.forEach(({ name, id }) => userMap.set(name, id))
       })
-      // Now, the transaction list using IDs
+      // Converting 'you' back to this user's name
+      const unyou = name => name === 'you' ? this.user.name : name
+      // Now, build the transaction list
       const transactions = this.transactions
         .filter(({ type }) => type)
         .map(({ from, type, to, postIndex }) => ({
           date: this.posts[postIndex].postDate,
-          from,
-          fromId: userMap.get(from),
+          from: unyou(from),
+          fromId: userMap.get(unyou(from)),
           type,
-          to,
-          toId: to ? userMap.get(to) : ''
+          to: unyou(to),
+          toId: to ? userMap.get(unyou(to)) : ''
         }))
       formData.set('transactions', JSON.stringify(transactions))
       // Do it
-      const { fragId } = await this.$axios.$post('/bc/api/dbtc/import', formData)
-      return fragId
+      const { motherId } = await this.$axios.$post('/bc/api/dbtc/import', formData)
+      return motherId
     }
   }
 }

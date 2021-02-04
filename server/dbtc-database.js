@@ -7,7 +7,7 @@ const {nowAsIsoString, utcIsoStringFromString} = require('../dates');
 
 //-----------------------------------------------------------------------------
 
-const DBTC_DB_VERSION = 3;
+const DBTC_DB_VERSION = 4;
 
 const db = new Database('dbtc', DBTC_DB_VERSION);
 
@@ -128,7 +128,8 @@ const INSERT_MOTHER = `
             cost,
             size,
             rules,
-            threadId
+            threadId,
+            threadUrl
         )
     VALUES
         (
@@ -145,7 +146,8 @@ const INSERT_MOTHER = `
             $cost,
             $size,
             $rules,
-            $threadId
+            $threadId,
+            $threadUrl
         )
 `;
 
@@ -183,7 +185,8 @@ const INSERT_ITEM_NULLABLE_VALUES = {
     size: null,
     picture: null,
     notes: null,
-    threadId: null
+    threadId: null,
+    threadUrl: null
 };
 
 function insertItem(values) {
@@ -199,7 +202,7 @@ function insertItem(values) {
             fragOf: null
         };
         const fragId = run(INSERT_FRAG, fragBindings);
-        return fragId;
+        return [motherId, fragId];
     });
 }
 
@@ -363,14 +366,15 @@ const UPDATE_ALIVE = `
         frags
     SET
         isAlive = 0,
-        fragsAvailable = 0
+        fragsAvailable = 0,
+        status = $status
     WHERE
         fragId = $fragId AND
         ownerId = ownerId
 `;
 
-function markAsDead(ownerId, fragId) {
-    db.run(UPDATE_ALIVE, {fragId, ownerId});
+function markAsDead(ownerId, fragId, status) {
+    db.run(UPDATE_ALIVE, {fragId, ownerId, status: status || null});
 }
 
 //-----------------------------------------------------------------------------
@@ -454,6 +458,8 @@ const SELECT_COLLECTION = `
         motherFrags.rules = $rules
     GROUP BY
         motherFrags.motherId
+    ORDER BY
+        motherFrags.timestamp DESC
 `;
 
 function selectCollection(userId, rules) {
@@ -743,7 +749,7 @@ const SELECT_USER_THREADS = `
         mothers,
         frags
     WHERE
-        mothers.motherId = frags.fragId AND
+        mothers.motherId = frags.motherId AND
         frags.ownerId = $userId AND
         threadId > 0
 `;

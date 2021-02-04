@@ -192,46 +192,6 @@
 
                 <v-row>
                   <v-col>
-                    <div v-if="!isUpdating && rules === 'dbtc'">
-                      <p>
-                        Choose whether you would like BARcode to create a new thread to
-                        track this item or use an existing thread. You should use an
-                        existing thread if the item is already in DBTC.
-                      </p>
-                      <div v-if="!type">
-                        <p
-                          class="red--text"
-                        >
-                          Please select the item's "type" above.
-                        </p>
-                      </div>
-                      <div v-else>
-                        <validation-provider
-                          v-slot="{ errors }"
-                          rules="required"
-                          name="thread"
-                        >
-                          <v-autocomplete
-                            id="type"
-                            v-model="threadId"
-                            label="Thread"
-                            name="thread"
-                            :items="threadsByType[type]"
-                            item-value="threadId"
-                            item-text="title"
-                            :error-messages="errors"
-                            required
-                            outlined
-                            clearable
-                          />
-                        </validation-provider>
-                      </div>
-                    </div>
-                  </v-col>
-                </v-row>
-
-                <v-row>
-                  <v-col>
                     <v-divider />
                     <v-card-actions>
                       <h3>Additional details - optional</h3>
@@ -520,12 +480,10 @@ export default {
       source: undefined,
       cost: 0,
       rules: 'dbtc',
-      threadId: undefined,
 
       // Enums
       types: [],
       allRules: [],
-      threadsByType: {},
 
       // For the main card
       loadingCard: true,
@@ -546,18 +504,6 @@ export default {
       // Can only edit 'mother' fields when adding a new item
       // or updating a frag that doesn't have a parent frag
       return !this.frag || (this.frag && !this.frag.fragOf)
-    }
-  },
-  watch: {
-    async type (value) {
-      if (this.threadsByType[value]) {
-        return
-      }
-      const { threads } = await this.$axios.$get(`/bc/api/dbtc/threads-for-type?type=${encodeURIComponent(value)}`)
-      this.threadsByType[value] = [
-        { threadId: 0, title: '<Create a new thread>' },
-        ...threads
-      ]
     }
   },
   methods: {
@@ -585,8 +531,7 @@ export default {
           'sourceType',
           'source',
           'cost',
-          'rules',
-          'threadId'
+          'rules'
         ]
 
         keys.forEach((key) => {

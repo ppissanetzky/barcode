@@ -6,8 +6,13 @@ const {
     lookupUser,
     getThreadsForItemType,
     getDBTCThreadsForUser,
-    getThreadPosts
+    getThreadPosts,
+    validateUserThread
 } = require('./xenforo');
+
+const {itemImported} = require('./forum');
+
+const {saveImageFromUrl} = require('./utility');
 
 //-----------------------------------------------------------------------------
 // Config
@@ -150,7 +155,7 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
         threadId: parseInt(body.threadId, 10)
     };
     // Add the new item
-    const fragId = db.insertItem(params);
+    const [, fragId] = db.insertItem(params);
     // Add a journal
     const journal = db.addJournal({
         fragId,
@@ -525,8 +530,11 @@ router.get('/threads-for-type', async (req, res) => {
 
 router.get('/imports', async (req, res) => {
     const {user} = req;
+    // This is a set of all threads that this user has created or imported
     const imported = new Set(db.getUserThreadIds(user.id));
+    // These are the threads loaded from the forum
     const allThreads = await getDBTCThreadsForUser(user.id);
+    // Remove those that are already here
     const threads = allThreads.filter(({threadId}) => !imported.has(threadId));
     res.json({user, threads});
 });
@@ -542,7 +550,7 @@ router.get('/imports/:threadId', async (req, res, next) => {
 
 router.post('/import', upload.single('picture'), async (req, res, next) => {
     const {user, body, file} = req;
-    const picture = file ? file.filename : null;
+    let picture = file ? file.filename : null;
     const {
         threadId,
         name,
@@ -551,11 +559,18 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
         pictureUrl,
         transactions: jsonTransactions
     } = body;
-    console.log(body);
-    // TODO: validate that the threadId belongs to this user
-    // TODO: deal with pictureUrl
+    // Validate that the threadId belongs to this user to prevent
+    // direct API attacks
+    const thread = await validateUserThread(user.id, threadId);
+    if (!thread) {
+        return next(NOT_YOURS());
+    }
+    // Now, see if there is a picture URL and download it,
+    if (!picture && pictureUrl) {
+        picture = await saveImageFromUrl(upload, pictureUrl);
+    }
     // Insert the main frag
-    const fragId = db.insertItem({
+    const [motherId, fragId] = db.insertItem({
         name,
         type,
         flow: 'Medium',
@@ -565,18 +580,133 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
         cost: 0,
         rules: 'dbtc',
         threadId,
+        threadUrl: thread.viewUrl,
         ownerId: user.id,
         dateAcquired,
         picture,
         fragOf: null,
         fragsAvailable: 0
     });
-    // TODO: Add a journal entry for it
-
-    // TODO: Process the transactions
+    // Add a journal entry when it was acquired
+    db.addJournal({
+        fragId,
+        timestamp: dateAcquired,
+        entryType: 'acquired',
+        notes: 'Acquired it (imported)'
+    });
+    // Add another journal entry about it being imported
+    db.addJournal({
+        fragId,
+        entryType: 'imported',
+        notes: `Imported from the forum`
+    });
+    // Now, process the transactions
     const transactions = JSON.parse(jsonTransactions);
-
-    res.json({fragId});
+    // This is a map from user ID to frag ID so that we know who
+    // has what as we process each transaction. It starts out with
+    // the first frag we just inserted for the current user.
+    const fragMap = new Map([[user.id, fragId]]);
+    transactions.forEach(({date, from, fromId, type, to, toId}) => {
+        function problem(message) {
+            console.error('Import transaction failed :', message, {
+                threadId, date, from, from, type, to, toId
+            });
+        }
+        switch (type) {
+            case 'gave': {
+                    // Get the source frag ID and bail if it cannot be found
+                    const fromFragId = fragMap.get(fromId);
+                    if (!fromFragId) {
+                        return problem('Could not find the source frag');
+                    }
+                    const [, toFragId] = db.giveAFrag(fromId, {
+                        motherId,
+                        ownerId: toId,
+                        dateAcquired: date,
+                        fragOf: fromFragId,
+                        fragsAvailable: 0
+                    });
+                    // Add thew new frag to our map
+                    fragMap.set(toId, toFragId);
+                    // Add a journal for the recipient
+                    db.addJournal({
+                        fragId: toFragId,
+                        timestamp: date,
+                        entryType: 'acquired',
+                        notes: `Got it from ${from} (imported)`
+                    });
+                    // Now, add a journal for the giver
+                    db.addJournal({
+                        fragId: fromFragId,
+                        timestamp: date,
+                        entryType: 'gave',
+                        notes: `Gave a frag to ${to} (imported)`
+                    });
+                }
+                break;
+            case 'trans': {
+                    // Get the source frag ID and bail if it cannot be found
+                    const fromFragId = fragMap.get(fromId);
+                    if (!fromFragId) {
+                        return problem('Could not find the source frag');
+                    }
+                    const [, toFragId] = db.giveAFrag(fromId, {
+                        motherId,
+                        ownerId: toId,
+                        dateAcquired: date,
+                        fragOf: fromFragId,
+                        fragsAvailable: 0
+                    });
+                    // Add thew new frag to our map
+                    fragMap.set(toId, toFragId);
+                    // Remove the original frag from the map, since this is
+                    // a transfer
+                    fragMap.delete(fromId);
+                    // Add a journal for the recipient
+                    db.addJournal({
+                        fragId: toFragId,
+                        timestamp: date,
+                        entryType: 'acquired',
+                        notes: `Transferred from ${from} (imported)`
+                    });
+                    // Now, add a journal for the giver
+                    db.addJournal({
+                        fragId: fromFragId,
+                        timestamp: date,
+                        entryType: 'gave',
+                        notes: `Transferred to ${to} (imported)`
+                    });
+                    // Mark the original frag as dead with a transferred status
+                    db.markAsDead(fromId, fromFragId, 'transferred');
+                }
+                break;
+            case 'rip': {
+                    // Get the source frag ID and bail if it cannot be found
+                    const fromFragId = fragMap.get(fromId);
+                    if (!fromFragId) {
+                        return problem('Could not find the source frag');
+                    }
+                    // Remove it from the map
+                    fragMap.delete(fromId);
+                    // Mark it as dead
+                    db.markAsDead(fromId, fromFragId);
+                    // Add a journal
+                    db.addJournal({
+                        fragId: fromFragId,
+                        timestamp: date,
+                        entryType: 'rip',
+                        notes: 'RIP (imported)'
+                    });
+                }
+                break;
+        }
+    });
+    // Add a post to the thread, but do it out of band
+    itemImported(user, threadId, motherId)
+        .then(() => console.log('Posted to thread', threadId))
+        .catch((error) => console.error('Failed to post after import', error))
+    // Send back the response now
+    res.json({motherId, fragId});
 });
 
 //-----------------------------------------------------------------------------

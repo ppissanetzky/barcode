@@ -350,6 +350,18 @@ import BcUserAutocomplete from '~/components/BcUserAutocomplete.vue'
 import BcDatePicker from '~/components/BcDatePicker.vue'
 import BcFragCard from '~/components/BcFragCard.vue'
 
+const ICONS = {
+  good: 'mdi-thumb-up-outline',
+  bad: 'mdi-thumb-down-outline',
+  gave: 'mdi-hand-heart-outline',
+  acquired: 'mdi-emoticon-happy-outline',
+  fragged: 'mdi-hand-saw',
+  rip: 'mdi-emoticon-dead-outline',
+  changed: 'mdi-pencil-outline',
+  imported: 'mdi-import'
+}
+const DEFAULT_ICON = 'mdi-progress-check'
+
 function augment (journal) {
   // Parse the timestamp and and add a date
   journal.date = dateFromIsoString(journal.timestamp)
@@ -357,16 +369,8 @@ function augment (journal) {
   journal.order = -journal.date.valueOf()
   // The age of the journal entry
   journal.age = age(journal.date, 'today', 'ago')
-  switch (journal.entryType) {
-    case 'good': journal.icon = 'mdi-thumb-up-outline'; break
-    case 'bad': journal.icon = 'mdi-thumb-down-outline'; break
-    case 'gave': journal.icon = 'mdi-hand-heart-outline'; break
-    case 'acquired': journal.icon = 'mdi-emoticon-happy-outline'; break
-    case 'fragged': journal.icon = 'mdi-hand-saw'; break
-    case 'rip': journal.icon = 'mdi-emoticon-dead-outline'; break
-    case 'changed': journal.icon = 'mdi-pencil-outline'; break
-    default: journal.icon = 'mdi-progress-check'
-  }
+  // Icon
+  journal.icon = ICONS[journal.entryType] || DEFAULT_ICON
   return journal
 }
 
