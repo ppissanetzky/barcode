@@ -3,6 +3,8 @@ const path = require('path');
 const fs = require('fs');
 const https = require('https');
 
+const _ = require('lodash');
+
 //-----------------------------------------------------------------------------
 // Utility to save an image from a URL, used when importing DBTC items and
 // using an image from the forum. 'upload' is the multer instance, so that
@@ -36,6 +38,17 @@ async function saveImageFromUrl(upload, url) {
     }))
 }
 
+//-----------------------------------------------------------------------------
+
+function isGoodId(thing) {
+    const value = parseInt(thing, 10);
+    return thing && _.isSafeInteger(value) && value > 0;
+}
+
+//-----------------------------------------------------------------------------
+
+
 module.exports = {
-    saveImageFromUrl
+    saveImageFromUrl,
+    isGoodId
 };

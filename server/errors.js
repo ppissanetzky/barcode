@@ -69,6 +69,12 @@ module.exports = {
 
     // When bad 'rules' are given
     INVALID_RULES:          error.bind(null, 'IRU'),
+
+    // When a bad import is given
+    INVALID_IMPORT:         error.bind(null, 'IMP'),
+
+    // A bad thread
+    INVALID_THREAD:         error.bind(null, 'ITH'),
 };
 
 //-----------------------------------------------------------------------------

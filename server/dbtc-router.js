@@ -1,3 +1,6 @@
+
+const assert = require('assert');
+
 const express = require('express');
 const multer = require('multer');
 
@@ -12,13 +15,13 @@ const {
 
 const {itemImported} = require('./forum');
 
-const {saveImageFromUrl} = require('./utility');
+const {saveImageFromUrl, isGoodId} = require('./utility');
 
 //-----------------------------------------------------------------------------
 // Config
 //-----------------------------------------------------------------------------
 
-const {BC_PRODUCTION, BC_UPLOADS_DIR, BC_SITE_BASE_URL} = require('../barcode.config');
+const {BC_UPLOADS_DIR, BC_SITE_BASE_URL} = require('../barcode.config');
 
 //-----------------------------------------------------------------------------
 // The database
@@ -35,7 +38,10 @@ const {
     INVALID_INCREMENT,
     INVALID_RECIPIENT,
     INVALID_RULES,
-    NOT_YOURS} = require('./errors');
+    NOT_YOURS,
+    INVALID_IMPORT,
+    INVALID_THREAD
+} = require('./errors');
 
 //-----------------------------------------------------------------------------
 // The destinaton for uploaded files (pictures)
@@ -565,6 +571,35 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
     if (!thread) {
         return next(NOT_YOURS());
     }
+    // Parse the transactions
+    const transactions = JSON.parse(jsonTransactions);
+    // Validate the transactions now, before we insert the mother frag
+    const good = transactions.every(({date, from, fromId, type, to, toId}) => {
+        try {
+            assert(date, 'Missing date');
+            assert(from && isGoodId(fromId), 'Missing from information');
+            switch (type) {
+                case 'gave':
+                case 'trans':
+                    assert(to && isGoodId(toId),'Missing to information');
+                    break;
+                case 'rip':
+                    break;
+                default:
+                    assert(false, 'Invalid type');
+            }
+            return true;
+        }
+        catch (error) {
+            console.error('Import transaction invalid :', error, {
+                threadId, date, from, fromId, type, to, toId
+            });
+            console.error(JSON.stringify(body, null, 2));
+        }
+    });
+    if (!good) {
+        return next(INVALID_IMPORT());
+    }
     // Now, see if there is a picture URL and download it,
     if (!picture && pictureUrl) {
         picture = await saveImageFromUrl(upload, pictureUrl);
@@ -600,8 +635,6 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
         entryType: 'imported',
         notes: `Imported from the forum`
     });
-    // Now, process the transactions
-    const transactions = JSON.parse(jsonTransactions);
     // This is a map from user ID to frag ID so that we know who
     // has what as we process each transaction. It starts out with
     // the first frag we just inserted for the current user.
@@ -609,7 +642,7 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
     transactions.forEach(({date, from, fromId, type, to, toId}) => {
         function problem(message) {
             console.error('Import transaction failed :', message, {
-                threadId, date, from, from, type, to, toId
+                threadId, date, from, fromId, type, to, toId
             });
         }
         switch (type) {
@@ -703,7 +736,6 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
     });
     // Add a post to the thread, but do it out of band
     itemImported(user, threadId, motherId)
-        .then(() => console.log('Posted to thread', threadId))
         .catch((error) => console.error('Failed to post after import', error))
     // Send back the response now
     res.json({motherId, fragId});

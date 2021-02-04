@@ -58,9 +58,8 @@
             </v-btn>
           </template>
           <v-list>
-            <v-list-item>
+            <v-list-item v-if="showEdit">
               <v-btn
-                v-if="showEdit"
                 icon
                 color="primary"
                 :to="`/add-new-item?fragId=${frag.fragId}`"
@@ -427,7 +426,7 @@ export default {
       return this.isAlive ? age(this.frag.dateAcquired, '', 'old') : null
     },
     showEdit () {
-      return this.ownsIt
+      return this.ownsIt && this.isAlive
     },
     isAFan () {
       return this.frag.isFan

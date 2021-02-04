@@ -14,6 +14,8 @@ const {AUTHENTICATION_FAILED, MEMBER_NEEDS_UPGRADE} = require('./errors');
 
 const {utcIsoStringFromDate, age} = require('../dates');
 
+const {isGoodId} = require('./utility');
+
 //-----------------------------------------------------------------------------
 // A user for testing
 //-----------------------------------------------------------------------------
@@ -451,9 +453,11 @@ async function getDBTCThreadsForUser(userId) {
 //-----------------------------------------------------------------------------
 
 async function validateUserThread(userId, threadId) {
-    const {thread} = await apiRequest(`threads/${threadId}/`, 'GET');
-    if (thread && thread.user_id === userId) {
-        return convertThread(thread);
+    if (isGoodId(threadId)) {
+        const {thread} = await apiRequest(`threads/${threadId}/`, 'GET');
+        if (thread && thread.user_id === userId) {
+            return convertThread(thread);
+        }
     }
 }
 
@@ -465,6 +469,7 @@ async function validateUserThread(userId, threadId) {
 
 function redactBBCode(userId, message) {
     let mentions = [];
+    let images = [];
     const text = [];
     bbob().process(message).tree.walk((thing) => {
         if (typeof thing === 'object') {
@@ -474,6 +479,14 @@ function redactBBCode(userId, message) {
                     name: thing.content.join('').substr(1)
                 });
                 text.push(thing.content.join(''));
+            }
+            else if (thing.tag === 'img') {
+                (thing.content || []).forEach((item) => {
+                    if (_.isString(item)) {
+                        images.push(item);
+                    }
+                });
+                text.push(`[${thing.tag}]`);
             }
             else if (thing.tag !== 'quote') {
                 text.push(`[${thing.tag}]`);
@@ -489,14 +502,18 @@ function redactBBCode(userId, message) {
     const name = ({name}) => name;
     mentions = _.sortBy(mentions, name);
     mentions = _.sortedUniqBy(mentions, name);
-    return ({
-        text: text.join('').trim(),
-        mentions
-    });
+    return [
+        text.join('').trim(),
+        mentions,
+        images
+    ];
 }
 
 async function getThreadPosts(userId, threadId) {
     const result = [];
+    if (!isGoodId(userId) || !isGoodId(threadId)) {
+        return;
+    }
     for (let page = 1; ;page++) {
         const {thread, posts, pagination: {last_page}} = await apiRequest(`threads/${threadId}/`, 'GET', {
             with_posts: true,
@@ -506,16 +523,24 @@ async function getThreadPosts(userId, threadId) {
         if (thread.user_id !== userId) {
             return;
         }
-        posts.forEach((post) => result.push({
-            attachments: (post.Attachments || []).map(({direct_url, content_type}) => direct_url),
-            viewUrl: post.view_url,
-            postDate: utcIsoStringFromDate(new Date(post.post_date * 1000)),
-            user: {
-                id: post.user_id,
-                name: post.username
-            },
-            ...redactBBCode(userId, post.message)
-        }));
+        posts.forEach((post) => {
+            const [text, mentions, images] = redactBBCode(userId, post.message);
+            const attachments = [
+                ...(post.Attachments || []).map(({direct_url}) => direct_url),
+                ...images
+            ];
+            result.push({
+                text,
+                mentions,
+                attachments,
+                viewUrl: post.view_url,
+                postDate: utcIsoStringFromDate(new Date(post.post_date * 1000)),
+                user: {
+                    id: post.user_id,
+                    name: post.username
+                }
+            });
+        })
         if (page === last_page) {
             break;
         }

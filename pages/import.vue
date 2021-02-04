@@ -5,7 +5,17 @@
       Choose a thread to import
     </v-stepper-step>
     <v-stepper-content step="1">
-      <v-container fluid>
+      <div v-if="!threads.length">
+        <p>There's nothing left to import. Well done!</p>
+        <v-btn
+          small
+          color="primary"
+          to="/"
+        >
+          Home
+        </v-btn>
+      </div>
+      <v-container v-else fluid>
         <p v-if="$vuetify.breakpoint.smAndDown">
           <i>It is strongly recommended that you do this on a larger screen. This could get frustrating...</i>
         </p>
@@ -217,7 +227,7 @@
               icon
               color="secondary"
               :disabled="postIndex === 0"
-              @click="--postIndex"
+              @click="goToPreviousPost"
             >
               <v-icon>mdi-arrow-left-thick</v-icon>
             </v-btn>
@@ -228,7 +238,7 @@
               icon
               color="secondary"
               :disabled="postIndex >= posts.length - 1"
-              @click="++postIndex"
+              @click="goToNextPost"
             >
               <v-icon>mdi-arrow-right-thick</v-icon>
             </v-btn>
@@ -239,41 +249,44 @@
             Describe what happened in this post:
           </v-col>
         </v-row>
-        <v-row>
-          <v-col>
-            <v-select
-              v-model="transactions[postIndex].from"
-              :items="peopleWithFrags"
-              outlined
-              hide-details
-              dense
-              clearable
-              placeholder="Nothing"
-            />
-          </v-col>
-          <v-col>
-            <v-select
-              v-model="transactions[postIndex].type"
-              :items="transactionTypes"
-              :disabled="!transactions[postIndex].from"
-              outlined
-              hide-details
-              dense
-              clearable
-            />
-          </v-col>
-          <v-col>
-            <v-select
-              v-model="transactions[postIndex].to"
-              :items="mentionsWithoutFrags"
-              :disabled="!(transactions[postIndex].type === 'gave' || transactions[postIndex].type === 'trans')"
-              outlined
-              hide-details
-              dense
-              clearable
-            />
-          </v-col>
-        </v-row>
+        <v-form ref="form" v-model="valid">
+          <v-row>
+            <v-col>
+              <v-select
+                v-model="transactions[postIndex].from"
+                :items="peopleWithFrags"
+                :rules="fromRules"
+                outlined
+                dense
+                clearable
+                placeholder="Nothing"
+                @input="validate"
+              />
+            </v-col>
+            <v-col>
+              <v-select
+                v-model="transactions[postIndex].type"
+                :items="transactionTypes"
+                :rules="typeRules"
+                outlined
+                dense
+                clearable
+                @input="validate"
+              />
+            </v-col>
+            <v-col>
+              <v-select
+                v-model="transactions[postIndex].to"
+                :items="mentionsWithoutFrags"
+                :rules="toRules"
+                outlined
+                dense
+                clearable
+                @input="validate"
+              />
+            </v-col>
+          </v-row>
+        </v-form>
         <v-row>
           <v-col cols="auto">
             <v-btn
@@ -288,7 +301,7 @@
             <v-btn
               small
               color="primary"
-              :disabled="postIndex < posts.length - 1"
+              :disabled="postIndex < posts.length - 1 || !valid"
               @click="leave(4)"
             >
               Continue
@@ -384,6 +397,10 @@ export default {
       promiseForPosts: undefined,
       loadingPosts: true,
       transactions: [{}],
+      valid: false,
+      fromRules: [value => this.validateTransaction('from')],
+      typeRules: [value => this.validateTransaction('type')],
+      toRules: [value => this.validateTransaction('to')],
       descriptions: [],
       step: 1,
       selectedThreadIndex: null,
@@ -528,7 +545,7 @@ export default {
             if (this.importAnother) {
               this.$router.go()
             } else {
-              this.$router.replace(`/bc/kids/${motherId}`)
+              this.$router.replace(`/kids/${motherId}`)
             }
           })
           return
@@ -572,6 +589,38 @@ export default {
       // Do it
       const { motherId } = await this.$axios.$post('/bc/api/dbtc/import', formData)
       return motherId
+    },
+    validateTransaction (field) {
+      const t = this.transactions[this.postIndex]
+      const { from, type, to } = t
+      if (!from && !type && !to) {
+        return true
+      }
+      if (from && type === 'rip' && !to) {
+        return true
+      }
+      if (from && type && to) {
+        return true
+      }
+      if (type === 'rip' && !to && field === 'to') {
+        return true
+      }
+      if (!t[field]) {
+        return 'This is required'
+      }
+      return true
+    },
+    goToPreviousPost () {
+      this.$refs.form.reset()
+      this.postIndex--
+    },
+    goToNextPost () {
+      if (this.$refs.form.validate()) {
+        this.postIndex++
+      }
+    },
+    validate () {
+      this.$refs.form.validate()
     }
   }
 }

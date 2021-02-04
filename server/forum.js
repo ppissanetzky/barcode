@@ -20,6 +20,9 @@ const POSTING_ENABLED =
     BC_FORUM_MODE === "production" ||
     parseInt(BC_FORUM_MODE, 10) > 0;
 
+console.log(`BC_FORUM_MODE=${BC_FORUM_MODE}`);
+console.log(`POSTING_ENABLED=${POSTING_ENABLED}`)
+
 //-----------------------------------------------------------------------------
 
 function getForumForType(type) {
@@ -49,7 +52,7 @@ async function itemAdded(fragId) {
     if (threadId === 0) {
         const [title, message] = await renderMessage('new-item-thread', {user, frag});
         const forumId = getForumForType(frag.type);
-        console.log(`Posting new thread to ${forumId}`);
+        console.log(`New thread in forum ${forumId}`);
         console.log(`"${title}"`);
         console.log(`"${message}"`);
         if (POSTING_ENABLED) {
@@ -73,7 +76,7 @@ async function itemAdded(fragId) {
 
 async function itemImported(user, threadId, motherId) {
     const [, message] = await renderMessage('item-imported', {user, motherId});
-    console.log(`Posting to thread ${threadId}`);
+    console.log(`New post in thread ${threadId}`);
     console.log(`"${message}"`);
     if (POSTING_ENABLED) {
         await postToForumThread(threadId, message);

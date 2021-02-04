@@ -48,7 +48,6 @@ export default {
   async fetch () {
     const motherId = this.$route.params.motherId
     const { user, frags } = await this.$axios.$get(`/bc/api/dbtc/kids/${encodeURIComponent(motherId)}`)
-
     this.user = user
     this.frags = frags
   },
