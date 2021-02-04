@@ -60,7 +60,7 @@
                       <v-text-field
                         id="name"
                         v-model="name"
-                        label="Name"
+                        label="Name of the item"
                         name="name"
                         hint="Common name"
                         persistent-hint

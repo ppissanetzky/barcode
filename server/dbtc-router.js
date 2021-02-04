@@ -87,7 +87,7 @@ router.get('/frag/:fragId', async (req, res, next) => {
     if (frag.rules === 'private' && user.id !== frag.ownerId) {
         return next(INVALID_FRAG());
     }
-    frag.owner = await lookupUser(frag.ownerId);
+    frag.owner = await lookupUser(frag.ownerId, true);
     frag.ownsIt = frag.ownerId === user.id;
     res.json({
         user,
@@ -111,7 +111,7 @@ router.get('/share/:fragId', async (req, res, next) => {
     if (frag.ownerId !== user.id) {
         return next(NOT_YOURS());
     }
-    frag.owner = await lookupUser(frag.ownerId);
+    frag.owner = await lookupUser(frag.ownerId, true);
     // We set it to false, so it will always be false in the
     // data we save
     frag.ownsIt = false;
@@ -414,11 +414,11 @@ router.get('/collection/:rules', async (req, res, next) => {
     // Now, get full user information about all of the
     // owners. This could get expensive
     await Promise.all(mothers.map(async (mother) => {
-        mother.owner = await lookupUser(mother.ownerId);
+        mother.owner = await lookupUser(mother.ownerId, true);
         mother.ownsIt = mother.ownerId === user.id;
         mother.inCollection = true;
         await Promise.all(mother.owners.map(async (owner) => {
-            const fullUser = await lookupUser(owner.ownerId);
+            const fullUser = await lookupUser(owner.ownerId, true);
             Object.assign(owner, fullUser);
         }));
     }));
@@ -442,7 +442,7 @@ router.get('/kids/:motherId', async (req, res, next) => {
     // Now, get full user information about all of the
     // owners. This could get expensive
     await Promise.all(frags.map(async (frag) => {
-        frag.owner = await lookupUser(frag.ownerId);
+        frag.owner = await lookupUser(frag.ownerId, true);
         frag.ownsIt = frag.ownerId === user.id;
     }));
     res.json({
@@ -466,7 +466,7 @@ router.get('/tree/:motherId', async (req, res, next) => {
     }
     const map = new Map(frags.map((frag) => [frag.fragId, frag]));
     await Promise.all(frags.map(async (frag) => {
-        frag.owner = await lookupUser(frag.ownerId);
+        frag.owner = await lookupUser(frag.ownerId, true);
     }));
     const [root] = frags.filter((frag) => {
         if (frag.fragOf) {
@@ -749,8 +749,8 @@ router.get('/top10', async (req, res) => {
     const result = db.getDbtcTop10s();
     await Promise.all(Object.keys(result).map(async (key) => {
         await Promise.all(result[key].map(async (row) => {
-            const {name} = await lookupUser(row.ownerId);
-            row.ownerName = name;
+            const user = await lookupUser(row.ownerId, true);
+            row.ownerName = user ? user.name : '<unknown>';
         }));
     }));
     res.json({...result});

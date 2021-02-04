@@ -154,10 +154,11 @@ function makeUser(xfUser) {
         view_url,
         age
     } = xfUser;
+    const allowed = isXfUserAllowed(xfUser);
     return ({
         id: parseInt(user_id, 10),
-        name: username,
-        allowed: isXfUserAllowed(xfUser),
+        name: allowed ? username : username + ' (NSM)',
+        allowed,
         canImpersonate: canXfUserImpersonate(xfUser),
         title: user_title,
         location: location,
@@ -268,9 +269,12 @@ function dropCachedUser(id) {
 }
 
 // Get a user object from the cache given a user ID. Returns a user object
-// or undefined if the user is not found or the request fails.
+// or undefined if the user is not found or the request fails. If the user
+// is not allowed to use the system, it returns undefined unless
+// 'forDisplayOnly' is set to true, in which case, the user is returned
+// regardless
 
-async function lookupUser(userId) {
+async function lookupUser(userId, forDisplayOnly) {
     if (!userId) {
         console.error('Missing userId in lookup');
         return;
@@ -292,7 +296,16 @@ async function lookupUser(userId) {
             // groups and we cannot determine whether the user is allowed
             api_bypass_permissions: 1
         });
-        if (user && isXfUserAllowed(user)) {
+        const isAllowed = isXfUserAllowed(user);
+        if (!isAllowed) {
+            console.log('USER NOT ALLOWED',
+                user.username,
+                user.user_title,
+                user.user_state,
+                user.user_group_id,
+                user.secondary_group_ids);
+        }
+        if (user && (forDisplayOnly || isAllowed)) {
             return cacheUser(makeUser(user));
         }
     }
