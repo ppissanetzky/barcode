@@ -1,9 +1,8 @@
 <template>
-  <v-card max-width="375">
+  <v-card width="375px">
     <!-- Picture or placeholder -->
     <v-img
-      max-width="375px"
-      max-height="300px"
+      height="300px"
       :src="frag.picture ? `${$config.BC_UPLOADS_URL}/${frag.picture}` : '/bc/picture-placeholder.png'"
     >
       <v-alert
@@ -46,7 +45,7 @@
 
     <!-- A transparent bar with a 3-dot button for a menu -->
 
-    <v-app-bar flat color="rgba(0, 0, 0, 0)" dense>
+    <v-app-bar flat color="rgba(0, 0, 0, 0)" dense class="ma-0">
       <h3>{{ frag.name }}</h3>
       <v-spacer />
       <v-menu v-if="ownsIt">
@@ -83,27 +82,50 @@
       </v-menu>
     </v-app-bar>
 
-    <v-card-subtitle>
-      <!-- Scientific name -->
-      <div>{{ frag.scientificName }}</div>
-
-      <!-- The contributor name (the person who added it to this collection) -->
-      <div v-if="frag.inCollection">
-        <strong>Contributed by {{ ownsIt ? 'you' : frag.owner.name }}</strong>
-      </div>
-
-      <!-- A link to the thread that the item is tracked in -->
-      <div v-if="frag.threadUrl">
-        <a :href="frag.threadUrl" target="_blank">Forum thread</a>
-      </div>
-    </v-card-subtitle>
+    <!-- Scientific name -->
+    <v-card-subtitle v-if="frag.scientificName" v-text="frag.scientificName" />
 
     <v-card-text>
+      <!-- A chip that links to the owner -->
+
+      <v-chip
+        v-if="showOwner"
+        small
+        label
+        :color="ownsIt ? 'orange' : 'green lighten-2'"
+        class="my-1 mr-1"
+        :href="frag.owner.viewUrl"
+        target="_blank"
+      >
+        {{ ownsIt ? 'Yours' : frag.owner.name }}
+        <v-icon small right>
+          mdi-open-in-new
+        </v-icon>
+      </v-chip>
+
+      <!-- A link to the thread that the item is tracked in -->
+
+      <v-chip
+        v-if="frag.threadUrl"
+        small
+        label
+        color="#1f63a6"
+        class="white--text my-1 mr-1"
+        :href="frag.threadUrl"
+        target="_blank"
+      >
+        Thread
+        <v-icon small right>
+          mdi-open-in-new
+        </v-icon>
+      </v-chip>
+
       <!-- A chip for the type -->
 
       <v-chip
         small
-        color="primary"
+        label
+        color="cyan lighten-3"
         class="my-1 mr-1"
         v-text="frag.type"
       />
@@ -113,6 +135,7 @@
       <v-chip
         v-if="age"
         small
+        label
         class="my-1 mr-1"
         v-text="age"
       />
@@ -122,6 +145,7 @@
       <v-chip
         v-if="!frag.inCollection"
         small
+        label
         class="my-1 mr-1"
         v-text="frag.rules.toUpperCase()"
       />
@@ -129,8 +153,9 @@
       <!-- If it is a mother and this user owns it, a chip to that effect -->
 
       <v-chip
-        v-if="ownsIt && isAlive"
+        v-if="ownsIt && isAlive && inCollection"
         small
+        label
         color="warning"
         class="my-1 mr-1"
       >
@@ -142,6 +167,7 @@
       <v-chip
         v-if="isAFan"
         small
+        label
         color="success"
         close
         class="my-1 mr-1"
@@ -155,6 +181,7 @@
       <v-chip
         v-if="fragsAvailable"
         small
+        label
         class="my-1 mr-1"
         v-text="`${fragsAvailable} available`"
       />
@@ -164,6 +191,7 @@
       <v-chip
         v-if="!isAlive"
         small
+        label
         color="error"
         class="my-1 mr-1"
       >
@@ -171,193 +199,208 @@
       </v-chip>
     </v-card-text>
 
-    <v-divider />
-    <v-tabs
-      v-model="tabs"
-      center-active
-      show-arrows
+    <v-btn
+      small
+      text
+      class="ma-1"
+      color="secondary"
+      @click="showTabs = !showTabs"
     >
-      <slot name="first-tabs" />
-      <v-tab>
-        <v-icon>mdi-wall-sconce-flat</v-icon>
-      </v-tab>
-      <v-tab v-if="notes">
-        <v-icon>mdi-text</v-icon>
-      </v-tab>
-      <v-tab v-if="shouldShowLineage" @click="updateLineage()">
-        <v-icon>mdi-file-tree-outline</v-icon>
-      </v-tab>
-      <v-tab v-if="canBecomeAFan || isAFan">
-        <v-icon>mdi-thumb-up-outline</v-icon>
-      </v-tab>
-      <slot name="tabs" />
-    </v-tabs>
-    <v-tabs-items v-model="tabs">
-      <slot name="first-tabs-items" />
+      {{ showTabs ? 'Less' : 'More' }}
+      <v-icon>{{ showTabs ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+    </v-btn>
 
-      <!-- A table to show light, flow, hardiness and growth rate -->
-
-      <v-tab-item>
-        <v-card-title>Conditions and traits</v-card-title>
-        <v-simple-table>
-          <template v-slot:default>
-            <thead>
-              <tr>
-                <th
-                  class="text-center"
-                >
-                  Light
-                </th>
-                <th
-                  class="text-center"
-                >
-                  Flow
-                </th>
-                <th
-                  class="text-center"
-                >
-                  Hardiness
-                </th>
-                <th
-                  class="text-center"
-                >
-                  Growth rate
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td
-                  class="text-center"
-                >
-                  {{ frag.light.toLowerCase() }}
-                </td>
-                <td
-                  class="text-center"
-                >
-                  {{ frag.flow.toLowerCase() }}
-                </td>
-                <td
-                  class="text-center"
-                >
-                  {{ frag.hardiness.toLowerCase() }}
-                </td>
-                <td
-                  class="text-center"
-                >
-                  {{ frag.growthRate.toLowerCase() }}
-                </td>
-              </tr>
-            </tbody>
-          </template>
-        </v-simple-table>
-      </v-tab-item>
-
-      <!-- Notes -->
-
-      <v-tab-item v-if="notes">
-        <v-card-title>Notes</v-card-title>
-        <v-card-text v-text="notes" />
-      </v-tab-item>
-
-      <!-- Lineage -->
-
-      <v-tab-item v-if="shouldShowLineage">
-        <v-card-title>Lineage</v-card-title>
-        <div
-          v-if="lineage.length === 0"
-          class="text-center"
+    <v-expand-transition>
+      <div v-if="showTabs">
+        <v-divider />
+        <v-tabs
+          v-model="tabs"
+          center-active
+          show-arrows
         >
-          <v-progress-linear
-            indeterminate
-            color="primary"
-          />
-        </div>
-        <div v-else>
-          <v-treeview
-            :items="lineage"
-            item-key="fragId"
-            item-text="text"
-            open-all
-            dense
-          >
-            <template v-slot:prepend="{ item }">
-              <v-avatar
-                v-if="item.isSource"
-                size="23"
-                color="amber"
-              />
-              <v-avatar
-                v-else-if="item.original"
-                size="23"
-                color="primary lighten-1"
-              >
-                <span
-                  v-if="item.text && item.children.length"
-                  class="white--text"
-                  v-text="item.children.length"
-                />
-              </v-avatar>
-              <v-avatar
-                v-else-if="item.children.length > 1"
-                size="23"
-                color="orange darken-4"
-              >
-                <span class="white--text" v-text="item.children.length" />
-              </v-avatar>
+          <slot name="first-tabs" />
+          <v-tab>
+            <v-icon>mdi-wall-sconce-flat</v-icon>
+          </v-tab>
+          <v-tab v-if="notes">
+            <v-icon>mdi-text</v-icon>
+          </v-tab>
+          <v-tab v-if="shouldShowLineage" @click="updateLineage()">
+            <v-icon>mdi-file-tree-outline</v-icon>
+          </v-tab>
+          <v-tab v-if="canBecomeAFan || isAFan">
+            <v-icon>mdi-thumb-up-outline</v-icon>
+          </v-tab>
+          <slot name="tabs" />
+        </v-tabs>
+        <v-tabs-items v-model="tabs">
+          <slot name="first-tabs-items" />
 
-              <v-avatar
-                v-else-if="item.children.length > 0"
-                size="23"
-                color="teal lighten-1"
-              >
-                <span class="white--text" v-text="item.children.length" />
-              </v-avatar>
-              <v-avatar
-                v-else
-                size="23"
-                color="teal lighten-4"
-              />
-              <strong v-if="item.isAlive" v-text="user.id === item.owner.id ? 'You' : item.owner.name" />
-              <span v-else class="text-decoration-line-through" v-text="user.id === item.owner.id ? 'You' : item.owner.name" />
-            </template>
-          </v-treeview>
-        </div>
-      </v-tab-item>
+          <!-- A table to show light, flow, hardiness and growth rate -->
 
-      <!-- Fan/Like -->
-      <v-tab-item v-if="canBecomeAFan || isAFan">
-        <v-card-title>Like</v-card-title>
-        <div v-if="canBecomeAFan">
-          <v-card-text>Like this item to be notified when frags are available</v-card-text>
-          <v-card-text>
-            <v-btn
-              small
-              color="secondary"
-              :loading="loadingFan"
-              @click="becomeAFan"
+          <v-tab-item>
+            <v-card-title>Conditions and traits</v-card-title>
+            <v-simple-table>
+              <template v-slot:default>
+                <thead>
+                  <tr>
+                    <th
+                      class="text-center"
+                    >
+                      Light
+                    </th>
+                    <th
+                      class="text-center"
+                    >
+                      Flow
+                    </th>
+                    <th
+                      class="text-center"
+                    >
+                      Hardiness
+                    </th>
+                    <th
+                      class="text-center"
+                    >
+                      Growth rate
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td
+                      class="text-center"
+                    >
+                      {{ frag.light.toLowerCase() }}
+                    </td>
+                    <td
+                      class="text-center"
+                    >
+                      {{ frag.flow.toLowerCase() }}
+                    </td>
+                    <td
+                      class="text-center"
+                    >
+                      {{ frag.hardiness.toLowerCase() }}
+                    </td>
+                    <td
+                      class="text-center"
+                    >
+                      {{ frag.growthRate.toLowerCase() }}
+                    </td>
+                  </tr>
+                </tbody>
+              </template>
+            </v-simple-table>
+          </v-tab-item>
+
+          <!-- Notes -->
+
+          <v-tab-item v-if="notes">
+            <v-card-title>Notes</v-card-title>
+            <v-card-text v-text="notes" />
+          </v-tab-item>
+
+          <!-- Lineage -->
+
+          <v-tab-item v-if="shouldShowLineage">
+            <v-card-title>Lineage</v-card-title>
+            <div
+              v-if="lineage.length === 0"
+              class="text-center"
             >
-              Like
-            </v-btn>
-          </v-card-text>
-        </div>
-        <div v-else>
-          <v-card-text>You already like this item. Unlike if you'd like to stop receiving notifications</v-card-text>
-          <v-card-text>
-            <v-btn
-              small
-              color="secondary"
-              :loading="loadingFan"
-              @click="removeFan"
-            >
-              Unlike
-            </v-btn>
-          </v-card-text>
-        </div>
-      </v-tab-item>
+              <v-progress-linear
+                indeterminate
+                color="primary"
+              />
+            </div>
+            <div v-else>
+              <v-treeview
+                :items="lineage"
+                item-key="fragId"
+                item-text="text"
+                open-all
+                dense
+              >
+                <template v-slot:prepend="{ item }">
+                  <v-avatar
+                    v-if="item.isSource"
+                    size="23"
+                    color="amber"
+                  />
+                  <v-avatar
+                    v-else-if="item.original"
+                    size="23"
+                    color="primary lighten-1"
+                  >
+                    <span
+                      v-if="item.text && item.children.length"
+                      class="white--text"
+                      v-text="item.children.length"
+                    />
+                  </v-avatar>
+                  <v-avatar
+                    v-else-if="item.children.length > 1"
+                    size="23"
+                    color="orange darken-4"
+                  >
+                    <span class="white--text" v-text="item.children.length" />
+                  </v-avatar>
 
-      <slot name="tabs-items" />
-    </v-tabs-items>
+                  <v-avatar
+                    v-else-if="item.children.length > 0"
+                    size="23"
+                    color="teal lighten-1"
+                  >
+                    <span class="white--text" v-text="item.children.length" />
+                  </v-avatar>
+                  <v-avatar
+                    v-else
+                    size="23"
+                    color="teal lighten-4"
+                  />
+                  <strong v-if="item.isAlive" v-text="user.id === item.owner.id ? 'You' : item.owner.name" />
+                  <span v-else class="text-decoration-line-through" v-text="user.id === item.owner.id ? 'You' : item.owner.name" />
+                </template>
+              </v-treeview>
+            </div>
+          </v-tab-item>
+
+          <!-- Fan/Like -->
+          <v-tab-item v-if="canBecomeAFan || isAFan">
+            <v-card-title>Like</v-card-title>
+            <div v-if="canBecomeAFan">
+              <v-card-text>Like this item to be notified when frags are available</v-card-text>
+              <v-card-text>
+                <v-btn
+                  small
+                  color="secondary"
+                  :loading="loadingFan"
+                  @click="becomeAFan"
+                >
+                  Like
+                </v-btn>
+              </v-card-text>
+            </div>
+            <div v-else>
+              <v-card-text>You already like this item. Unlike if you'd like to stop receiving notifications</v-card-text>
+              <v-card-text>
+                <v-btn
+                  small
+                  color="secondary"
+                  :loading="loadingFan"
+                  @click="removeFan"
+                >
+                  Unlike
+                </v-btn>
+              </v-card-text>
+            </div>
+          </v-tab-item>
+
+          <slot name="tabs-items" />
+        </v-tabs-items>
+      </div>
+    </v-expand-transition>
 
     <!-- Slot for content -->
 
@@ -377,6 +420,10 @@ export default {
     fragOrMother: {
       type: Object,
       default: null
+    },
+    showOwner: {
+      type: Boolean,
+      default: false
     }
   },
   data: () => ({
@@ -386,12 +433,9 @@ export default {
     shareAlert: false,
     shareLink: undefined,
 
+    showTabs: false,
     // Tabs
     tabs: null,
-    // Controls showing the notes
-    showNotes: false,
-    // Showing the lineage
-    showLineage: false,
     // Loading indicator for the 'become a fan' button
     loadingFan: false
   }),
@@ -435,9 +479,6 @@ export default {
     }
   },
   watch: {
-    showLineage (value) {
-      this.updateLineage(false)
-    },
     fragsAvailable (value) {
       this.updateLineage(true)
     }

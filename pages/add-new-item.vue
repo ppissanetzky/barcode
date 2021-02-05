@@ -11,12 +11,19 @@
             class="text-center"
             v-text="'Update ' + frag.name"
           />
-          <h1
-            v-else
-            class="text-center"
-          >
-            Add a new item
-          </h1>
+          <div v-else>
+            <h1
+              class="text-center"
+            >
+              Add a new item
+            </h1>
+            <h3
+              class="text-center"
+            >
+              If the item you'd like to add is already being tracked in a forum thread,
+              you should <a href="/bc/import">import it</a> instead.
+            </h3>
+          </div>
         </v-card>
       </v-col>
     </v-row>

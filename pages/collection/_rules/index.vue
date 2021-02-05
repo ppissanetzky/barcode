@@ -76,7 +76,11 @@
                   :key="m.motherId"
                   cols="auto"
                 >
-                  <bc-editable-frag-card :frag="m" :user="user">
+                  <bc-editable-frag-card
+                    :frag="m"
+                    :user="user"
+                    show-owner
+                  >
                     <template v-slot:first-tabs>
                       <v-tab>
                         <v-icon>mdi-account-multiple-outline</v-icon>

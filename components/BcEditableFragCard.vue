@@ -3,6 +3,7 @@
     v-if="frag"
     :frag-or-mother="frag"
     :user="user"
+    :show-owner="showOwner"
   >
     <template v-slot:first-tabs>
       <slot name="first-tabs" />
@@ -394,6 +395,10 @@ export default {
     journals: {
       type: Array,
       default: null
+    },
+    showOwner: {
+      type: Boolean,
+      default: false
     }
   },
   data: () => ({

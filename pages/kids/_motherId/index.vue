@@ -16,6 +16,7 @@
         <bc-editable-frag-card
           :frag="frag"
           :user="user"
+          show-owner
         >
           <template v-slot:first-tabs>
             <v-tab>
