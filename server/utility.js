@@ -1,7 +1,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const https = require('https');
+const {https} = require('follow-redirects');
 
 const _ = require('lodash');
 
@@ -46,7 +46,6 @@ function isGoodId(thing) {
 }
 
 //-----------------------------------------------------------------------------
-
 
 module.exports = {
     saveImageFromUrl,
