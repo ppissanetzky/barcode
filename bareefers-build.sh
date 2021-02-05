@@ -28,7 +28,7 @@ mkdir -p ${SITE_DIR}
 
 # npm install
 
-npm i
+npm ci
 
 # Build it
 
