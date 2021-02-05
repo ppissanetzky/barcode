@@ -42,47 +42,46 @@
           </v-col>
         </v-row>
       </v-alert>
-      <!-- A transparent bar with a 3-dot button for a menu -->
-
-      <v-app-bar v-if="ownsIt && !shareAlert" flat color="rgba(0, 0, 0, 0)">
-        <v-spacer />
-        <v-menu>
-          <template v-slot:activator="{on, attrs}">
-            <v-btn
-              color="white"
-              icon
-              v-bind="attrs"
-              v-on="on"
-            >
-              <v-icon>mdi-dots-vertical</v-icon>
-            </v-btn>
-          </template>
-          <v-list>
-            <v-list-item v-if="showEdit">
-              <v-btn
-                icon
-                color="primary"
-                :to="`/add-new-item?fragId=${frag.fragId}`"
-              >
-                <v-icon>mdi-pencil</v-icon>
-              </v-btn>
-            </v-list-item>
-            <v-list-item>
-              <v-btn
-                icon
-                color="primary"
-                @click="getShareLink"
-              >
-                <v-icon>mdi-export-variant</v-icon>
-              </v-btn>
-            </v-list-item>
-          </v-list>
-        </v-menu>
-      </v-app-bar>
     </v-img>
 
-    <!-- The name -->
-    <v-card-title>{{ frag.name }}</v-card-title>
+    <!-- A transparent bar with a 3-dot button for a menu -->
+
+    <v-app-bar flat color="rgba(0, 0, 0, 0)" dense>
+      <h3>{{ frag.name }}</h3>
+      <v-spacer />
+      <v-menu v-if="ownsIt">
+        <template v-slot:activator="{on, attrs}">
+          <v-btn
+            icon
+            small
+            v-bind="attrs"
+            v-on="on"
+          >
+            <v-icon>mdi-dots-vertical</v-icon>
+          </v-btn>
+        </template>
+        <v-list>
+          <v-list-item v-if="showEdit">
+            <v-btn
+              icon
+              color="primary"
+              :to="`/add-new-item?fragId=${frag.fragId}`"
+            >
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+          </v-list-item>
+          <v-list-item>
+            <v-btn
+              icon
+              color="primary"
+              @click="getShareLink"
+            >
+              <v-icon>mdi-export-variant</v-icon>
+            </v-btn>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+    </v-app-bar>
 
     <v-card-subtitle>
       <!-- Scientific name -->
