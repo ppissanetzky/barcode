@@ -17,10 +17,9 @@
     <v-row>
       <!-- A card for imports -->
       <v-col v-if="imports.length" cols="auto">
-        <v-card max-width="375">
+        <v-card width="375px">
           <v-img
-            max-width="375px"
-            max-height="300px"
+            height="300px"
             src="/bc/import.jpg"
           />
           <v-card-title>They're waiting!</v-card-title>

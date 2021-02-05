@@ -150,10 +150,10 @@
         v-text="frag.rules.toUpperCase()"
       />
 
-      <!-- If it is a mother and this user owns it, a chip to that effect -->
+      <!-- If the user is not the owner but has one of them, show it -->
 
       <v-chip
-        v-if="ownsIt && isAlive && inCollection"
+        v-if="frag.hasOne && !ownsIt && frag.inCollection"
         small
         label
         color="warning"

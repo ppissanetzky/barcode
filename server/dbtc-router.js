@@ -420,6 +420,9 @@ router.get('/collection/:rules', async (req, res, next) => {
         await Promise.all(mother.owners.map(async (owner) => {
             const fullUser = await lookupUser(owner.ownerId, true);
             Object.assign(owner, fullUser);
+            if (owner.ownerId === user.id) {
+                mother.hasOne = true;
+            }
         }));
     }));
     res.json({
