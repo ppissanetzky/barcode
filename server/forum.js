@@ -9,6 +9,12 @@ const {lookupUser, startForumThread, postToForumThread} = require('./xenforo');
 const {renderMessage} = require('./messages.js');
 
 //-----------------------------------------------------------------------------
+
+function later(f) {
+    Promise.resolve().then(f).catch((error) => console.error(error));
+}
+
+//-----------------------------------------------------------------------------
 // Load the map of 'type' to forum ID from the database
 //-----------------------------------------------------------------------------
 
@@ -38,54 +44,84 @@ function getForumForType(type) {
 
 //-----------------------------------------------------------------------------
 
-async function itemAdded(fragId) {
-    const [frag] = db.selectFrag(fragId);
-    assert(frag, `Invalid frag ${fragId}`);
-    if (frag.rules !== 'dbtc') {
-        console.log(`Frag ${fragId} is not DBTC, not posting`);
-        return;
-    }
-    const user = await lookupUser(frag.ownerId);
-    assert(user, `Failed to look up user ${frag.ownerId}`);
-    const {threadId} = frag;
-    // Thread ID zero means that we have to create a new thread
-    if (threadId === 0) {
+function itemAdded(fragId) {
+    later(async () => {
+        const [frag] = db.selectFrag(fragId);
+        assert(frag, `Invalid frag ${fragId}`);
+        if (frag.rules !== 'dbtc') {
+            console.log(`Frag ${fragId} is not DBTC, not posting`);
+            return;
+        }
+        const user = await lookupUser(frag.ownerId);
+        assert(user, `Failed to look up user ${frag.ownerId}`);
         const [title, message] = await renderMessage('new-item-thread', {user, frag});
         const forumId = getForumForType(frag.type);
         console.log(`New thread in forum ${forumId}`);
         console.log(`"${title}"`);
         console.log(`"${message}"`);
-        if (POSTING_ENABLED) {
-            const newThreadId = await startForumThread(forumId, title, message);
-            console.log(`Created thread ${newThreadId}`);
-            // Update the database with the new thread ID
-            db.setMotherThreadId(frag.motherId, newThreadId);
+        if (!POSTING_ENABLED) {
+            return;
         }
-        return;
-    }
-    // Falsy thread ID means that no posting should be done
-    if (!threadId) {
-        console.log(`Frag ${fragId} is marked with no thread ID, not posting`);
-        return;
-    }
-    // Otherwise, it already has a thread
-    console.log('Already has a thread, doing nothing');
+        const newThreadId = await startForumThread(forumId, title, message);
+        console.log(`Created thread ${newThreadId}`);
+        // Update the database with the new thread ID
+        db.setMotherThreadId(frag.motherId, newThreadId);
+    });
 }
 
 //-----------------------------------------------------------------------------
 
-async function itemImported(user, threadId, motherId) {
-    const [, message] = await renderMessage('item-imported', {user, motherId});
-    console.log(`New post in thread ${threadId}`);
-    console.log(`"${message}"`);
-    if (POSTING_ENABLED) {
+function uberPost(threadId, messageName, context) {
+    later(async () => {
+        const [, message] = await renderMessage(messageName, context);
+        console.log(`New post in thread ${threadId}`);
+        console.log(`"${message}"`);
+        if (!POSTING_ENABLED) {
+            return;
+        }
         await postToForumThread(threadId, message);
         console.log(`Posted to thread ${threadId}`)
-    }
+    });
+}
+
+//-----------------------------------------------------------------------------
+
+function itemImported(user, threadId, motherId) {
+    uberPost(threadId, 'item-imported', {user, motherId});
+}
+
+//-----------------------------------------------------------------------------
+
+function madeFragsAvailable(user, frag) {
+    uberPost(frag.threadId, 'frags-available', {user, frag});
+}
+
+//-----------------------------------------------------------------------------
+
+function fragGiven(user, recipient, fragId) {
+    const [frag] = db.selectFrag(fragId);
+    uberPost(frag.threadId, 'frag-given', {user, recipient, frag});
+}
+
+//-----------------------------------------------------------------------------
+
+function journalUpdated(user, frag, journal) {
+    uberPost(frag.threadId, 'journal-updated', {user, frag, journal});
+}
+
+//-----------------------------------------------------------------------------
+
+function fragDied(user, frag, journal) {
+    uberPost(frag.threadId, 'frag-died', {user, frag, journal});
 }
 
 //-----------------------------------------------------------------------------
 
 module.exports = {
-    itemImported
+    itemAdded,
+    itemImported,
+    madeFragsAvailable,
+    fragGiven,
+    journalUpdated,
+    fragDied
 };

@@ -1,0 +1,19 @@
+{{!
+This one is used to create a new post when a user updates the journal
+    user - the user object representing the one who gave the frag
+    frag - all the data from 'mothers' and 'frags' for this item
+    journal - the new journal object
+}}
+no title - this is a post
+
+@{{user.name}} made a [URL={{fragUrl frag.fragId}}]journal update[/URL].
+
+{{#if journal.picture}}
+[IMG]{{pictureUrl journal.picture}}[/IMG]
+{{/if}}
+
+{{#if journal.notes}}
+[QUOTE={{user.name}}]
+{{journal.notes}}
+[/QUOTE]
+{{/if}}

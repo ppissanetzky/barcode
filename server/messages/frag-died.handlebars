@@ -1,0 +1,15 @@
+{{!
+This one is used to create a new post when a user reports a frag as lost.
+    user - the user object representing the one who gave the frag
+    frag - all the data from 'mothers' and 'frags' for this item
+    journal - the new journal object
+}}
+no title - this is a post
+
+Time for condolences, @{{user.name}} lost [URL={{fragUrl frag.fragId}}]a frag[/URL].
+
+{{#if journal.notes}}
+[QUOTE={{user.name}}]
+{{journal.notes}}
+[/QUOTE]
+{{/if}}

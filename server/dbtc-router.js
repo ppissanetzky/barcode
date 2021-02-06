@@ -13,7 +13,14 @@ const {
     validateUserThread
 } = require('./xenforo');
 
-const {itemImported} = require('./forum');
+const {
+    itemAdded,
+    itemImported,
+    madeFragsAvailable,
+    fragGiven,
+    journalUpdated,
+    fragDied
+} = require('./forum');
 
 const {saveImageFromUrl, isGoodId} = require('./utility');
 
@@ -39,8 +46,7 @@ const {
     INVALID_RECIPIENT,
     INVALID_RULES,
     NOT_YOURS,
-    INVALID_IMPORT,
-    INVALID_THREAD
+    INVALID_IMPORT
 } = require('./errors');
 
 //-----------------------------------------------------------------------------
@@ -171,10 +177,10 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
         notes: body.source ?
             `Got it from ${body.source}` : 'Acquired it'
     });
-    res.json({
-        fragId,
-        journal
-    });
+    // Post to the forum out of band
+    itemAdded(fragId);
+    // Reply
+    res.json({fragId, journal});
 });
 
 //-----------------------------------------------------------------------------
@@ -263,6 +269,14 @@ router.put('/frag/:fragId/available/:fragsAvailable', (req, res, next) => {
         picture: null,
         notes: `Updated available frags to ${value}`
     });
+    // Post to the forum
+    if (result) {
+        madeFragsAvailable(user, {
+            ...frag,
+            fragsAvailable: result
+        });
+    }
+    // Reply
     res.json({
         fragsAvailable: result,
         journal
@@ -322,6 +336,8 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
         picture,
         notes: `Gave a frag to ${recipient.name}`
     });
+    // Post to the forum
+    fragGiven(user, recipient, newFragId);
     // Reply
     res.json({
         fragsAvailable,
@@ -360,6 +376,8 @@ router.post('/frag/:fragId/journal', upload.single('picture'), (req, res, next) 
         db.updateFragPicture(user.id, fragId, picture);
         coverPicture = picture;
     }
+    // Post to the forum
+    journalUpdated(user, frag, journal);
     // Reply
     res.json({
         journal,
@@ -393,6 +411,8 @@ router.post('/frag/:fragId/rip', upload.none(), (req, res, next) => {
         picture: null,
         notes: body.notes || 'RIP'
     });
+    // Post to the thread
+    fragDied(user, frag, journal);
     // Reply
     res.json({journal});
 });
@@ -737,9 +757,8 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
                 break;
         }
     });
-    // Add a post to the thread, but do it out of band
-    itemImported(user, threadId, motherId)
-        .catch((error) => console.error('Failed to post after import', error))
+    // Add a post to the thread out of band
+    itemImported(user, threadId, motherId);
     // Send back the response now
     res.json({motherId, fragId});
 });

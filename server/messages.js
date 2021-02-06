@@ -5,6 +5,8 @@ const handlebars = require('handlebars');
 
 const {BC_SITE_BASE_URL, BC_UPLOADS_URL} = require('../barcode.config');
 
+const {age} = require('../dates');
+
 //-----------------------------------------------------------------------------
 // A helper for handlebars that returns the full URL to a picture, use it like
 // this: {{pictureUrl frag.picture}}
@@ -20,6 +22,10 @@ handlebars.registerHelper('fragUrl', (fragId) => {
 
 handlebars.registerHelper('motherUrl', (motherId) => {
     return `${BC_SITE_BASE_URL}/kids/${motherId}`;
+});
+
+handlebars.registerHelper('age', (date) => {
+    return age(date, 'today', 'ago');
 });
 
 //-----------------------------------------------------------------------------

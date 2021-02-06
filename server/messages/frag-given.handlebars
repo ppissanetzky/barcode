@@ -1,0 +1,20 @@
+{{!
+This one is used to create a new post when a frag is given
+    user - the user object representing the one who gave the frag
+    recipient - the user object for the one who got the frag
+    frag - all the data from 'mothers' and 'frags' for this item
+The first line is the thread title
+}}
+no title - this is a post
+
+@{{user.name}} gave a [URL={{fragUrl frag.fragId}}]frag[/URL] to @{{recipient.name}} {{age frag.dateAcquired}}.
+
+{{#if frag.picture}}
+[IMG]{{pictureUrl frag.picture}}[/IMG]
+{{/if}}
+
+{{#if frag.notes}}
+[QUOTE={{user.name}}]
+{{frag.notes}}
+[/QUOTE]
+{{/if}}

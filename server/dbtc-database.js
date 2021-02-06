@@ -221,7 +221,7 @@ const SELECT_FRAGS_AVAILABLE = `
         fragsAvailable
     FROM
         frags
-        WHERE
+    WHERE
         fragId = $fragId AND
         ownerId = $ownerId
 `;
@@ -308,7 +308,7 @@ const UPDATE_FRAGS_AVAILABLE = `
 `;
 
 function updateFragsAvailable(ownerId, fragId, fragsAvailable) {
-    db.transaction(({run, all}) => {
+    return db.transaction(({run, all}) => {
         run(UPDATE_FRAGS_AVAILABLE, {
             fragId,
             ownerId,

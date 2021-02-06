@@ -8,14 +8,16 @@ DBTC: {{frag.name}}
 
 @{{user.name}} contributed [URL={{fragUrl frag.fragId}}]{{frag.name}}[/URL] to DBTC.
 
+{{#if frag.fragsAvailable}}
+There are {{frag.fragsAvailable}} frags available right now.
+{{/if}}
+
 {{#if frag.picture}}
 [IMG]{{pictureUrl frag.picture}}[/IMG]
 {{/if}}
 
 {{#if frag.notes}}
+[QUOTE={{user.name}}]
 {{frag.notes}}
-{{/if}}
-
-{{#if frag.fragsAvailable}}
-There are {{frag.fragsAvailable}} frags available right now.
+[/QUOTE]
 {{/if}}
