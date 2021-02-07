@@ -284,7 +284,7 @@
               cols="12"
             >
               <v-img
-                :src="`${$config.BC_ROUTER_BASE}uploads/${item.picture}`"
+                :src="`/bc/uploads/${item.picture}`"
                 aspect-ratio="1"
               />
               <v-card-subtitle class="text-center">

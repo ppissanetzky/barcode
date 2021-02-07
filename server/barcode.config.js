@@ -42,19 +42,6 @@ module.exports = {
     get BC_SITE_BASE_URL () { return get('BC_SITE_BASE_URL') },
 
     //-------------------------------------------------------------------------
-    // This one has to be provided to the client BUILD. It points to site's
-    // base URL
-    //
-    // For development, on my machine, it is '/bc/'
-    //
-    // For production, it should be '/bc/'
-    //
-    // For the container build, it should be '/'
-    //-------------------------------------------------------------------------
-
-    get BC_ROUTER_BASE () { return get('BC_ROUTER_BASE' ) },
-
-    //-------------------------------------------------------------------------
     // This has to be provided to the server at RUNTIME. It is the local
     // directory where uploaded images will be stored.
     //

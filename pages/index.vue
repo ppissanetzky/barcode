@@ -20,7 +20,7 @@
         <v-card width="375px">
           <v-img
             height="300px"
-            :src="`${$config.BC_ROUTER_BASE}import.jpg`"
+            src="/bc/import.jpg"
           />
           <v-card-title>They're waiting!</v-card-title>
           <v-card-subtitle>

@@ -9,10 +9,6 @@ import colors from 'vuetify/es5/util/colors'
 
 const {version} = require('./package.json')
 
-const BC_ROUTER_BASE = process.env.BC_ROUTER_BASE
-
-assert(BC_ROUTER_BASE, 'Missing environment variable BC_ROUTER_BASE');
-
 //-----------------------------------------------------------------------------
 
 export default {
@@ -38,7 +34,7 @@ export default {
 
   // Router
   router: {
-    base: BC_ROUTER_BASE
+    base: '/bc/'
   },
 
   // Global CSS (https://go.nuxtjs.dev/config-css)
@@ -70,7 +66,7 @@ export default {
   // The library we use to fetch data from the server
   // https://axios.nuxtjs.org/
   axios: {
-    prefix: BC_ROUTER_BASE,
+    prefix: '/bc/',
     proxy: true,
   },
 
@@ -96,7 +92,6 @@ export default {
 
   // This is exposed to pages in $config
   publicRuntimeConfig: {
-    BC_ROUTER_BASE,
     version
   },
 

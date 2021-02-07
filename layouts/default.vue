@@ -6,7 +6,7 @@
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <router-link to="/">
         <v-img
-          :src="`${$config.BC_ROUTER_BASE}barcode-logo-375.png`"
+          src="/bc/barcode-logo-375.png"
           max-width="150px"
         />
       </router-link>

@@ -3,12 +3,13 @@
   "version": "1.13.0",
   "private": true,
   "scripts": {
-    "dev": "BC_ROUTER_BASE=/bc/ nuxt --dotenv false",
-    "generate": "nuxt generate",
+    "dev": "nuxt --dotenv false",
+    "generate": "nuxt generate --fail-on-error --dotenv false",
     "lint:js": "eslint --ext .js,.vue --ignore-path .gitignore .",
     "lint": "npm run lint:js",
     "server": "nodemon server/server.js",
-    "build-containers": "BC_ROUTER_BASE=/ npx nuxt generate --fail-on-error --dotenv false && docker-compose build",
+    "build-containers": "npm run generate && docker-compose build",
+    "start-containers": "docker-compose up",
     "preversion": "git checkout main && git pull origin main",
     "postversion": "git push origin main --tags"
   },

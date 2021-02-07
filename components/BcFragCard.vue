@@ -3,7 +3,7 @@
     <!-- Picture or placeholder -->
     <v-img
       height="300px"
-      :src="frag.picture ? `${$config.BC_ROUTER_BASE}uploads/${frag.picture}` : `${$config.BC_ROUTER_BASE}picture-placeholder.png`"
+      :src="frag.picture ? `/bc/uploads/${frag.picture}` : `/bc/picture-placeholder.png`"
     >
       <v-alert
         :value="shareAlert"

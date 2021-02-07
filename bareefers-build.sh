@@ -28,7 +28,7 @@ npm ci
 
 # Build it
 
-BC_ROUTER_BASE=/bc/ npx nuxt generate --fail-on-error --dotenv false
+npx nuxt generate --fail-on-error --dotenv false
 
 # Clean and copy the build to the site directory
 
