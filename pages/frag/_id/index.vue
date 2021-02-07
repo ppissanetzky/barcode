@@ -19,7 +19,7 @@ export default {
   components: { BcEditableFragCard },
   async fetch () {
     const fragId = this.$route.params.id
-    const { user, frag, journals } = await this.$axios.$get(`/bc/api/dbtc/frag/${fragId}`)
+    const { user, frag, journals } = await this.$axios.$get(`/api/dbtc/frag/${fragId}`)
     this.user = user
     this.frag = frag
     this.journals = journals

@@ -3,7 +3,7 @@ const assert = require('assert');
 
 const {Database} = require('./db');
 
-const {nowAsIsoString, utcIsoStringFromString} = require('../dates');
+const {nowAsIsoString, utcIsoStringFromString} = require('./dates');
 
 //-----------------------------------------------------------------------------
 

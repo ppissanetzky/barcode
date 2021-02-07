@@ -1,0 +1,44 @@
+version: "3.7"
+services:
+  api-server:
+    container_name: barcode-api-server
+    build:
+      context: .
+      dockerfile: ./docker/api-server.dockerfile
+    volumes:
+      - uploads:/volumes/uploads
+      - databases:/volumes/databases
+    networks:
+      barcode-net:
+    env_file:
+      - .env
+    environment:
+      BC_DATABASE_DIR: /volumes/databases
+      BC_UPLOADS_DIR: /volumes/uploads
+    # NOT IN PROD
+    ports:
+      - "3003:3003"
+
+  web-server:
+    container_name: barcode-web-server
+    build:
+      context: .
+      dockerfile: ./docker/web-server.dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - type: volume
+        source: uploads
+        target: /volumes/uploads
+        read_only: true
+    networks:
+      barcode-net:
+    depends_on:
+      - api-server
+
+volumes:
+  uploads:
+  databases:
+
+networks:
+  barcode-net:

@@ -142,7 +142,7 @@ export default {
   components: { BcEditableFragCard },
   async fetch () {
     const rules = this.$route.params.rules
-    const { user, mothers } = await this.$axios.$get(`/bc/api/dbtc/collection/${encodeURIComponent(rules)}`)
+    const { user, mothers } = await this.$axios.$get(`/api/dbtc/collection/${encodeURIComponent(rules)}`)
 
     this.user = user
     this.mothers = mothers

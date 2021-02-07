@@ -7,12 +7,12 @@ const _ = require('lodash');
 // https://github.com/JiLiZART/bbob/tree/master/packages/bbob-core
 const bbob = require('@bbob/core').default;
 
-const {BC_TEST_USER, BC_XF_API_KEY, BC_PRODUCTION} = require('../barcode.config');
+const {BC_TEST_USER, BC_XF_API_KEY} = require('./barcode.config');
 const dbtcDatabase = require('./dbtc-database');
 
 const {AUTHENTICATION_FAILED, MEMBER_NEEDS_UPGRADE} = require('./errors');
 
-const {utcIsoStringFromDate, age} = require('../dates');
+const {utcIsoStringFromDate, age} = require('./dates');
 
 const {isGoodId} = require('./utility');
 

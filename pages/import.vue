@@ -374,12 +374,12 @@
   </v-stepper>
 </template>
 <script>
-import { age, justTheLocalDate, dateFromIsoString, utcIsoStringFromString } from '../dates'
+import { age, justTheLocalDate, dateFromIsoString, utcIsoStringFromString } from '~/server/dates'
 import BcDatePicker from '~/components/BcDatePicker.vue'
 export default {
   components: { BcDatePicker },
   async fetch () {
-    const { user, threads } = await this.$axios.$get('/bc/api/dbtc/imports')
+    const { user, threads } = await this.$axios.$get('/api/dbtc/imports')
     this.user = user
     this.threads = threads.slice(0, 5)
   },
@@ -491,7 +491,7 @@ export default {
         case 1: // Chose the thread
           // Start fetching the posts now
           this.loadingPosts = true
-          this.promiseForPosts = this.$axios.$get(`/bc/api/dbtc/imports/${this.thread.threadId}`)
+          this.promiseForPosts = this.$axios.$get(`/api/dbtc/imports/${this.thread.threadId}`)
           this.name = this.thread.name
           this.dateAcquired = justTheLocalDate(this.thread.startDate)
           this.startDateString = this.dateString(this.thread.startDate)
@@ -587,7 +587,7 @@ export default {
         }))
       formData.set('transactions', JSON.stringify(transactions))
       // Do it
-      const { motherId } = await this.$axios.$post('/bc/api/dbtc/import', formData)
+      const { motherId } = await this.$axios.$post('/api/dbtc/import', formData)
       return motherId
     },
     validateTransaction (field) {

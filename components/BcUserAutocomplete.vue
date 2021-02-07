@@ -64,7 +64,7 @@ export default {
 
       // Request new items out of band
       this.isLoading = true
-      this.$axios.$get(`/bc/api/dbtc/find-users?prefix=${encodeURIComponent(value)}`)
+      this.$axios.$get(`/api/dbtc/find-users?prefix=${encodeURIComponent(value)}`)
         .then(({ users }) => {
           this.users = users.map(([id, name]) => ({ id, name }))
           if (this.excludeUser) {

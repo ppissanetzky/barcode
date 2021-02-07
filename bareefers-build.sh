@@ -1,9 +1,5 @@
 set -e
 
-# The base URL of the server
-
-BASE_URL=https://bareefers.org
-
 # The base directory
 
 BASE_DIR=/home/admin3/barcode-data
@@ -32,7 +28,7 @@ npm ci
 
 # Build it
 
-npx nuxt generate --fail-on-error
+BC_ROUTER_BASE=/bc/ npx nuxt generate --fail-on-error --dotenv false
 
 # Clean and copy the build to the site directory
 

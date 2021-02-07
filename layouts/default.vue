@@ -4,13 +4,12 @@
 
     <v-app-bar app>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
-      <a href="/bc/">
+      <router-link to="/">
         <v-img
-          to="/"
-          src="/bc/barcode-logo-375.png"
+          :src="`${$config.BC_ROUTER_BASE}barcode-logo-375.png`"
           max-width="150px"
         />
-      </a>
+      </router-link>
       <v-spacer />
       <v-dialog
         v-if="user"
@@ -162,13 +161,13 @@ export default {
   methods: {
     async stopImpersonating () {
       this.showImpersonate = false
-      await this.$axios.$delete('/bc/api/impersonate')
+      await this.$axios.$delete('/api/impersonate')
       this.$router.go()
     },
     async impersonate () {
       this.showImpersonate = false
       const { id } = this.impersonateUser
-      await this.$axios.$put(`/bc/api/impersonate/${id}`)
+      await this.$axios.$put(`/api/impersonate/${id}`)
       this.$router.go()
     }
   }

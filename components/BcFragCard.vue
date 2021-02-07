@@ -3,7 +3,7 @@
     <!-- Picture or placeholder -->
     <v-img
       height="300px"
-      :src="frag.picture ? `${$config.BC_UPLOADS_URL}/${frag.picture}` : '/bc/picture-placeholder.png'"
+      :src="frag.picture ? `${$config.BC_ROUTER_BASE}uploads/${frag.picture}` : `${$config.BC_ROUTER_BASE}picture-placeholder.png`"
     >
       <v-alert
         :value="shareAlert"
@@ -409,7 +409,7 @@
 </template>
 <script>
 
-import { age } from '~/dates'
+import { age } from '~/server/dates'
 
 export default {
   props: {
@@ -498,7 +498,7 @@ export default {
         return
       }
       this.$nextTick(async () => {
-        const { root } = await this.$axios.$get(`/bc/api/dbtc/tree/${this.frag.motherId}`)
+        const { root } = await this.$axios.$get(`/api/dbtc/tree/${this.frag.motherId}`)
         addAge(root)
         root.original = true
         if (this.frag.source) {
@@ -521,7 +521,7 @@ export default {
     async becomeAFan () {
       this.loadingFan = true
       try {
-        await this.$axios.$put(`/bc/api/dbtc/fan/${this.frag.motherId}`)
+        await this.$axios.$put(`/api/dbtc/fan/${this.frag.motherId}`)
         this.frag.isFan = true
       } finally {
         this.loadingFan = false
@@ -529,14 +529,14 @@ export default {
     },
     async removeFan () {
       this.loadingFan = true
-      await this.$axios.$delete(`/bc/api/dbtc/fan/${this.frag.motherId}`)
+      await this.$axios.$delete(`/api/dbtc/fan/${this.frag.motherId}`)
       this.frag.isFan = false
       this.loadingFan = false
     },
     async getShareLink () {
       this.shareLink = undefined
       this.shareAlert = true
-      const { url } = await this.$axios.$get(`/bc/api/dbtc/share/${this.frag.fragId}`)
+      const { url } = await this.$axios.$get(`/api/dbtc/share/${this.frag.fragId}`)
       this.shareLink = url
     }
   }

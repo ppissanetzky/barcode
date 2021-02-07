@@ -42,36 +42,23 @@ module.exports = {
     get BC_SITE_BASE_URL () { return get('BC_SITE_BASE_URL') },
 
     //-------------------------------------------------------------------------
-    // This one has to be provided to the client BUILD. It points to the URL
-    // that the BC API server is listening on.
+    // This one has to be provided to the client BUILD. It points to site's
+    // base URL
     //
-    // For development, it should be 'http://localhost:3003'
+    // For development, on my machine, it is '/bc/'
     //
-    // For production, it should be 'https://bareefers.org'. The client will
-    // add '/bc/api' to these calls and the web server will redirect these
-    // calls to our server.
+    // For production, it should be '/bc/'
+    //
+    // For the container build, it should be '/'
     //-------------------------------------------------------------------------
 
-    get BC_API_URL () { return get('BC_API_URL') },
-
-    //-------------------------------------------------------------------------
-    // This one has to be provided to the client BUILD. It points to the URL
-    // that serves uploaded images.
-    //
-    // For development, on my machine, it is 'http://localhost/uploads' because
-    // I have a local web server that serves the uploaded images from that URL.
-    //
-    // For production, it should be 'https://bareefers.org/bc/uploads'
-    //-------------------------------------------------------------------------
-
-    get BC_UPLOADS_URL () { return get('BC_UPLOADS_URL') },
+    get BC_ROUTER_BASE () { return get('BC_ROUTER_BASE' ) },
 
     //-------------------------------------------------------------------------
     // This has to be provided to the server at RUNTIME. It is the local
     // directory where uploaded images will be stored.
     //
-    // For development, on my machine, it is '/var/www/html/uploads' because
-    // that's my web server's root directory for BC_UPLOADS_URL.
+    // For development, on my machine, it is '/var/www/html/uploads'
     //
     // For production, it should be '/home/admin3/bc-data/uploads'
     //-------------------------------------------------------------------------
@@ -120,6 +107,6 @@ function get(name) {
         console.error(`MISSING ENVIRONMENT VARIABLE "${name}", SEE barcode.config.js`);
         process.exit(2);
     }
-    // console.warn(`${name}=${value}`);
+    //console.warn(`${name}=${value}`);
     return value;
 }

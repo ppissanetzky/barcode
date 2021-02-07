@@ -3,9 +3,9 @@ const path = require('path');
 const fs = require('fs');
 const handlebars = require('handlebars');
 
-const {BC_SITE_BASE_URL, BC_UPLOADS_URL} = require('../barcode.config');
+const {BC_SITE_BASE_URL} = require('./barcode.config');
 
-const {age} = require('../dates');
+const {age} = require('./dates');
 
 //-----------------------------------------------------------------------------
 // A helper for handlebars that returns the full URL to a picture, use it like
@@ -13,7 +13,7 @@ const {age} = require('../dates');
 //-----------------------------------------------------------------------------
 
 handlebars.registerHelper('pictureUrl', (picture) => {
-    return `${BC_UPLOADS_URL}/${picture}`;
+    return `${BC_SITE_BASE_URL}/uploads/${picture}`;
 });
 
 handlebars.registerHelper('fragUrl', (fragId) => {

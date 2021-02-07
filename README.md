@@ -61,8 +61,4 @@ $ npm run server
 $ npm run dev
 
 # In your browser, navigate to http://localhost:3000
-
-# If you don't see any images in the UI, check the value of
-# BC_UPLOADS_URL in the .env file. You need to have a web server
-# that serves images from BC_UPLOADS_DIR using that URL
 ```

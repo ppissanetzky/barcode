@@ -1,12 +1,17 @@
+
+const assert = require('assert');
+
 import colors from 'vuetify/es5/util/colors'
 
 //-----------------------------------------------------------------------------
 // Load our build-time configuration
 //-----------------------------------------------------------------------------
 
-import BarcodeConfig from './barcode.config.js'
-
 const {version} = require('./package.json')
+
+const BC_ROUTER_BASE = process.env.BC_ROUTER_BASE
+
+assert(BC_ROUTER_BASE, 'Missing environment variable BC_ROUTER_BASE');
 
 //-----------------------------------------------------------------------------
 
@@ -33,7 +38,7 @@ export default {
 
   // Router
   router: {
-    base: '/bc/'
+    base: BC_ROUTER_BASE
   },
 
   // Global CSS (https://go.nuxtjs.dev/config-css)
@@ -65,19 +70,33 @@ export default {
   // The library we use to fetch data from the server
   // https://axios.nuxtjs.org/
   axios: {
+    prefix: BC_ROUTER_BASE,
     proxy: true,
   },
 
-  // When we make a request to /bc/api, it gets redirected to our server
-  // plus '/bc/api'
   proxy: {
-    '/bc/api': BarcodeConfig.BC_API_URL,
+    // When we make a request to /api, it gets redirected to our local node
+    // server with the /api/ part of the url removed. This is only for development
+    '/bc/api/': {
+      target: 'http://localhost:3003',
+      pathRewrite: {
+        '^/bc/api/': ''
+      }
+    },
+    // When we get a request to /bc/uploads, it gets redirected to a local
+    // web server on port 80 with the /bc/ part of the url removed.
+    // So /bc/uploads/foo, goes to /uploads/foo
+    '/bc/uploads/': {
+      target: 'http://localhost/',
+      pathRewrite: {
+        '^/bc/': ''
+      }
+    }
   },
 
-  // This is exposed to pages in $config.uploadsBaseUrl so that they know
-  // the base URL for uploaded images
+  // This is exposed to pages in $config
   publicRuntimeConfig: {
-    BC_UPLOADS_URL: BarcodeConfig.BC_UPLOADS_URL,
+    BC_ROUTER_BASE,
     version
   },
 

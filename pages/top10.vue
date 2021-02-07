@@ -57,7 +57,7 @@
 <script>
 export default {
   async fetch () {
-    const result = await this.$axios.$get('/bc/api/dbtc/top10')
+    const result = await this.$axios.$get('/api/dbtc/top10')
     this.lists.forEach((item) => {
       item.data = result[item.key]
     })

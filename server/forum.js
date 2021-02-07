@@ -2,7 +2,7 @@ const assert = require('assert');
 
 const db = require('./dbtc-database');
 
-const {BC_FORUM_MODE} = require('../barcode.config');
+const {BC_FORUM_MODE} = require('./barcode.config');
 
 const {lookupUser, startForumThread, postToForumThread} = require('./xenforo');
 

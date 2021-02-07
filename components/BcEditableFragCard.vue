@@ -284,7 +284,7 @@
               cols="12"
             >
               <v-img
-                :src="`${$config.BC_UPLOADS_URL}/${item.picture}`"
+                :src="`${$config.BC_ROUTER_BASE}uploads/${item.picture}`"
                 aspect-ratio="1"
               />
               <v-card-subtitle class="text-center">
@@ -346,7 +346,7 @@
 </template>
 <script>
 import { ValidationObserver, ValidationProvider } from 'vee-validate/dist/vee-validate.full.esm'
-import { age, utcIsoStringFromString, dateFromIsoString, differenceBetween } from '~/dates'
+import { age, utcIsoStringFromString, dateFromIsoString, differenceBetween } from '~/server/dates'
 import BcUserAutocomplete from '~/components/BcUserAutocomplete.vue'
 import BcDatePicker from '~/components/BcDatePicker.vue'
 import BcFragCard from '~/components/BcFragCard.vue'
@@ -501,7 +501,7 @@ export default {
     async submitFragsAvailable () {
       this.loadingMakeFragsAvailable = true
       try {
-        const { journal } = await this.$axios.$put(`/bc/api/dbtc/frag/${this.frag.fragId}/available/${this.editedFragsAvailable}`)
+        const { journal } = await this.$axios.$put(`/api/dbtc/frag/${this.frag.fragId}/available/${this.editedFragsAvailable}`)
         this.fragsAvailable = this.editedFragsAvailable
         this.addJournal(journal)
         this.snackbarText = `${this.fragsAvailable} made available`
@@ -531,7 +531,7 @@ export default {
         if (this.notes) {
           formData.set('notes', this.notes)
         }
-        const { fragsAvailable, journal } = await this.$axios.$post('/bc/api/dbtc/give-a-frag', formData)
+        const { fragsAvailable, journal } = await this.$axios.$post('/api/dbtc/give-a-frag', formData)
         // Update available frags from the response
         this.fragsAvailable = fragsAvailable
         this.editedFragsAvailable = fragsAvailable
@@ -571,7 +571,7 @@ export default {
           formData.set('makeCoverPicture', true)
         }
 
-        const { journal, coverPicture } = await this.$axios.$post(`/bc/api/dbtc/frag/${this.frag.fragId}/journal`, formData)
+        const { journal, coverPicture } = await this.$axios.$post(`/api/dbtc/frag/${this.frag.fragId}/journal`, formData)
 
         // Add it as the first one in our array
         this.addJournal(journal)
@@ -606,7 +606,7 @@ export default {
         if (this.ripNotes) {
           formData.set('notes', this.ripNotes)
         }
-        const { journal } = await this.$axios.$post(`/bc/api/dbtc/frag/${this.frag.fragId}/rip`, formData)
+        const { journal } = await this.$axios.$post(`/api/dbtc/frag/${this.frag.fragId}/rip`, formData)
         this.addJournal(journal)
         this.frag.isAlive = false
         this.fragsAvailable = 0
@@ -628,7 +628,7 @@ export default {
     async loadJournals () {
       if (!this.loadedJournals) {
         this.loadedJournals = []
-        const { journals } = await this.$axios.$get(`/bc/api/dbtc/journals/${this.frag.fragId}`)
+        const { journals } = await this.$axios.$get(`/api/dbtc/journals/${this.frag.fragId}`)
         this.loadedJournals = journals.map(journal => augment(journal))
       }
     }

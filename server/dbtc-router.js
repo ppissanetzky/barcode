@@ -28,7 +28,7 @@ const {saveImageFromUrl, isGoodId} = require('./utility');
 // Config
 //-----------------------------------------------------------------------------
 
-const {BC_UPLOADS_DIR, BC_SITE_BASE_URL} = require('../barcode.config');
+const {BC_UPLOADS_DIR, BC_SITE_BASE_URL} = require('./barcode.config');
 
 //-----------------------------------------------------------------------------
 // The database

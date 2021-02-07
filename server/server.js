@@ -5,7 +5,7 @@ const cookieParser = require('cookie-parser');
 // Configuration
 //-----------------------------------------------------------------------------
 
-const {BC_PRODUCTION} = require('../barcode.config');
+const {BC_PRODUCTION} = require('./barcode.config');
 
 //-----------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ app.use(express.urlencoded({extended: true}));
 // CAREFUL - THESE ROUTES DO NOT GET USER VALIDATION. THEY ARE PUBLIC
 //-----------------------------------------------------------------------------
 
-app.use('/bc/api/public', publicRouter);
+app.use('/public', publicRouter);
 
 //-----------------------------------------------------------------------------
 // This function has to validate the incoming request's session against
@@ -118,7 +118,7 @@ if (!BC_PRODUCTION) {
 
 //-----------------------------------------------------------------------------
 
-app.put('/bc/api/impersonate/:userId', async (req, res) => {
+app.put('/impersonate/:userId', async (req, res) => {
     const {user, params} = req;
     const {userId} = params;
     if (user.canImpersonate) {
@@ -134,7 +134,7 @@ app.put('/bc/api/impersonate/:userId', async (req, res) => {
 
 //-----------------------------------------------------------------------------
 
-app.delete('/bc/api/impersonate', (req, res) => {
+app.delete('/impersonate', (req, res) => {
     const {originalUser} = req;
     res.cookie(IMPERSONATE_COOKIE, 0);
     if (originalUser) {
@@ -151,7 +151,7 @@ app.delete('/bc/api/impersonate', (req, res) => {
 // The dbtc routes
 //-----------------------------------------------------------------------------
 
-app.use('/bc/api/dbtc', dbtcRouter);
+app.use('/dbtc', dbtcRouter);
 
 //-----------------------------------------------------------------------------
 
@@ -184,6 +184,17 @@ const PORT = 3003;
 // Start listening
 //-----------------------------------------------------------------------------
 
-app.listen(PORT, () => {
-  console.log(`BARcode ready at http://localhost:${PORT}`);
+const server = app.listen(PORT, () => {
+    console.log(`BARcode ready at http://localhost:${PORT}`);
+});
+
+//-----------------------------------------------------------------------------
+// Graceful shutdown for docker
+//-----------------------------------------------------------------------------
+
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM, shutting down...');
+    server.close(() => {
+        console.log('Server closed');
+    });
 });

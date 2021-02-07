@@ -21,7 +21,11 @@
               class="text-center"
             >
               If the item you'd like to add is already being tracked in a forum thread,
-              you should <a href="/bc/import">import it</a> instead.
+              you should <router-link
+                to="/import"
+              >
+                import it
+              </router-link> instead.
             </h3>
           </div>
         </v-card>
@@ -420,7 +424,7 @@
 // This imports the validation observer, provider and all the
 // rules with their messages
 import { ValidationObserver, ValidationProvider } from 'vee-validate/dist/vee-validate.full.esm'
-import { utcIsoStringFromString } from '~/dates'
+import { utcIsoStringFromString } from '~/server/dates'
 import BcDatePicker from '~/components/BcDatePicker.vue'
 
 function undefinedIfNull (value) {
@@ -436,14 +440,14 @@ export default {
   async fetch () {
     this.loadingCard = true
     try {
-      const { types, rules } = await this.$axios.$get('/bc/api/dbtc/enums')
+      const { types, rules } = await this.$axios.$get('/api/dbtc/enums')
       this.types = types
       this.allRules = rules
 
       // If a frag ID is passed in, we are editing an existing item
       const { fragId } = this.$route.query
       if (fragId) {
-        const { frag } = await this.$axios.$get(`/bc/api/dbtc/frag/${fragId}`)
+        const { frag } = await this.$axios.$get(`/api/dbtc/frag/${fragId}`)
         this.frag = frag
         this.name = frag.name
         this.type = frag.type
@@ -554,9 +558,9 @@ export default {
         let fragId
         if (this.isUpdating) {
           fragId = this.frag.fragId
-          await this.$axios.$post(`/bc/api/dbtc/update/${fragId}`, formData)
+          await this.$axios.$post(`/api/dbtc/update/${fragId}`, formData)
         } else {
-          const response = await this.$axios.$post('/bc/api/dbtc/add-new-item', formData)
+          const response = await this.$axios.$post('/api/dbtc/add-new-item', formData)
           fragId = response.fragId
         }
         // Navigate to the details page for this frag, replacing

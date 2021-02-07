@@ -27,7 +27,7 @@ export default {
   components: { BcEditableFragCard },
   async fetch () {
     const shareId = this.$route.params.shareId
-    const { frag, journals } = await this.$axios.$get(`/bc/api/public/shared/${encodeURIComponent(shareId)}`)
+    const { frag, journals } = await this.$axios.$get(`/api/public/shared/${encodeURIComponent(shareId)}`)
     this.user = {}
     this.frag = frag
     this.journals = journals
