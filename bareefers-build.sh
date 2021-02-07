@@ -28,12 +28,12 @@ npm ci
 
 # Build it
 
-npx nuxt generate --fail-on-error --dotenv false
+npm run generate
 
 # Clean and copy the build to the site directory
 
 rm -rf ${SITE_DIR}/*
-cp -r -v ./dist/* ${SITE_DIR}/
+cp -r -v ./site/dist/* ${SITE_DIR}/
 
 # Restart the server
 

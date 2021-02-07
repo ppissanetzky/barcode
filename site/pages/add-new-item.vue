@@ -424,7 +424,7 @@
 // This imports the validation observer, provider and all the
 // rules with their messages
 import { ValidationObserver, ValidationProvider } from 'vee-validate/dist/vee-validate.full.esm'
-import { utcIsoStringFromString } from '~/server/dates'
+import { utcIsoStringFromString } from '~/dates'
 import BcDatePicker from '~/components/BcDatePicker.vue'
 
 function undefinedIfNull (value) {

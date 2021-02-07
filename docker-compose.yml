@@ -3,15 +3,15 @@ services:
   api-server:
     container_name: barcode-api-server
     build:
-      context: .
-      dockerfile: ./docker/api-server.dockerfile
+      context: server
+      dockerfile: api-server.dockerfile
     volumes:
       - uploads:/volumes/uploads
       - databases:/volumes/databases
     networks:
       barcode-net:
     env_file:
-      - .env
+      - ./server/.env
     environment:
       BC_DATABASE_DIR: /volumes/databases
       BC_UPLOADS_DIR: /volumes/uploads
@@ -22,8 +22,8 @@ services:
   web-server:
     container_name: barcode-web-server
     build:
-      context: .
-      dockerfile: ./docker/web-server.dockerfile
+      context: site
+      dockerfile: web-server.dockerfile
     ports:
       - "8080:80"
     volumes:

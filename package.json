@@ -3,42 +3,13 @@
   "version": "1.13.0",
   "private": true,
   "scripts": {
-    "dev": "nuxt --dotenv false",
-    "generate": "nuxt generate --fail-on-error --dotenv false",
-    "lint:js": "eslint --ext .js,.vue --ignore-path .gitignore .",
-    "lint": "npm run lint:js",
-    "server": "nodemon server/server.js",
+    "install": "(cd site && npm i) && (cd server && npm i)",
+    "dev": "(cd site && npm run dev)",
+    "generate": "(cd site && npm run generate)",
+    "server": "(cd server && npm run server)",
     "build-containers": "npm run generate && docker-compose build",
     "start-containers": "docker-compose up",
     "preversion": "git checkout main && git pull origin main",
     "postversion": "git push origin main --tags"
-  },
-  "dependencies": {
-    "@bbob/core": "^2.6.2",
-    "@nuxtjs/axios": "^5.12.5",
-    "@nuxtjs/proxy": "^2.1.0",
-    "better-sqlite3": "^7.1.2",
-    "cookie": "^0.4.1",
-    "cookie-parser": "^1.4.5",
-    "core-js": "^3.6.5",
-    "date-fns": "^2.16.1",
-    "date-fns-tz": "^1.0.12",
-    "dotenv": "^8.2.0",
-    "express": "^4.17.1",
-    "follow-redirects": "^1.13.2",
-    "handlebars": "^4.7.6",
-    "lodash": "^4.17.20",
-    "multer": "^1.4.2",
-    "nuxt": "^2.14.6",
-    "vee-validate": "^3.4.5"
-  },
-  "devDependencies": {
-    "@nuxtjs/eslint-config": "^3.1.0",
-    "@nuxtjs/eslint-module": "^2.0.0",
-    "@nuxtjs/vuetify": "^1.11.2",
-    "babel-eslint": "^10.1.0",
-    "eslint": "^7.10.0",
-    "eslint-plugin-nuxt": "^1.0.0",
-    "nodemon": "^2.0.7"
   }
 }

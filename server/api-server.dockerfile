@@ -11,7 +11,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --only prod
 
 # Copy the server code
-COPY server ./server/
+COPY . .
 
 # Command to start the server
-CMD ["node", "server/server.js"]
+CMD ["node", "server.js"]

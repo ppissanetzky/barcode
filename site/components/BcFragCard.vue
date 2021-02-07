@@ -409,7 +409,7 @@
 </template>
 <script>
 
-import { age } from '~/server/dates'
+import { age } from '~/dates'
 
 export default {
   props: {
