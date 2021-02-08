@@ -86,14 +86,25 @@ function uberPost(threadId, messageName, context) {
 
 //-----------------------------------------------------------------------------
 
-function itemImported(user, threadId, motherId) {
-    uberPost(threadId, 'item-imported', {user, motherId});
+function itemImported(user, threadId, motherId, fragId) {
+    uberPost(threadId, 'item-imported', {user, motherId, fragId});
 }
 
 //-----------------------------------------------------------------------------
 
 function madeFragsAvailable(user, frag) {
-    uberPost(frag.threadId, 'frags-available', {user, frag});
+    later(async () => {
+        const fans = await Promise.all(db.getFans(frag.motherId).map(async ({userId, timestamp}) => {
+            const {name} = await lookupUser(userId);
+            return ({name, timestamp});
+        }));
+        uberPost(frag.threadId, 'frags-available', {
+            user,
+            frag,
+            fans,
+            singleFan: fans.length === 1 ? fans[0] : null
+        });
+    })
 }
 
 //-----------------------------------------------------------------------------

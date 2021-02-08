@@ -11,13 +11,20 @@ const {age} = require('./dates');
 // A helper for handlebars that returns the full URL to a picture, use it like
 // this: {{pictureUrl frag.picture}}
 //-----------------------------------------------------------------------------
+// NOTE THAT HANDLEBARS PASSES AN EXTRA OPTIONS OBJECT TO HELPER FUNCTIONS,
+// THAT'S WHY THE fragUrl HELPER HAS TO CHECK THE TYPE
+//-----------------------------------------------------------------------------
 
 handlebars.registerHelper('pictureUrl', (picture) => {
     return `${BC_SITE_BASE_URL}/uploads/${picture}`;
 });
 
-handlebars.registerHelper('fragUrl', (fragId) => {
-    return `${BC_SITE_BASE_URL}/frag/${fragId}`;
+handlebars.registerHelper('fragUrl', (fragId, tab) => {
+    let url = `${BC_SITE_BASE_URL}/frag/${fragId}`;
+    if (typeof tab === 'string') {
+        url += `?tab=${tab}`;
+    }
+    return url;
 });
 
 handlebars.registerHelper('motherUrl', (motherId) => {
@@ -49,7 +56,10 @@ async function renderMessage(name, context) {
     // Compile the template
     const template = handlebars.compile(content, {noEscape: true});
     // Run it
-    const result = template(context);
+    const result = template({
+        baseUrl: BC_SITE_BASE_URL,
+        ...context
+    });
     // Now, look for the first new line
     const newLine = result.indexOf('\n');
     // No new line?

@@ -336,6 +336,8 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
         picture,
         notes: `Gave a frag to ${recipient.name}`
     });
+    // Remove the recipient from the fans table
+    db.removeFan(recipient.id, frag.motherId);
     // Post to the forum
     fragGiven(user, recipient, newFragId);
     // Reply
@@ -758,7 +760,7 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
         }
     });
     // Add a post to the thread out of band
-    itemImported(user, threadId, motherId);
+    itemImported(user, threadId, motherId, fragId);
     // Send back the response now
     res.json({motherId, fragId});
 });

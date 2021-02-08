@@ -214,31 +214,31 @@
       <div v-if="showTabs">
         <v-divider />
         <v-tabs
-          v-model="tabs"
+          v-model="tab"
           center-active
           show-arrows
         >
           <slot name="first-tabs" />
-          <v-tab>
+          <v-tab href="#conditions">
             <v-icon>mdi-wall-sconce-flat</v-icon>
           </v-tab>
-          <v-tab v-if="notes">
+          <v-tab v-if="notes" href="#notes">
             <v-icon>mdi-text</v-icon>
           </v-tab>
-          <v-tab v-if="shouldShowLineage" @click="updateLineage()">
+          <v-tab v-if="shouldShowLineage" href="#lineage">
             <v-icon>mdi-file-tree-outline</v-icon>
           </v-tab>
-          <v-tab v-if="canBecomeAFan || isAFan">
+          <v-tab v-if="canBecomeAFan || isAFan" href="#like">
             <v-icon>mdi-thumb-up-outline</v-icon>
           </v-tab>
           <slot name="tabs" />
         </v-tabs>
-        <v-tabs-items v-model="tabs">
+        <v-tabs-items v-model="tab">
           <slot name="first-tabs-items" />
 
           <!-- A table to show light, flow, hardiness and growth rate -->
 
-          <v-tab-item>
+          <v-tab-item value="conditions">
             <v-card-title>Conditions and traits</v-card-title>
             <v-simple-table>
               <template v-slot:default>
@@ -296,14 +296,14 @@
 
           <!-- Notes -->
 
-          <v-tab-item v-if="notes">
+          <v-tab-item v-if="notes" value="notes">
             <v-card-title>Notes</v-card-title>
             <v-card-text v-text="notes" />
           </v-tab-item>
 
           <!-- Lineage -->
 
-          <v-tab-item v-if="shouldShowLineage">
+          <v-tab-item v-if="shouldShowLineage" value="lineage">
             <v-card-title>Lineage</v-card-title>
             <div
               v-if="lineage.length === 0"
@@ -367,7 +367,7 @@
           </v-tab-item>
 
           <!-- Fan/Like -->
-          <v-tab-item v-if="canBecomeAFan || isAFan">
+          <v-tab-item v-if="canBecomeAFan || isAFan" value="like">
             <v-card-title>Like</v-card-title>
             <div v-if="canBecomeAFan">
               <v-card-text>Like this item to be notified when frags are available</v-card-text>
@@ -408,7 +408,6 @@
   </v-card>
 </template>
 <script>
-
 import { age } from '~/dates'
 
 export default {
@@ -434,8 +433,7 @@ export default {
     shareLink: undefined,
 
     showTabs: false,
-    // Tabs
-    tabs: null,
+    tab: undefined,
     // Loading indicator for the 'become a fan' button
     loadingFan: false
   }),
@@ -481,6 +479,22 @@ export default {
   watch: {
     fragsAvailable (value) {
       this.updateLineage(true)
+    },
+    tab (tab) {
+      this.$emit('update:tab', tab)
+      switch (tab) {
+        case 'lineage':
+          this.updateLineage(false)
+          break
+      }
+    }
+  },
+  mounted () {
+    // If there is a '?tab=<tab>' show the tabs and focus it
+    const { tab } = this.$route.query
+    if (tab && !this.showTabs) {
+      this.showTabs = true
+      this.tab = tab
     }
   },
   methods: {

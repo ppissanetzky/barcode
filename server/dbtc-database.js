@@ -681,6 +681,14 @@ function isFan(userId, motherId) {
     return row ? true : false;
 }
 
+const SELECT_FANS = `
+    SELECT userId, timestamp FROM fans WHERE motherId = $motherId ORDER BY timestamp
+`;
+
+function getFans(motherId) {
+    return db.all(SELECT_FANS, {motherId});
+}
+
 //-----------------------------------------------------------------------------
 
 const SELECT_RANDOM_STRING = `
@@ -785,5 +793,6 @@ module.exports = {
     setMotherThreadId,
     shareFrag,
     getShare,
-    getUserThreadIds
+    getUserThreadIds,
+    getFans
 }

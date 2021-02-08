@@ -3,8 +3,10 @@ This one is used to create a post in an existing thread when an item is imported
 It receives:
     user - the user object representing the owner of thread
     motherId - the ID of the new mother
+    fragId - the ID of the new frag
 There is no title
 }}
 no title - this is a post
 
-@{{user.name}} just added [URL={{motherUrl motherId}}]this item[/URL] to BARcode. [URL={{motherUrl motherId}}]Check it out[/URL], you may have a new frag in your collection!
+@{{user.name}} just added [URL={{fragUrl fragId "lineage"}}]this item[/URL] to BARcode. Check it out: you may have a new frag in [URL={{baseUrl}}]your collection[/URL]!
+If not, [URL={{fragUrl fragId "like"}}]like it[/URL] to be notified when new frags are available.

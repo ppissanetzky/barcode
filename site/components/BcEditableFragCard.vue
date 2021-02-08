@@ -4,38 +4,39 @@
     :frag-or-mother="frag"
     :user="user"
     :show-owner="showOwner"
+    @update:tab="tabChanged($event)"
   >
     <template v-slot:first-tabs>
       <slot name="first-tabs" />
     </template>
     <template v-slot:tabs>
       <!-- Make frags available -->
-      <v-tab v-if="canMakeChanges && !isPrivate">
+      <v-tab v-if="canMakeChanges && !isPrivate" href="#frag">
         <v-icon>mdi-hand-saw</v-icon>
       </v-tab>
 
       <!-- Give a frag -->
-      <v-tab v-if="canMakeChanges && !isPrivate">
+      <v-tab v-if="canMakeChanges && !isPrivate" href="#give">
         <v-icon>mdi-hand-heart-outline</v-icon>
       </v-tab>
 
       <!-- Add a journal entry -->
-      <v-tab v-if="canMakeChanges">
+      <v-tab v-if="canMakeChanges" href="#entry">
         <v-icon>mdi-file-document-edit-outline</v-icon>
       </v-tab>
 
       <!-- Journal -->
-      <v-tab @click="loadJournals">
+      <v-tab href="#journal">
         <v-icon>mdi-file-document-outline</v-icon>
       </v-tab>
 
       <!-- Pictures -->
-      <v-tab @click="loadJournals">
+      <v-tab href="#pictures">
         <v-icon>mdi-camera-outline</v-icon>
       </v-tab>
 
       <!-- RIP -->
-      <v-tab v-if="canMakeChanges">
+      <v-tab v-if="canMakeChanges" href="#rip">
         <v-icon>mdi-emoticon-dead-outline</v-icon>
       </v-tab>
     </template>
@@ -45,7 +46,7 @@
     </template>
     <template v-slot:tabs-items>
       <!-- Make frags available -->
-      <v-tab-item v-if="canMakeChanges && !isPrivate">
+      <v-tab-item v-if="canMakeChanges && !isPrivate" value="frag">
         <v-card-title>Update available frags</v-card-title>
         <v-card-text>
           You can change the number of available frags here. If you increase it,
@@ -95,7 +96,7 @@
       </v-tab-item>
 
       <!-- Give a frag -->
-      <v-tab-item v-if="canMakeChanges && !isPrivate">
+      <v-tab-item v-if="canMakeChanges && !isPrivate" value="give">
         <v-card-title>Give a frag</v-card-title>
         <v-card-text v-if="!fragsAvailable">
           You cannot give a frag because there are none available. Update
@@ -174,7 +175,7 @@
       </v-tab-item>
 
       <!-- Add a journal entry -->
-      <v-tab-item v-if="canMakeChanges">
+      <v-tab-item v-if="canMakeChanges" value="entry">
         <v-card-title>Add a journal entry</v-card-title>
         <v-form
           id="journal"
@@ -240,7 +241,7 @@
       </v-tab-item>
 
       <!-- Journal -->
-      <v-tab-item>
+      <v-tab-item value="journal">
         <v-card-title>Journal</v-card-title>
         <div
           v-for="j in loadedJournals || []"
@@ -271,7 +272,7 @@
       </v-tab-item>
 
       <!-- Pictures -->
-      <v-tab-item>
+      <v-tab-item value="pictures">
         <v-card-title>Pictures</v-card-title>
         <v-card-subtitle v-if="!pictures.length">
           Add a journal entry with a picture to see it here.
@@ -296,7 +297,7 @@
       </v-tab-item>
 
       <!-- RIP -->
-      <v-tab-item v-if="canMakeChanges">
+      <v-tab-item v-if="canMakeChanges" value="rip">
         <v-card-title>RIP</v-card-title>
         <v-card-text>
           They don't always make it and that's OK. If you mark the {{ frag.name }} as lost
@@ -494,6 +495,14 @@ export default {
     }
   },
   methods: {
+    tabChanged (tab) {
+      switch (tab) {
+        case 'journal':
+        case 'pictures':
+          this.loadJournals()
+          break
+      }
+    },
     submitPreventFragsAvailable () {
       this.$refs.fragsAvailableObserver.validate()
     },
