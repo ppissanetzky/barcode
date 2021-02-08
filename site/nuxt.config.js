@@ -7,7 +7,7 @@ import colors from 'vuetify/es5/util/colors'
 // Load our build-time configuration
 //-----------------------------------------------------------------------------
 
-const {version} = require('./package.json')
+const {version} = require('../package.json')
 
 //-----------------------------------------------------------------------------
 
