@@ -20,7 +20,7 @@ export default {
 
   // Global page headers (https://go.nuxtjs.dev/config-head)
   head: {
-    titleTemplate: '%s - BARcode',
+    // titleTemplate: '%s - BARcode',
     title: 'BARcode',
     meta: [
       { charset: 'utf-8' },
