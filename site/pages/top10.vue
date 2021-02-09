@@ -2,53 +2,43 @@
   <v-container fluid>
     <v-row>
       <v-col>
-        <v-card flat max-width="375px">
-          <h1
-            class="text-center"
-          >
-            DBTC Top 10
-          </h1>
+        <v-card flat width="375px">
+          <h1>DBTC Top 10</h1>
         </v-card>
       </v-col>
     </v-row>
     <v-row>
-      <v-col>
-        <v-card max-width="375px">
-          <div
-            v-for="(list, i) in lists"
-            :key="list.key"
+      <v-col v-for="list in lists" :key="list.key" cols="auto">
+        <v-card width="375px">
+          <v-card-title
+            :class="`${list.color}--text`"
           >
-            <v-divider v-if="i" />
-            <v-card-title
-              :class="`${list.color}--text`"
-            >
-              <strong v-text="list.name" />
-            </v-card-title>
-            <v-card-subtitle v-text="list.desc" />
-            <v-card-text>
-              <v-simple-table>
-                <template v-slot:default>
-                  <tbody>
-                    <tr
-                      v-for="item in list.data"
-                      :key="item.ownerId"
+            <strong v-text="list.name" />
+          </v-card-title>
+          <v-card-subtitle v-text="list.desc" />
+          <v-card-text>
+            <v-simple-table>
+              <template v-slot:default>
+                <tbody>
+                  <tr
+                    v-for="item in list.data"
+                    :key="item.ownerId"
+                  >
+                    <td
+                      class="text-left"
                     >
-                      <td
-                        class="text-left"
-                      >
-                        {{ item.ownerName }}
-                      </td>
-                      <td
-                        class="text-right"
-                      >
-                        {{ item.count }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </template>
-              </v-simple-table>
-            </v-card-text>
-          </div>
+                      {{ item.ownerName }}
+                    </td>
+                    <td
+                      class="text-right"
+                    >
+                      {{ item.count }}
+                    </td>
+                  </tr>
+                </tbody>
+              </template>
+            </v-simple-table>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
