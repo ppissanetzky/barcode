@@ -1,7 +1,5 @@
 <template>
   <v-app>
-    <v-system-bar app />
-
     <v-app-bar app>
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <router-link to="/">
