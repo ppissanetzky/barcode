@@ -532,7 +532,7 @@ const TOP_10 = {
             mothers.rules = 'dbtc' AND
             f1.motherId = mothers.motherId AND
             f1.fragOf IS NOT NULL AND
-            (f1.status IS NULL OR f1.status != 'transferred') AND
+            (f2.status IS NULL OR f2.status != 'transferred') AND
             f2.fragId = f1.fragOf
         GROUP BY 1
         ORDER BY 2 DESC
@@ -550,7 +550,7 @@ const TOP_10 = {
             mothers.rules = 'dbtc' AND
             f1.motherId = mothers.motherId AND
             f1.fragOf IS NOT NULL AND
-            (f1.status IS NULL OR f1.status != 'transferred') AND
+            (f2.status IS NULL OR f2.status != 'transferred') AND
             f2.fragOf IS NOT NULL AND
             f2.fragId = f1.fragOf
         GROUP BY 1
