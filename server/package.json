@@ -5,6 +5,7 @@
   "dependencies": {
     "@bbob/core": "^2.6.2",
     "better-sqlite3": "^7.1.2",
+    "bree": "^6.0.0",
     "cookie": "^0.4.1",
     "cookie-parser": "^1.4.5",
     "date-fns": "^2.16.1",
@@ -14,7 +15,8 @@
     "follow-redirects": "^1.13.2",
     "handlebars": "^4.7.6",
     "lodash": "^4.17.20",
-    "multer": "^1.4.2"
+    "multer": "^1.4.2",
+    "proper-lockfile": "^4.1.2"
   },
   "devDependencies": {
     "eslint": "^7.10.0",

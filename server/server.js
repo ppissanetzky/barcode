@@ -9,6 +9,10 @@ const {BC_PRODUCTION} = require('./barcode.config');
 
 //-----------------------------------------------------------------------------
 
+const scheduler = require('./scheduler');
+
+//-----------------------------------------------------------------------------
+
 const {ExplicitError} = require('./errors');
 
 //-----------------------------------------------------------------------------
@@ -186,6 +190,8 @@ const PORT = 3003;
 
 const server = app.listen(PORT, () => {
     console.log(`BARcode ready at http://localhost:${PORT}`);
+    // Start the scheduler
+    scheduler();
 });
 
 //-----------------------------------------------------------------------------
