@@ -1,4 +1,6 @@
 
+const path = require('path');
+
 const Bree = require('bree');
 
 //-----------------------------------------------------------------------------
@@ -11,6 +13,7 @@ const JOBS = [
 
 function scheduler() {
     const bree = new Bree({
+        root: path.join(__dirname, 'jobs'),
         jobs: JOBS.map(([name, interval]) => ({name, interval}))
     });
     bree.start();
