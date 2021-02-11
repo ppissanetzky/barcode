@@ -6,7 +6,9 @@ const Bree = require('bree');
 //-----------------------------------------------------------------------------
 
 const JOBS = [
-    ['backup-database', 'at 4:00 am']
+    // since the server is running in UTC, account for that.
+    // THE NEW SERVER IS RUNNING IN PACIFIC TIME, WILL NEED TO ADJUST
+    ['backup-database', 'at 11:00 am']
 ];
 
 //-----------------------------------------------------------------------------
