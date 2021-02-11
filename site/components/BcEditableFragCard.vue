@@ -98,11 +98,7 @@
       <!-- Give a frag -->
       <v-tab-item v-if="canMakeChanges && !isPrivate" value="give">
         <v-card-title>Give a frag</v-card-title>
-        <v-card-text v-if="!fragsAvailable">
-          You cannot give a frag because there are none available. Update
-          the number of available frags first.
-        </v-card-text>
-        <validation-observer v-else ref="giveAFragObserver" v-slot="{ invalid }">
+        <validation-observer ref="giveAFragObserver" v-slot="{ invalid }">
           <v-form
             id="give-a-frag"
             @submit.prevent="submitPreventGiveAFrag"

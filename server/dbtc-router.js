@@ -295,9 +295,8 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
     const picture = file ? file.filename : null;
     // Validate
     const {fragOf, ownerId, dateAcquired} = body;
-    // Validate the frag. It must belong to this user and be alive. It must
-    // have > 0 frags available
-    const frag = db.validateFrag(user.id, fragOf, true, 0);
+    // Validate the frag. It must belong to this user and be alive.
+    const frag = db.validateFrag(user.id, fragOf, true, -1);
     if (!frag) {
         return next(INVALID_FRAG());
     }
