@@ -420,20 +420,7 @@
             <v-card-title v-else>
               {{ likes }} likes
             </v-card-title>
-            <div v-if="canBecomeAFan">
-              <v-card-text>Like this item to be notified when frags are available</v-card-text>
-              <v-card-text>
-                <v-btn
-                  small
-                  color="secondary"
-                  :loading="loadingFan"
-                  @click="becomeAFan"
-                >
-                  Like
-                </v-btn>
-              </v-card-text>
-            </div>
-            <div v-else-if="isAFan">
+            <div v-if="isAFan">
               <v-card-text>You already like this item. Unlike if you'd like to stop receiving notifications</v-card-text>
               <v-card-text>
                 <v-btn
@@ -443,6 +430,19 @@
                   @click="removeFan"
                 >
                   Unlike
+                </v-btn>
+              </v-card-text>
+            </div>
+            <div v-else-if="canBecomeAFan">
+              <v-card-text>Like this item to be notified when frags are available</v-card-text>
+              <v-card-text>
+                <v-btn
+                  small
+                  color="secondary"
+                  :loading="loadingFan"
+                  @click="becomeAFan"
+                >
+                  Like
                 </v-btn>
               </v-card-text>
             </div>
