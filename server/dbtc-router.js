@@ -69,6 +69,7 @@ router.get('/your-collection', (req, res) => {
     const {user} = req;
     const frags = db.selectAllFragsForUser(user);
     frags.forEach((frag) => {
+        frag.owner = user;
         frag.ownsIt = true;
     });
     res.json({
@@ -95,9 +96,9 @@ router.get('/frag/:fragId', async (req, res, next) => {
     }
     frag.owner = await lookupUser(frag.ownerId, true);
     frag.ownsIt = frag.ownerId === user.id;
+    frag.isFan = db.isFan(user.id, frag.motherId);
     res.json({
         user,
-        isFan: db.isFan(user.id, frag.motherId),
         frag,
         journals
     });
@@ -423,29 +424,18 @@ router.post('/frag/:fragId/rip', upload.none(), (req, res, next) => {
 // Returns a collection of mothers for the given rules
 //-----------------------------------------------------------------------------
 
-router.get('/collection/:rules', async (req, res, next) => {
-    const {user, params} = req;
-    const {rules} = params;
+router.get('/collection/:rules/p/:page', async (req, res, next) => {
+    const {user, params: {rules, page}, query} = req;
     if (!db.validateRules(rules)) {
         return next(INVALID_RULES());
     }
     if (rules === 'private') {
         return next(INVALID_RULES());
     }
-    const mothers = db.selectCollection(user.id, rules);
-    // Now, get full user information about all of the
-    // owners. This could get expensive
+    const mothers = db.selectCollectionPaged(user.id, rules, page, query);
     await Promise.all(mothers.map(async (mother) => {
         mother.owner = await lookupUser(mother.ownerId, true);
-        mother.ownsIt = mother.ownerId === user.id;
         mother.inCollection = true;
-        await Promise.all(mother.owners.map(async (owner) => {
-            const fullUser = await lookupUser(owner.ownerId, true);
-            Object.assign(owner, fullUser);
-            if (owner.ownerId === user.id) {
-                mother.hasOne = true;
-            }
-        }));
     }));
     res.json({
         user,
@@ -518,19 +508,18 @@ router.get('/tree/:motherId', async (req, res, next) => {
 router.put('/fan/:motherId', (req, res) => {
     const {user, params: {motherId}} = req;
     db.addFan(user.id, motherId);
-    res.json({});
+    res.json(db.getLikes(user.id, motherId));
 });
 
 router.delete('/fan/:motherId', (req, res) => {
     const {user, params: {motherId}} = req;
     db.removeFan(user.id, motherId);
-    res.json({});
+    res.json(db.getLikes(user.id, motherId));
 });
 
 router.get('/fan/:motherId', (req, res) => {
     const {user, params: {motherId}} = req;
-    const isFan = db.isFan(user.id, motherId);
-    res.json({isFan});
+    res.json(db.getLikes(user.id, motherId));
 });
 
 //-----------------------------------------------------------------------------
@@ -773,8 +762,10 @@ router.get('/top10', async (req, res) => {
     const result = db.getDbtcTop10s();
     await Promise.all(Object.keys(result).map(async (key) => {
         await Promise.all(result[key].map(async (row) => {
-            const user = await lookupUser(row.ownerId, true);
-            row.ownerName = user ? user.name : '<unknown>';
+            if (row.ownerId) {
+                const user = await lookupUser(row.ownerId, true);
+                row.ownerName = user ? user.name : '<unknown>';
+            }
         }));
     }));
     res.json({...result});

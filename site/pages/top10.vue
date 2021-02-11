@@ -89,6 +89,13 @@ export default {
           desc: 'Have the most DBTC frags alive',
           color: 'green',
           data: []
+        },
+        {
+          key: 'likes',
+          name: 'Likes',
+          desc: 'Have the most likes',
+          color: 'brown',
+          data: []
         }
       ]
     }

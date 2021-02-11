@@ -22,7 +22,7 @@ function lock(f) {
     const lockfilePath = path.join(BC_DATABASE_DIR, 'backup.lock');
     return lockfile.lock(BC_DATABASE_DIR, {lockfilePath})
         .then(
-            (release) => Promise.resolve(f()).finally(release),
+            (release) => new Promise((resolve) => resolve(f())).finally(release),
             () => console.log('Failed to get database backup lock')
         )
 }

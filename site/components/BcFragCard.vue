@@ -146,7 +146,8 @@
         v-if="!frag.inCollection"
         small
         label
-        class="my-1 mr-1"
+        color="brown"
+        class="white--text my-1 mr-1"
         v-text="frag.rules.toUpperCase()"
       />
 
@@ -182,6 +183,7 @@
         v-if="fragsAvailable"
         small
         label
+        color="yellow accent-4"
         class="my-1 mr-1"
         v-text="`${fragsAvailable} available`"
       />
@@ -228,8 +230,11 @@
           <v-tab v-if="shouldShowLineage" href="#lineage">
             <v-icon>mdi-file-tree-outline</v-icon>
           </v-tab>
-          <v-tab v-if="canBecomeAFan || isAFan" href="#like">
-            <v-icon>mdi-thumb-up-outline</v-icon>
+          <v-tab v-if="shouldShowKids" href="#kids">
+            <v-icon>mdi-account-multiple-outline</v-icon>
+          </v-tab>
+          <v-tab href="#like">
+            <v-icon>mdi-heart-outline</v-icon>
           </v-tab>
           <slot name="tabs" />
         </v-tabs>
@@ -359,16 +364,62 @@
                     size="23"
                     color="teal lighten-4"
                   />
-                  <strong v-if="item.isAlive" v-text="user.id === item.owner.id ? 'You' : item.owner.name" />
-                  <span v-else class="text-decoration-line-through" v-text="user.id === item.owner.id ? 'You' : item.owner.name" />
+                  <strong v-if="item.isAlive" v-text="you(item.owner, true)" />
+                  <span v-else class="text-decoration-line-through" v-text="you(item.owner, true)" />
                 </template>
               </v-treeview>
             </div>
           </v-tab-item>
 
+          <!-- Kids -->
+
+          <v-tab-item v-if="shouldShowKids" value="kids">
+            <v-card-title>Owners and frags available</v-card-title>
+            <v-card-text v-if="!kids.length">
+              Only <a :href="user.viewUrl" target="_blank">{{ you(frag.owner) }}</a>
+            </v-card-text>
+            <v-card-text v-else>
+              <v-simple-table>
+                <tbody>
+                  <tr
+                    v-for="kid in kids"
+                    :key="kid.fragId"
+                  >
+                    <td>
+                      <a :href="kid.owner.viewUrl" target="_blank">{{ you(kid.owner, true) }}</a>
+                      {{ kid.owner.location ? ' in ' + kid.owner.location : '' }}
+                    </td>
+                    <td
+                      class="text-right"
+                    >
+                      {{ kid.fragsAvailable }}
+                    </td>
+                  </tr>
+                </tbody>
+              </v-simple-table>
+            </v-card-text>
+            <v-card-text v-if="kids.length > 1">
+              <v-btn
+                small
+                color="secondary"
+                :to="`/kids/${frag.motherId}`"
+              >
+                See all frags
+              </v-btn>
+            </v-card-text>
+          </v-tab-item>
+
           <!-- Fan/Like -->
-          <v-tab-item v-if="canBecomeAFan || isAFan" value="like">
-            <v-card-title>Like</v-card-title>
+          <v-tab-item value="like">
+            <v-card-title v-if="likes === 0">
+              No likes
+            </v-card-title>
+            <v-card-title v-else-if="likes === 1">
+              1 like
+            </v-card-title>
+            <v-card-title v-else>
+              {{ likes }} likes
+            </v-card-title>
             <div v-if="canBecomeAFan">
               <v-card-text>Like this item to be notified when frags are available</v-card-text>
               <v-card-text>
@@ -382,7 +433,7 @@
                 </v-btn>
               </v-card-text>
             </div>
-            <div v-else>
+            <div v-else-if="isAFan">
               <v-card-text>You already like this item. Unlike if you'd like to stop receiving notifications</v-card-text>
               <v-card-text>
                 <v-btn
@@ -429,6 +480,12 @@ export default {
     lineage: [],
     gotLineage: false,
 
+    kids: [],
+    gotKids: false,
+
+    likes: 0,
+    gotLikes: false,
+
     shareAlert: false,
     shareLink: undefined,
 
@@ -445,6 +502,9 @@ export default {
       return this.frag.notes
     },
     shouldShowLineage () {
+      return !(this.isPrivate || this.frag.isStatic)
+    },
+    shouldShowKids () {
       return !(this.isPrivate || this.frag.isStatic)
     },
     isAlive () {
@@ -473,18 +533,25 @@ export default {
       return this.frag.isFan
     },
     canBecomeAFan () {
-      return !this.frag.isStatic && !this.isAFan && !this.ownsIt && !this.fragsAvailable
+      return !this.frag.isStatic && !this.ownsIt && !this.fragsAvailable
     }
   },
   watch: {
     fragsAvailable (value) {
       this.updateLineage(true)
+      this.updateKids(true)
     },
     tab (tab) {
       this.$emit('update:tab', tab)
       switch (tab) {
         case 'lineage':
           this.updateLineage(false)
+          break
+        case 'kids':
+          this.updateKids(false)
+          break
+        case 'like':
+          this.updateLikes(false)
           break
       }
     }
@@ -507,7 +574,6 @@ export default {
           node.children = []
         }
       }
-
       if (this.gotLineage && !force) {
         return
       }
@@ -532,26 +598,64 @@ export default {
         this.gotLineage = true
       })
     },
-    async becomeAFan () {
-      this.loadingFan = true
-      try {
-        await this.$axios.$put(`/api/dbtc/fan/${this.frag.motherId}`)
-        this.frag.isFan = true
-      } finally {
-        this.loadingFan = false
+    updateKids (force) {
+      if (this.gotKids && !force) {
+        return
       }
+      this.$nextTick(async () => {
+        const { frags } = await this.$axios.$get(`/api/dbtc/kids/${this.frag.motherId}`)
+        this.kids = frags
+          .filter(({ isAlive }) => isAlive)
+          .sort((a, b) => b.fragsAvailable - a.fragsAvailable)
+        this.gotKids = true
+      })
     },
-    async removeFan () {
+    updateLikes (force) {
+      if (this.gotLikes && !force) {
+        return
+      }
+      this.$axios.$get(`/api/dbtc/fan/${this.frag.motherId}`)
+        .then(({ isFan, likes }) => {
+          this.frag.isFan = isFan
+          this.likes = likes
+          this.gotLikes = true
+        })
+    },
+    becomeAFan () {
       this.loadingFan = true
-      await this.$axios.$delete(`/api/dbtc/fan/${this.frag.motherId}`)
-      this.frag.isFan = false
-      this.loadingFan = false
+      this.$axios.$put(`/api/dbtc/fan/${this.frag.motherId}`)
+        .then(({ isFan, likes }) => {
+          this.frag.isFan = isFan
+          this.likes = likes
+          this.gotLikes = true
+        })
+        .finally(() => {
+          this.loadingFan = false
+        })
+    },
+    removeFan () {
+      this.loadingFan = true
+      this.$axios.$delete(`/api/dbtc/fan/${this.frag.motherId}`)
+        .then(({ isFan, likes }) => {
+          this.frag.isFan = isFan
+          this.likes = likes
+          this.gotLikes = true
+        })
+        .finally(() => {
+          this.loadingFan = false
+        })
     },
     async getShareLink () {
       this.shareLink = undefined
       this.shareAlert = true
       const { url } = await this.$axios.$get(`/api/dbtc/share/${this.frag.fragId}`)
       this.shareLink = url
+    },
+    you (owner, caps) {
+      if (owner.id === this.user.id) {
+        return caps ? 'You' : 'you'
+      }
+      return owner.name
     }
   }
 }

@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid>
+  <v-container v-scroll="scroll" fluid>
     <v-row>
       <v-col>
         <h1>{{ this.$route.params.rules.toUpperCase() }} Collection</h1>
@@ -27,73 +27,52 @@
           <v-card>
             <v-card-title>Filter</v-card-title>
             <v-card-actions>
+              <v-text-field
+                v-model="nameFilter"
+                placeholder="Enter part of the name"
+                clearable
+                hide-details
+                outlined
+              />
+            </v-card-actions>
+            <v-card-actions>
               <v-autocomplete
                 v-model="typeFilter"
                 label="Type"
                 :items="types"
                 clearable
+                outlined
                 hide-details
-                solo
               />
             </v-card-actions>
             <v-card-actions>
-              <v-autocomplete
+              <bc-user-autocomplete
                 v-model="memberFilter"
                 label="Member"
-                :items="members"
-                item-value="ownerId"
-                item-text="name"
-                clearable
-                hide-details
-                solo
-              />
-            </v-card-actions>
-            <v-card-actions>
-              <v-checkbox
-                v-model="haveFilter"
-                label="You don't have it"
-                hide-details
-              />
-              <v-spacer />
-              <v-checkbox
-                v-model="availableFilter"
-                label="Is available"
-                hide-details
               />
             </v-card-actions>
             <v-card-actions>
               <v-btn color="secondary" @click="clearFilter">
                 Clear
               </v-btn>
+              <v-btn color="secondary" @click="applyFilter">
+                Apply
+              </v-btn>
             </v-card-actions>
           </v-card>
         </v-dialog>
       </v-col>
-      <v-col cols="auto">
-        <v-autocomplete
-          v-model="nameFilter"
-          placeholder="Type to search by name"
-          :items="names"
-          clearable
-          hide-details
-          outlined
-          dense
-        />
-      </v-col>
     </v-row>
     <v-row>
-      <v-col align-self="center" cols="auto">
-        <v-chip v-if="typeFilter" label close class="my-1 mr-1" @click:close="typeFilter=''">
+      <v-col v-if="filters" align-self="center" cols="auto">
+        <v-chip v-if="filters.name" label close class="my-1 mr-1" @click:close="removeNameFilter">
+          {{ nameFilter }}
+        </v-chip>
+        <v-chip v-if="filters.type" label close class="my-1 mr-1" @click:close="removeTypeFilter">
           {{ typeFilter }}
         </v-chip>
-        <v-chip v-if="memberFilter" label close class="my-1 mr-1" @click:close="memberFilter=''">
-          {{ memberFilterName }}
-        </v-chip>
-        <v-chip v-if="haveFilter" label close class="my-1 mr-1" @click:close="haveFilter=false">
-          You don't have it
-        </v-chip>
-        <v-chip v-if="availableFilter" label close class="my-1 mr-1" @click:close="availableFilter=false">
-          Is available
+        <v-chip v-if="filters.member" label close class="my-1 mr-1" @click:close="removeMemberFilter">
+          {{ filters.member.name }}
         </v-chip>
       </v-col>
       <v-col>
@@ -104,7 +83,7 @@
     <!-- The cards of mothers -->
     <v-row>
       <v-col
-        v-for="m in filteredMothers"
+        v-for="m in mothers"
         :key="m.motherId"
         cols="auto"
       >
@@ -112,177 +91,122 @@
           :frag="m"
           :user="user"
           show-owner
-        >
-          <template v-slot:first-tabs>
-            <v-tab>
-              <v-icon>mdi-account-multiple-outline</v-icon>
-            </v-tab>
-          </template>
-          <template v-slot:first-tabs-items>
-            <v-tab-item>
-              <v-card-title>Owners and frags available</v-card-title>
-              <v-card-text v-if="!m.owners.length && m.isAlive">
-                Only <a :href="m.owner.viewUrl" target="_blank">{{ you(m.owner) }}</a>
-              </v-card-text>
-              <v-card-text v-else-if="!m.owners.length && !m.isAlive">
-                Only <a :href="m.owner.viewUrl" target="_blank">{{ you(m.owner) }}</a>, but it is dead
-              </v-card-text>
-              <v-card-text v-else>
-                <v-simple-table>
-                  <tbody>
-                    <tr
-                      v-for="owner in m.owners"
-                      :key="owner.ownerId"
-                    >
-                      <td>
-                        <a :href="owner.viewUrl" target="_blank">{{ you(owner, true) }}</a>
-                        {{ owner.location ? ' in ' + owner.location : '' }}
-                      </td>
-                      <td
-                        class="text-right"
-                      >
-                        {{ owner.fragsAvailable }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </v-simple-table>
-              </v-card-text>
-              <v-card-text v-if="m.owners.length > 1">
-                <v-btn
-                  small
-                  color="secondary"
-                  :to="`/kids/${m.motherId}`"
-                >
-                  See all frags
-                </v-btn>
-              </v-card-text>
-            </v-tab-item>
-          </template>
-        </bc-editable-frag-card>
+        />
       </v-col>
     </v-row>
   </v-container>
 </template>
 <script>
 import BcEditableFragCard from '~/components/BcEditableFragCard.vue'
-const compare = (a, b) => {
-  const la = a.toLowerCase()
-  const lb = b.toLowerCase()
-  if (la < lb) {
-    return -1
-  }
-  if (la > lb) {
-    return 1
-  }
-  return 0
-}
+import BcUserAutocomplete from '~/components/BcUserAutocomplete.vue'
 export default {
-  components: { BcEditableFragCard },
+  components: { BcEditableFragCard, BcUserAutocomplete },
   async fetch () {
-    const rules = this.$route.params.rules
-    const { user, mothers } = await this.$axios.$get(`/api/dbtc/collection/${encodeURIComponent(rules)}`)
-
-    this.user = user
-    this.mothers = mothers
-    this.filteredMothers = mothers
-
-    const members = []
-    mothers.forEach(({ owners, name, type }) => {
-      owners.forEach(owner => members.push(owner))
-      this.types.push(type)
+    // Get the types in the background
+    this.$axios.$get('/api/dbtc/enums').then(({ types }) => {
+      this.types = types.map(({ type }) => type)
     })
-    members.sort((a, b) => compare(a.name, b.name))
-    this.types.sort(compare)
-    this.members = members
+    // Now wait for the next page
+    await this.loadNextPage()
   },
   data () {
     return {
       user: {},
       mothers: [],
-      filteredMothers: [],
-      members: [],
       types: [],
 
+      lastPage: 0,
+      loadingPage: false,
+      allPagesLoaded: false,
       showFilter: false,
-      typeFilter: '',
-      memberFilter: '',
-      haveFilter: false,
-      nameFilter: '',
-      availableFilter: false
+      filters: null,
+      typeFilter: null,
+      memberFilter: null,
+      nameFilter: null
     }
   },
-  computed: {
-    memberFilterName () {
-      let result = ''
-      if (this.memberFilter) {
-        // const filterId = parseInt(this.memberFilter, 10)
-        this.members.some(({ id, name }) => {
-          if (id === this.memberFilter) {
-            result = name
-            return true
-          }
-        })
-      }
-      return result
-    },
-    names () {
-      return this.filteredMothers.map(({ name }) => name).sort(compare)
-    }
-  },
-  watch: {
-    typeFilter () {
-      this.filter()
-    },
-    memberFilter (value) {
-      this.filter()
-    },
-    haveFilter () {
-      this.filter()
-    },
-    nameFilter () {
-      this.filter()
-    },
-    availableFilter () {
-      this.filter()
-    }
-  },
-
   methods: {
-    filter () {
-      this.filteredMothers = this.mothers.filter((mother) => {
-        if (this.typeFilter) {
-          if (mother.type !== this.typeFilter) {
-            return false
+    async loadNextPage () {
+      if (this.loadingPage || this.allPagesLoaded) {
+        return
+      }
+      this.loadingPage = true
+      try {
+        const rules = this.$route.params.rules
+        const page = ++this.lastPage
+        const url = `/api/dbtc/collection/${encodeURIComponent(rules)}/p/${page}`
+        const options = !this.filters ? {} : {
+          params: {
+            type: this.filters.type,
+            name: this.filters.name ? `%${this.filters.name}%` : null,
+            ownerId: this.filters.member ? this.filters.member.id : null
           }
         }
-        if (this.memberFilter) {
-          return mother.owners.some(({ ownerId }) => ownerId === this.memberFilter)
+        const { user, mothers } = await this.$axios.$get(url, options)
+        if (mothers.length === 0) {
+          this.allPagesLoaded = true
+          return
         }
-        if (this.haveFilter && mother.ownsIt) {
-          return false
+        this.user = user
+        this.mothers = this.mothers.concat(mothers)
+        this.filteredMothers = this.mothers
+      } finally {
+        this.loadingPage = false
+      }
+    },
+    scroll () {
+      if (this.allPagesLoaded) {
+        return
+      }
+      const bottomOfWindow = document.documentElement.scrollTop +
+        window.innerHeight >= document.documentElement.offsetHeight - 300
+
+      if (bottomOfWindow) {
+        this.loadNextPage()
+      }
+    },
+    removeNameFilter () {
+      this.nameFilter = null
+      this.applyFilter()
+    },
+    removeTypeFilter () {
+      this.typeFilter = null
+      this.applyFilter()
+    },
+    removeMemberFilter () {
+      this.memberFilter = null
+      this.applyFilter()
+    },
+    applyFilter () {
+      this.allPagesLoaded = false
+      this.lastPage = 0
+      this.showFilter = false
+      this.mothers = []
+      if (this.nameFilter || this.typeFilter || this.memberFilter) {
+        this.filters = {
+          name: this.nameFilter,
+          type: this.typeFilter,
+          member: this.memberFilter
         }
-        if (this.nameFilter) {
-          return mother.name === this.nameFilter
-        }
-        if (this.availableFilter) {
-          return mother.fragsAvailable > 0
-        }
-        return true
-      })
+      } else {
+        this.filters = null
+      }
+      this.loadNextPage()
     },
     clearFilter () {
-      this.typeFilter = ''
-      this.memberFilter = ''
-      this.haveFilter = false
-      this.nameFilter = ''
-      this.availableFilter = false
       this.showFilter = false
-    },
-    you (owner, caps) {
-      if (owner.id === this.user.id) {
-        return caps ? 'You' : 'you'
+      if (!this.filters) {
+        return
       }
-      return owner.name
+      this.typeFilter = null
+      this.memberFilter = null
+      this.nameFilter = null
+      this.filters = null
+      this.allPagesLoaded = false
+      this.lastPage = 0
+      this.showFilter = false
+      this.mothers = []
+      this.loadNextPage()
     }
   }
 }

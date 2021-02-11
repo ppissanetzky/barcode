@@ -395,86 +395,85 @@ function updateFragPicture(ownerId, fragId, picture) {
 }
 
 //-----------------------------------------------------------------------------
-// Select mothers that have frags alive, including:
-//  an array of all the frags
-//  an array of all the frag pictures (which can have nulls in it)
-//-----------------------------------------------------------------------------
-// Example row:
-//
-// motherId = 6
-// timestamp = 2021-01-16T01:05:31.696Z
-//      name = Armor Of God Zoa
-//      type = Softie
-// scientificName =
-//      flow = Medium
-//     light = Medium
-// hardiness = Normal
-// growthRate = Normal
-// sourceType = Member
-//    source = Srt4Eric
-//      cost = 0.0
-//      size =
-//    owners = [
-//              {"ownerId":16186,"fragId":10,"fragsAvailable":0},
-//              {"ownerId":803,"fragId":11,"fragsAvailable":0},
-//              {"ownerId":14245,"fragId":12,"fragsAvailable":0},
-//              {"ownerId":13957,"fragId":13,"fragsAvailable":0},
-//
-//  Note that 16186 appears twice because someone else gave them a frag back
-//
-//              {"ownerId":16186,"fragId":14,"fragsAvailable":0}
-//             ]
-//  pictures = ["92dc15eff7cb74ba939806449b9fa88e",null,null,"a93b531dd1339e1dd14d18b907438191",null]
-//-----------------------------------------------------------------------------
 
-const SELECT_COLLECTION = `
+const SELECT_COLLECTION_PAGED = `
     SELECT
-        motherFrags.*,
-        fans.userId AS isFan,
-        SUM(IFNULL(frags.fragsAvailable, 0)) - motherFrags.fragsAvailable AS otherFragsAvailable,
-        json_group_array(
-            CASE WHEN frags.ownerId IS NULL
-            THEN NULL
-            ELSE
-                json_object(
-                    'ownerId',          frags.ownerId,
-                    'fragId',           frags.fragId,
-                    'fragsAvailable',   frags.fragsAvailable
-                )
-            END
-        ) AS owners
+        mf.*,
+        -- 1 if this user owns the mother frag
+        CASE WHEN mf.ownerId = $userId THEN 1 ELSE 0 END as ownsIt,
+        -- Adds up all the available children frags
+        SUM(IFNULL(frags.fragsAvailable, 0)) AS otherFragsAvailable,
+        -- Ends up being 1 if the user owns one of the children frags
+        MAX(CASE WHEN frags.ownerId = $userId THEN 1 ELSE 0 END) AS hasOne,
+        -- Counts the number of children frags
+        COUNT(DISTINCT frags.fragId) AS childCount,
+        -- Ends up being 1 if the user is a fan
+        MAX(CASE WHEN fans.userId = $userId THEN 1 ELSE 0 END) AS isFan,
+        -- Counts the number of fans
+        COUNT(DISTINCT fans.userId) as fanCount
     FROM
-        motherFrags
+        motherFrags AS mf
     LEFT OUTER JOIN
         frags
     ON
-        motherFrags.motherId = frags.motherId AND
-        frags.isAlive = 1
+        -- Skip the mother frag in the children
+        frags.fragOf IS NOT NULL
+        -- The child has to be alive
+        AND frags.isAlive = 1
+        -- And it has to have the same mother
+        AND frags.motherId = mf.motherId
     LEFT OUTER JOIN
         fans
     ON
-        motherFrags.motherId = fans.motherId AND
-        fans.userId = $userId
+        fans.motherId = mf.motherId
     WHERE
-        motherFrags.rules = $rules
+        mf.rules = $rules
+        -- The subquery skips ahead the given number of items
+        -- This is called 'keyset pagination'
+        -- It must have the same WHERE as above and the same
+        -- ORDER BY as below
+        AND ($type IS NULL OR mf.type = $type)
+        AND ($ownerId IS NULL OR mf.ownerId = $ownerId)
+        AND ($name IS NULL OR mf.name LIKE $name)
+        AND mf.motherId NOT IN (
+            SELECT
+                mf.motherId
+            FROM
+                motherFrags AS mf
+            WHERE
+                mf.rules = $rules
+                AND ($type IS NULL OR mf.type = $type)
+                AND ($ownerId IS NULL OR mf.ownerId = $ownerId)
+                AND ($name IS NULL OR mf.name LIKE $name)
+            ORDER BY
+                mf.timestamp DESC
+            -- Skips previous pages - $page is 1 based
+            LIMIT $itemsPerPage * ($page - 1)
+        )
     GROUP BY
-        motherFrags.motherId
+        1
     ORDER BY
-        motherFrags.timestamp DESC
-`;
+        mf.timestamp DESC
+    LIMIT
+        $itemsPerPage
+    `
+const ITEMS_PER_PAGE = 12;
 
-function selectCollection(userId, rules) {
-    const rows = db.all(SELECT_COLLECTION, {rules, userId});
-    // Now, go through them and parse the JSON parts
-    rows.forEach((row) => {
-        // Parse the owners and remove nulls
-        row.owners = JSON.parse(row.owners)
-            .filter((owner) => owner)
-            // Also sort the list in descending order by frags available,
-            // so the ones with the most frags are first
-            .sort((a, b) => b.fragsAvailable - a.fragsAvailable);
+const NULL_FILTERS = {
+    type: null,
+    ownerId: null,
+    name: null
+};
+
+function selectCollectionPaged(userId, rules, page, filters) {
+    return db.all(SELECT_COLLECTION_PAGED, {
+        userId,
+        rules,
+        page,
+        itemsPerPage: ITEMS_PER_PAGE,
+        ...NULL_FILTERS,
+        ...filters
     });
-    return rows;
 }
 
 //-----------------------------------------------------------------------------
@@ -589,6 +588,20 @@ const TOP_10 = {
             frags.fragOf IS NOT NULL
         GROUP BY 1
         ORDER BY 2 DESC
+        LIMIT 10`,
+
+    likes: `
+        SELECT
+            mothers.name as ownerName,
+            COUNT(userId) AS count
+        FROM
+            mothers,
+            fans
+        WHERE
+            mothers.rules = 'dbtc' AND
+            mothers.motherId = fans.motherId
+        GROUP BY 1
+        ORDER BY 2 DESC
         LIMIT 10`
 }
 
@@ -692,6 +705,26 @@ function getFans(motherId) {
     return db.all(SELECT_FANS, {motherId});
 }
 
+const SELECT_LIKES = `
+    SELECT
+        MAX(CASE WHEN userId = $userId THEN 1 ELSE 0 END) isFan,
+        COUNT(userId) as likes
+    FROM
+        fans
+    WHERE
+        motherId = $motherId
+    GROUP BY
+        motherId
+`;
+
+function getLikes(userId, motherId) {
+    const [row] = db.all(SELECT_LIKES, {userId, motherId});
+    return ({
+        isFan: row ? Boolean(row.isFan) : false,
+        likes: row ? row.likes : 0
+    });
+}
+
 //-----------------------------------------------------------------------------
 
 const SELECT_RANDOM_STRING = `
@@ -781,7 +814,7 @@ module.exports = {
     addJournal,
     markAsDead,
     updateFragPicture,
-    selectCollection,
+    selectCollectionPaged,
     getTypes,
     getType,
     getEnums,
@@ -797,5 +830,6 @@ module.exports = {
     shareFrag,
     getShare,
     getUserThreadIds,
-    getFans
+    getFans,
+    getLikes
 }

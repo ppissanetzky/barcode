@@ -13,6 +13,7 @@
     :label="label"
     outlined
     hide-details
+    clearable
   />
 </template>
 <script>
@@ -40,6 +41,12 @@ export default {
   }),
 
   watch: {
+    value (value) {
+      if (!value) {
+        this.selectedUser = undefined
+      }
+    },
+
     selectedUser (value) {
       this.$emit('input', value)
     },
