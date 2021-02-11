@@ -386,7 +386,7 @@ async function sendAlert(recipientId, body, linkText, linkUrl) {
 // https://xenforo.com/community/pages/api-endpoints/#route_get_users_find_name
 //-----------------------------------------------------------------------------
 
-async function findUsersWithPrefix(prefix) {
+async function findUsersWithPrefix(prefix, all) {
     const response = await apiRequest('users/find-name', 'GET', {
         username: prefix,
         // Without this, we don't get information about the secondary
@@ -396,11 +396,11 @@ async function findUsersWithPrefix(prefix) {
     const users = [];
     if (response) {
         const {exact, recommendations} = response;
-        if (exact && isXfUserAllowed(exact)) {
+        if (exact && (all || isXfUserAllowed(exact))) {
             users.push(cacheUser(makeUser(exact)));
         }
         recommendations.forEach((xfUser) => {
-            if (isXfUserAllowed(xfUser)) {
+            if (all || isXfUserAllowed(xfUser)) {
                 users.push(cacheUser(makeUser(xfUser)));
             }
         });

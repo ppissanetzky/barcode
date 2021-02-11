@@ -30,6 +30,10 @@ export default {
     excludeUser: {
       type: Number,
       default: 0
+    },
+    allowAll: {
+      type: Boolean,
+      default: false
     }
   },
 
@@ -37,7 +41,8 @@ export default {
     users: [],
     isLoading: false,
     selectedUser: undefined,
-    searchForUser: undefined
+    searchForUser: undefined,
+    loading: Promise.resolve()
   }),
 
   watch: {
@@ -59,28 +64,26 @@ export default {
         return
       }
 
-      // Otherwise, if we have already loaded items, don't do it again
-      if (this.users.length) {
-        return
-      }
-
-      // We are currently loading items
-      if (this.isLoading) {
-        return
-      }
-
       // Request new items out of band
-      this.isLoading = true
-      this.$axios.$get(`/api/dbtc/find-users?prefix=${encodeURIComponent(value)}`)
-        .then(({ users }) => {
-          this.users = users.map(([id, name]) => ({ id, name }))
-          if (this.excludeUser) {
-            this.users = this.users.filter(({ id }) => id !== this.excludeUser)
+      this.loading = this.loading.then(() => {
+        this.isLoading = true
+        const url = '/api/dbtc/find-users'
+        const options = {
+          params: {
+            prefix: value,
+            all: this.allowAll
           }
-        })
-        .finally(() => {
-          this.isLoading = false
-        })
+        }
+        return this.$axios.$get(url, options)
+          .then(({ users }) => {
+            this.users = users.map(([id, name]) => ({ id, name }))
+            if (this.excludeUser) {
+              this.users = this.users.filter(({ id }) => id !== this.excludeUser)
+            }
+          })
+      }).finally(() => {
+        this.isLoading = false
+      })
     }
   }
 }

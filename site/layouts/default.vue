@@ -53,6 +53,7 @@
           <v-card-actions>
             <bc-user-autocomplete
               v-model="impersonateUser"
+              allow-all
             />
           </v-card-actions>
           <v-card-actions>

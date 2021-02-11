@@ -778,7 +778,8 @@ router.get('/top10', async (req, res) => {
 router.get('/find-users', async (req, res) => {
     const {query} = req;
     const {prefix} = query;
-    const fullUsers = await findUsersWithPrefix(prefix);
+    const all = query.all === 'true';
+    const fullUsers = await findUsersWithPrefix(prefix, all);
     // Make it smaller, only returning [[id, name],...]
     const users = fullUsers.map(({id, name}) => [id, name]);
     res.json({
