@@ -37,8 +37,23 @@ BC_TEST_USER && console.warn('Running as user', BC_TEST_USER);
 const API_KEY = BC_XF_API_KEY;
 const HOST = 'bareefers.org';
 const PATH = '/forum/api';
-const SESSION_COOKIE = 'xfb_session';
-const USER_COOKIE = 'xfb_user';
+
+//-----------------------------------------------------------------------------
+// These were the existing cookies before I changed the
+// prefix on 2/11/2021 to support subdomains
+//-----------------------------------------------------------------------------
+
+const OLD_SESSION_COOKIE = 'xfb_session';
+const OLD_USER_COOKIE    = 'xfb_user';
+
+//-----------------------------------------------------------------------------
+// These are the new ones
+//-----------------------------------------------------------------------------
+
+const NEW_SESSION_COOKIE = 'xfc_session';
+const NEW_USER_COOKIE    = 'xfc_user';
+
+//-----------------------------------------------------------------------------
 
 const LOGIN_LINK = 'https://bareefers.org/forum/login/';
 const SUPPORTING_MEMBER_LINK = 'https://www.bareefers.org/forum/threads/how-do-i-become-a-supporting-member.14130/';
@@ -203,8 +218,8 @@ async function validateXenForoUser(headers) {
     const cookies = cookieParser.parse(headers.cookie);
 
     // Get the session ID
-    const sessionId = cookies[SESSION_COOKIE];
-    const rememberCookie = cookies[USER_COOKIE];
+    const sessionId = cookies[NEW_SESSION_COOKIE] || cookies[OLD_SESSION_COOKIE];
+    const rememberCookie = cookies[NEW_USER_COOKIE] || cookies[OLD_USER_COOKIE];
 
     if (!sessionId && !rememberCookie) {
         throw authenticationFailed('No XF cookies');
