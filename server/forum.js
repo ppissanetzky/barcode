@@ -101,8 +101,7 @@ function madeFragsAvailable(user, frag) {
         uberPost(frag.threadId, 'frags-available', {
             user,
             frag,
-            fans,
-            singleFan: fans.length === 1 ? fans[0] : null
+            fans
         });
     })
 }

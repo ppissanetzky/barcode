@@ -5,17 +5,12 @@ It receives:
     user - the user object representing the owner of thread
     frag - the mother/frag object
     fans - an array of (name, timestamp)
-    singleFan - if the array of fans has only one item, it will be here, null otherwise
 There is no title
 }}
 no title - this is a post
 
 @{{user.name}} just made {{frag.fragsAvailable}} frag(s) available. [URL={{fragUrl frag.fragId}}]Get them[/URL] while they're fresh!
 
-{{#if singleFan}}
-@{{singleFan.name}} has been waiting {{age singleFan.timestamp}} for one of these.
-{{else}}
 {{#if fans.length}}
 {{#each fans}}@{{this.name}}, {{/each}}now is your chance.
-{{/if}}
 {{/if}}
