@@ -83,7 +83,7 @@
       <v-list>
         <v-list-item>
           <v-list-item-title>BARcode</v-list-item-title>
-          <v-list-item-subtitle>v{{ $config.version }}</v-list-item-subtitle>
+          <v-list-item-subtitle>{{ $config.version }}</v-list-item-subtitle>
         </v-list-item>
         <v-divider />
         <v-list-item to="/add-new-item">
