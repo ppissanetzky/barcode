@@ -8,6 +8,12 @@ services:
       - /home/barcode/barcode-data/databases:/volumes/databases
     networks:
       barcode-net:
+    extra_hosts:
+      # This allows the API server to talk to our forum using
+      # its private IP address instead of the public one. It
+      # should be faster. The only caveat is that they must
+      # both be in the same data center - which they are.
+      - "bareefers.org:192.168.167.79"
     env_file:
       - /home/barcode/barcode-env
     environment:
