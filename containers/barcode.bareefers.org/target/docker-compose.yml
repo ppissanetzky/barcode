@@ -1,0 +1,41 @@
+version: "3.7"
+services:
+  api-server:
+    image: barcode-api-server
+    volumes:
+      - /home/barcode/barcode-data/uploads/bc/uploads:/volumes/uploads
+      - /home/barcode/barcode-data/databases:/volumes/databases
+    networks:
+      barcode-net:
+    env_file:
+      - /home/barcode/barcode-env
+    environment:
+      BC_FORUM_MODE: 0
+      BC_SITE_BASE_URL: http://barcode.bareefers.org
+      BC_DATABASE_DIR: /volumes/databases
+      BC_UPLOADS_DIR: /volumes/uploads
+
+  web-server:
+    image: barcode-web-server
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - type: bind
+        source: /home/barcode/barcode-data/uploads/bc/uploads
+        target: /volumes/uploads
+        read_only: true
+      - type: bind
+        source: /etc/letsencrypt
+        target: /etc/letsencrypt
+        read_only: true
+      - type: bind
+        source: ./etc/nginx/conf.d
+        target: /etc/nginx/conf.d
+    networks:
+      barcode-net:
+    depends_on:
+      - api-server
+
+networks:
+  barcode-net:

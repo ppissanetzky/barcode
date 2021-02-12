@@ -1,7 +1,7 @@
 {
   "scripts": {
     "dev": "nuxt --dotenv false",
-    "generate": "nuxt generate --fail-on-error --dotenv false"
+    "generate": "BC_VERSION=`git describe --dirty` nuxt generate --fail-on-error --dotenv false"
   },
   "dependencies": {
     "@nuxtjs/axios": "^5.12.5",

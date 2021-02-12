@@ -202,5 +202,6 @@ process.on('SIGTERM', () => {
     console.log('Received SIGTERM, shutting down...');
     server.close(() => {
         console.log('Server closed');
+        process.exit(0);
     });
 });

@@ -3,11 +3,11 @@ const assert = require('assert');
 
 import colors from 'vuetify/es5/util/colors'
 
-//-----------------------------------------------------------------------------
-// Load our build-time configuration
-//-----------------------------------------------------------------------------
+const version = process.env.BC_VERSION;
 
-const {version} = require('../package.json')
+assert(version, 'Missing BC_VERSION environment variable');
+
+console.log('Version', version);
 
 //-----------------------------------------------------------------------------
 

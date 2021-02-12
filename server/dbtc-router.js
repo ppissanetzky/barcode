@@ -615,7 +615,12 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
     }
     // Now, see if there is a picture URL and download it,
     if (!picture && pictureUrl) {
-        picture = await saveImageFromUrl(upload, pictureUrl);
+        try {
+            picture = await saveImageFromUrl(upload, pictureUrl);
+        }
+        catch (error) {
+            console.error('Failed to download image', pictureUrl, error);
+        }
     }
     // Insert the main frag
     const [motherId, fragId] = db.insertItem({
