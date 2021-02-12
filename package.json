@@ -1,6 +1,6 @@
 {
   "name": "barcode",
-  "version": "1.18.3",
+  "version": "1.18.4",
   "private": true,
   "scripts": {
     "install": "(cd site && npm i) && (cd server && npm i)",
