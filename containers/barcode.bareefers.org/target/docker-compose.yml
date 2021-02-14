@@ -18,7 +18,7 @@ services:
       - /home/barcode/barcode-env
     environment:
       BC_FORUM_MODE: production
-      BC_SITE_BASE_URL: http://barcode.bareefers.org
+      BC_SITE_BASE_URL: http://barcode.bareefers.org/bc
       BC_DATABASE_DIR: /volumes/databases
       BC_UPLOADS_DIR: /volumes/uploads
 
