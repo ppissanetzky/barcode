@@ -97,13 +97,20 @@
 
       <!-- Give a frag -->
       <v-tab-item v-if="canMakeChanges && !isPrivate" value="give">
-        <v-card-title>Give a frag</v-card-title>
+        <v-card-title>Give a frag or transfer this one</v-card-title>
         <validation-observer ref="giveAFragObserver" v-slot="{ invalid }">
           <v-form
             id="give-a-frag"
             @submit.prevent="submitPreventGiveAFrag"
             @submit="submitGiveAFrag"
           >
+            <v-card-text>
+              <v-checkbox
+                v-model="isTransfer"
+                label="Check this box if you are transferring this item and will no longer own it"
+                hide-details
+              />
+            </v-card-text>
             <!-- The user that is getting the frag -->
             <v-card-text>
               <validation-provider
@@ -407,6 +414,8 @@ export default {
     loadingMakeFragsAvailable: false,
 
     loadingGiveAFrag: false,
+    // Whether this is a transfer
+    isTransfer: false,
     // The user object chosen as the recipient
     // in 'give a frag' {id,name}
     recipient: undefined,
@@ -536,10 +545,19 @@ export default {
         if (this.notes) {
           formData.set('notes', this.notes)
         }
+        const { isTransfer } = this
+        if (isTransfer) {
+          formData.set('transfer', true)
+        }
         const { fragsAvailable, journal } = await this.$axios.$post('/api/dbtc/give-a-frag', formData)
         // Update available frags from the response
         this.fragsAvailable = fragsAvailable
         this.editedFragsAvailable = fragsAvailable
+        // For a transfer, this frag is considered dead
+        if (isTransfer) {
+          this.frag.isAlive = false
+          this.frag.status = 'transferred'
+        }
 
         // Augment and add the journal
         this.addJournal(journal)
@@ -548,9 +566,10 @@ export default {
         this.picture = undefined
         this.notes = undefined
         this.dateGiven = undefined
+        this.isTransfer = false
         event.target.reset()
 
-        this.snackbarText = `One frag given to ${recipientName}`
+        this.snackbarText = isTransfer ? `This frag was transferred to ${recipientName}` : `One frag given to ${recipientName}`
         this.snackbar = true
       } finally {
         this.loadingGiveAFrag = false

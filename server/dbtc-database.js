@@ -248,7 +248,19 @@ function giveAFrag(userId, values) {
         };
         const fragId = run(INSERT_FRAG, fixDates(fragBindings));
 
-        // Decrement available frags on the source frag
+        // If it is a transfer, mark the source frag as dead
+        // with a 'transferred' status. Return with zero frags
+        // available
+        if (values.transfer) {
+            run(UPDATE_ALIVE, {
+                fragId: values.fragOf,
+                ownerId: userId,
+                status: 'transferred'
+            });
+            return [0, fragId];
+        }
+
+        // Otherwise, decrement available frags on the source frag
         run(DECREMENT_FRAGS_AVAILABLE, {
             ownerId: userId,
             fragId: values.fragOf
@@ -361,6 +373,7 @@ function addJournal(values) {
 }
 
 //-----------------------------------------------------------------------------
+// Also used for give a frag when it is a transfer
 
 const UPDATE_ALIVE = `
     UPDATE
@@ -371,7 +384,7 @@ const UPDATE_ALIVE = `
         status = $status
     WHERE
         fragId = $fragId AND
-        ownerId = ownerId
+        ownerId = $ownerId
 `;
 
 function markAsDead(ownerId, fragId, status) {

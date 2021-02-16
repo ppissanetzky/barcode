@@ -18,6 +18,7 @@ const {
     itemImported,
     madeFragsAvailable,
     fragGiven,
+    fragTransferred,
     journalUpdated,
     fragDied
 } = require('./forum');
@@ -294,7 +295,7 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
     const {user, body, file} = req;
     const picture = file ? file.filename : null;
     // Validate
-    const {fragOf, ownerId, dateAcquired} = body;
+    const {fragOf, ownerId, dateAcquired, transfer} = body;
     // Validate the frag. It must belong to this user and be alive.
     const frag = db.validateFrag(user.id, fragOf, true, -1);
     if (!frag) {
@@ -325,7 +326,9 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
         fragId: newFragId,
         timestamp: dateAcquired,
         entryType: 'acquired',
-        notes: `Got it from ${user.name}`
+        notes: transfer ?
+            `Transferred from ${user.name}` :
+            `Got it from ${user.name}`
     });
 
     // Add a journal entry for the one who gave it
@@ -334,12 +337,19 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
         timestamp: dateAcquired,
         entryType: 'gave',
         picture,
-        notes: `Gave a frag to ${recipient.name}`
+        notes: transfer ?
+            `Transferred to ${recipient.name}` :
+            `Gave a frag to ${recipient.name}`
     });
     // Remove the recipient from the fans table
     db.removeFan(recipient.id, frag.motherId);
     // Post to the forum
-    fragGiven(user, recipient, newFragId);
+    if (transfer) {
+        fragTransferred(user, recipient, newFragId);
+    }
+    else {
+        fragGiven(user, recipient, newFragId);
+    }
     // Reply
     res.json({
         fragsAvailable,

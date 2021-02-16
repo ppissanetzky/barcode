@@ -115,6 +115,13 @@ function fragGiven(user, recipient, fragId) {
 
 //-----------------------------------------------------------------------------
 
+function fragTransferred(user, recipient, fragId) {
+    const [frag] = db.selectFrag(fragId);
+    uberPost(frag.threadId, 'frag-transferred', {user, recipient, frag});
+}
+
+//-----------------------------------------------------------------------------
+
 function journalUpdated(user, frag, journal) {
     uberPost(frag.threadId, 'journal-updated', {user, frag, journal});
 }
@@ -132,6 +139,7 @@ module.exports = {
     itemImported,
     madeFragsAvailable,
     fragGiven,
+    fragTransferred,
     journalUpdated,
     fragDied
 };
