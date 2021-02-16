@@ -93,6 +93,8 @@ module.exports = {
   dateFromIsoString,
   nowAsIsoString,
   differenceBetween,
+  differenceInDays,
+  formatDistance,
   justTheUtcDate,
   justTheLocalDate
 }

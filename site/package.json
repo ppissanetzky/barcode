@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "dev": "nuxt --dotenv false",
+    "dev": "BC_VERSION=`git describe --dirty` nuxt --dotenv false",
     "generate": "BC_VERSION=`git describe --dirty` nuxt generate --fail-on-error --dotenv false"
   },
   "dependencies": {

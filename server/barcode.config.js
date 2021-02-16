@@ -1,9 +1,14 @@
 
+const os = require('os');
+const path = require('path');
+
 //-----------------------------------------------------------------------------
 // This will read the values from the .env file and put them in process.env
 //-----------------------------------------------------------------------------
 
-require('dotenv').config()
+require('dotenv').config({
+    path: path.join(os.homedir(), 'barcode-env')
+});
 
 //-----------------------------------------------------------------------------
 
@@ -82,6 +87,14 @@ module.exports = {
     //-------------------------------------------------------------------------
 
     get BC_FORUM_MODE () { return get('BC_FORUM_MODE') },
+
+    //-------------------------------------------------------------------------
+    // If this is 'production', we will send actual SMS messages using the AWS
+    // SNS service - which costs money. Otherwise, we will print the messages
+    // on the API server console.
+    //-------------------------------------------------------------------------
+
+    get BC_SMS_MODE () { return get('BC_SMS_MODE') },
 
     //-------------------------------------------------------------------------
 };

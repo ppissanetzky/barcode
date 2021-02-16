@@ -85,14 +85,16 @@ class Database {
 
             // Check the version with this pragma
             let [{user_version}] = db.pragma('user_version');
-            console.log(name, 'is version', user_version, 'requesting version', version);
 
             // If it is already at the desired version, add it to the map
             // so we won't check it again and return it
             if (user_version === version) {
+                console.log(name, 'is version', user_version);
                 this.migrated = true;
                 return db;
             }
+
+            console.log(name, 'is version', user_version, 'requesting version', version);
 
             // If it is at a higher version than the desired one, there is
             // a problem and we should not continue.

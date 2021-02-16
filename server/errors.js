@@ -75,6 +75,29 @@ module.exports = {
 
     // A bad thread
     INVALID_THREAD:         error.bind(null, 'ITH'),
+
+    // Invalid phone number for OTP
+    INVALID_PHONE_NUMBER:   error.bind(null, 'IPH'),
+
+    // It is too soon to send another OTP
+    OTP_TOO_SOON:           error.bind(null, 'OTS'),
+
+    // There is no OTP in the database when the user tries to get in line
+    // or there is a request to get in line with not OTP
+    NO_OTP:                 error.bind(null, 'NOP'),
+
+    // The user is banned from borrowing equipment
+    BANNED:                 error.bind(null, 'BAN'),
+
+    // The OTP in the database is expired
+    OTP_TOO_OLD:            error.bind(null, 'OEX'),
+
+    // The user is trying to drop out of an item's queue but
+    // they have the item
+    CANT_DROP_OUT:          error.bind(null, 'CDO'),
+
+    // When a transfer request doesn't have a correct verb
+    BAD_TRANSFER:           error.bind(null, 'BTR'),
 };
 
 //-----------------------------------------------------------------------------
