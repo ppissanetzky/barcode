@@ -62,7 +62,7 @@ function itemAdded(fragId) {
         if (!POSTING_ENABLED) {
             return;
         }
-        const newThreadId = await startForumThread(forumId, title, message);
+        const newThreadId = await startForumThread(user.id, forumId, title, message);
         console.log(`Created thread ${newThreadId}`);
         // Update the database with the new thread ID
         db.setMotherThreadId(frag.motherId, newThreadId);

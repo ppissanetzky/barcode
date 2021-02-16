@@ -578,7 +578,7 @@ async function getThreadPosts(userId, threadId) {
 
 //-----------------------------------------------------------------------------
 
-async function startForumThread(forumId, title, message) {
+async function startForumThread(userId, forumId, title, message) {
     const {thread: {thread_id}} = await apiRequest('threads/', 'POST', {
         node_id: forumId,
         title: title,
@@ -586,7 +586,8 @@ async function startForumThread(forumId, title, message) {
         api_bypass_permissions: 1
     },
     {
-        'XF-Api-User': BARCODE_USER
+        // This will create the thread on behalf of the given user
+        'XF-Api-User': userId || BARCODE_USER
     });
     return thread_id;
 }

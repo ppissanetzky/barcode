@@ -399,6 +399,13 @@
                     <v-divider />
                   </v-col>
                 </v-row>
+                <v-row v-if="!isUpdating">
+                  <v-col>
+                    <p>
+                      Note that BARcode will create a forum thread on your behalf
+                    </p>
+                  </v-col>
+                </v-row>
                 <v-row>
                   <v-col>
                     <v-btn

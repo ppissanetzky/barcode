@@ -3,13 +3,17 @@ This one is used to create a new thread in one of the DBTC forums, it receives:
     user - the user object representing the owner of the frag
     frag - all the data from 'mothers' and 'frags' for this item
 The first line is the thread title
+This thread is created on behalf of the user who contributed the item, so we should
+not use third person.
 }}
 DBTC: {{frag.name}}
 
-@{{user.name}} contributed [URL={{fragUrl frag.fragId}}]{{frag.name}}[/URL] to DBTC.
+I just added [URL={{fragUrl frag.fragId}}]{{frag.name}}[/URL] to DBTC.
 
 {{#if frag.fragsAvailable}}
 There are {{frag.fragsAvailable}} frag(s) available right now.
+{{else}}
+[URL={{fragUrl frag.fragId "like"}}]Get in line[/URL] to be notified when new frags are available.
 {{/if}}
 
 {{#if frag.picture}}
@@ -17,7 +21,9 @@ There are {{frag.fragsAvailable}} frag(s) available right now.
 {{/if}}
 
 {{#if frag.notes}}
-[QUOTE={{user.name}}]
+[QUOTE]
 {{frag.notes}}
 [/QUOTE]
 {{/if}}
+
+[I]This thread was automatically created by BARcode[/I]
