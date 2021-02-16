@@ -71,17 +71,11 @@ class Database {
             // If we have already migrated it, return a new DB
             if (migrated) {
                 db = new BetterSqlite3(file);
-                if (!db.pragma('foreign_keys', {simple: true})) {
-                    db.pragma('foreign_keys = ON');
-                }
                 return db;
             }
             // Otherwise, open it and see what version it currently is
             console.log('Opening database', file);
             db = new BetterSqlite3(file);
-            if (!db.pragma('foreign_keys', {simple: true})) {
-                db.pragma('foreign_keys = ON');
-            }
 
             // Check the version with this pragma
             let [{user_version}] = db.pragma('user_version');
