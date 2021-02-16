@@ -92,8 +92,8 @@ export default {
         },
         {
           key: 'likes',
-          name: 'Likes',
-          desc: 'Have the most likes',
+          name: 'Popular',
+          desc: 'Have the most members waiting',
           color: 'brown',
           data: []
         }

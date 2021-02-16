@@ -163,7 +163,7 @@
         You have it
       </v-chip>
 
-      <!-- A chip that shows the user is a fan -->
+      <!-- A chip that shows the user is in line for a frag -->
 
       <v-chip
         v-if="isAFan"
@@ -174,7 +174,7 @@
         class="my-1 mr-1"
         @click:close="removeFan"
       >
-        You're a fan
+        You're in line
       </v-chip>
 
       <!-- A chip to show the total number of available frags -->
@@ -234,7 +234,7 @@
             <v-icon>mdi-account-multiple-outline</v-icon>
           </v-tab>
           <v-tab href="#like">
-            <v-icon>mdi-heart-outline</v-icon>
+            <v-icon>mdi-human-queue</v-icon>
           </v-tab>
           <slot name="tabs" />
         </v-tabs>
@@ -412,16 +412,16 @@
           <!-- Fan/Like -->
           <v-tab-item value="like">
             <v-card-title v-if="likes === 0">
-              No likes
+              No one waiting
             </v-card-title>
             <v-card-title v-else-if="likes === 1">
-              1 like
+              1 member waiting for a frag
             </v-card-title>
             <v-card-title v-else>
-              {{ likes }} likes
+              {{ likes }} members waiting for a frag
             </v-card-title>
             <div v-if="isAFan">
-              <v-card-text>You already like this item. Unlike if you'd like to stop receiving notifications</v-card-text>
+              <v-card-text>You're already in line for a frag</v-card-text>
               <v-card-text>
                 <v-btn
                   small
@@ -429,12 +429,12 @@
                   :loading="loadingFan"
                   @click="removeFan"
                 >
-                  Unlike
+                  Drop out
                 </v-btn>
               </v-card-text>
             </div>
             <div v-else-if="canBecomeAFan">
-              <v-card-text>Like this item to be notified when frags are available</v-card-text>
+              <v-card-text>Get in line to be notified when frags are available</v-card-text>
               <v-card-text>
                 <v-btn
                   small
@@ -442,7 +442,7 @@
                   :loading="loadingFan"
                   @click="becomeAFan"
                 >
-                  Like
+                  Get in line
                 </v-btn>
               </v-card-text>
             </div>
