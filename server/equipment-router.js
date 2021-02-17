@@ -261,14 +261,16 @@ async function getQueue(item) {
     // get the first item from the waits array - that's how long it will
     // take. Then, we push that wait plus maxDays into the back of the array
     // because that's how long that waiting user will have it for.
-    waiters.forEach((entry) => {
-        const wait = waits.shift();
-        const date = new Date();
-        date.setDate(date.getDate() + wait);
-        entry.eta = wait < 1 ? 'soon' : `in ${formatDistance(date, now)}`
-        // Now, push that wait plus max days
-        waits.push(wait + item.maxDays);
-    });
+    if (waits.length) {
+        waiters.forEach((entry) => {
+            const wait = waits.shift();
+            const date = new Date();
+            date.setDate(date.getDate() + wait);
+            entry.eta = wait < 1 ? 'soon' : `in ${formatDistance(date, now)}`
+            // Now, push that wait plus max days
+            waits.push(wait + item.maxDays);
+        });
+    }
     return ({haves, waiters});
 }
 
