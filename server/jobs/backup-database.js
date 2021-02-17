@@ -6,28 +6,15 @@
 const fs = require('fs');
 const path = require('path');
 
-const lockfile = require('proper-lockfile');
-
 const BetterSqlite3 = require('better-sqlite3');
 
 const {BC_DATABASE_DIR} = require('../barcode.config');
 const {justTheLocalDate} = require('../dates');
+const {lock} = require('../lock');
 
 //-----------------------------------------------------------------------------
-// Use a lock file in the databases directory to make sure that only one node
-// process runs this backup job at a time.
-//-----------------------------------------------------------------------------
 
-function lock(f) {
-    const lockfilePath = path.join(BC_DATABASE_DIR, 'backup.lock');
-    return lockfile.lock(BC_DATABASE_DIR, {lockfilePath})
-        .then(
-            (release) => new Promise((resolve) => resolve(f())).finally(release),
-            () => console.log('Failed to get database backup lock')
-        )
-}
-
-lock(() => {
+lock('backup-database', () => {
 
     //-------------------------------------------------------------------------
     // The ISO date for today, eg '2021-02-09'

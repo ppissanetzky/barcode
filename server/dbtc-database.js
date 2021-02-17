@@ -110,6 +110,10 @@ function selectFrag(fragId) {
     return [frag, journals];
 }
 
+function getFragJournals(fragId) {
+    return db.all(SELECT_FRAG_JOURNALS, {fragId});
+}
+
 //-----------------------------------------------------------------------------
 
 const INSERT_MOTHER = `
@@ -491,7 +495,8 @@ function selectCollectionPaged(userId, rules, page, filters) {
 
 //-----------------------------------------------------------------------------
 // This is used when displaying all frags for a mother AND also to generate the
-// lineage tree. If you change it, make sure both work correctly
+// lineage tree. If you change it, make sure both work correctly.
+// It is also used by the DBTC nag job
 //-----------------------------------------------------------------------------
 
 const SELECT_FRAGS_FOR_MOTHER = `
@@ -508,8 +513,8 @@ const SELECT_FRAGS_FOR_MOTHER = `
         dateAcquired
 `;
 
-function selectFragsForMother(userId, motherId) {
-    return db.all(SELECT_FRAGS_FOR_MOTHER, {userId, motherId});
+function selectFragsForMother(motherId) {
+    return db.all(SELECT_FRAGS_FOR_MOTHER, {motherId});
 }
 
 //-----------------------------------------------------------------------------
@@ -796,23 +801,30 @@ function getShare(shareId) {
 }
 
 //-----------------------------------------------------------------------------
-// Returns an array of all thread IDs the given user has imported
+// Just an array of user IDs for DBTC nagging purposes
 //-----------------------------------------------------------------------------
 
-const SELECT_USER_THREADS = `
+const SELECT_UNIQUE_USERS = `SELECT DISTINCT ownerId FROM frags`;
+
+function getUserIds() {
+    return db.all(SELECT_UNIQUE_USERS, {}).map(({ownerId}) => ownerId);
+}
+
+//-----------------------------------------------------------------------------
+
+const SELECT_DBTC_THREADS = `
     SELECT
+        motherId,
         threadId
     FROM
-        mothers,
-        frags
+        mothers
     WHERE
-        mothers.motherId = frags.motherId AND
-        frags.ownerId = $userId AND
-        threadId > 0
+        rules = 'dbtc' AND
+        threadId IS NOT NULL
 `;
 
-function getUserThreadIds(userId) {
-    return db.all(SELECT_USER_THREADS, {userId}).map(({threadId}) => threadId);
+function getDbtcThreads() {
+    return db.all(SELECT_DBTC_THREADS, {});
 }
 
 //-----------------------------------------------------------------------------
@@ -821,6 +833,7 @@ module.exports = {
     selectAllFragsForUser,
     insertItem,
     selectFrag,
+    getFragJournals,
     validateFrag,
     updateFragsAvailable,
     giveAFrag,
@@ -842,7 +855,8 @@ module.exports = {
     setMotherThreadId,
     shareFrag,
     getShare,
-    getUserThreadIds,
+    getUserIds,
     getFans,
-    getLikes
+    getLikes,
+    getDbtcThreads
 }

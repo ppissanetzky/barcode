@@ -8,7 +8,9 @@ const Bree = require('bree');
 const JOBS = [
     // since the server is running in UTC, account for that.
     // THE NEW SERVER IS RUNNING IN PACIFIC TIME, WILL NEED TO ADJUST
-    ['backup-database', 'at 11:00 am']
+    ['backup-database', 'at 11:00 am'],
+
+    ['dbtc-nag', 'every weekday at 5:00 pm'],
 ];
 
 //-----------------------------------------------------------------------------

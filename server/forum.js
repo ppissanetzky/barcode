@@ -135,6 +135,7 @@ function fragDied(user, frag, journal) {
 //-----------------------------------------------------------------------------
 
 module.exports = {
+    uberPost,
     itemAdded,
     itemImported,
     madeFragsAvailable,
