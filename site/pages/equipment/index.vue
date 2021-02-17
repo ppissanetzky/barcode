@@ -48,7 +48,7 @@
               Enter your phone number
             </v-stepper-step>
             <v-stepper-content step="2">
-              <p>You must have a verified phone number to borrow the {{ selectedItem.shortName }}. This is just in case we need to contact you.</p>
+              <p>You must have a verified phone number to borrow the {{ selectedItem.shortName }}.</p>
               <p>We will send a code to this number via SMS. Please enter your phone number below.</p>
               <p
                 v-if="otpSendFailed"
@@ -62,9 +62,18 @@
                 label="Phone number"
                 :rules="[validatePhoneNumber]"
               />
+              <p>We also need your consent to contact you about the {{ selectedItem.shortName }} when you have it.</p>
+              <div>
+                <v-spacer />
+                <v-checkbox
+                  v-model="consent"
+                  label="I consent"
+                  :ripple="false"
+                />
+              </div>
               <v-btn
                 text
-                :disabled="validatePhoneNumber(phoneNumber) !== true || otpSendFailed"
+                :disabled="!consent || validatePhoneNumber(phoneNumber) !== true || otpSendFailed"
                 :loading="sendingOtp"
                 @click="sendOtp"
               >
@@ -437,6 +446,8 @@ export default {
       step: 1,
       // The phone number entered
       phoneNumber: undefined,
+      // Consent to receive messages
+      consent: false,
       // Set to true while we are sending the OTP
       sendingOtp: false,
       // Set to true when there is a problem sending the OTP
@@ -488,6 +499,7 @@ export default {
       // of its state
       this.step = 1
       this.phoneNumber = undefined
+      this.consent = false
       this.sendingOtp = false
       this.otpSendFailed = false
       this.tooSoonToResend = true
