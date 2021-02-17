@@ -71,22 +71,15 @@ export default {
   },
 
   proxy: {
-    // When we make a request to /api, it gets redirected to our local node
-    // server with the /api/ part of the url removed. This is only for development
+    // When we make a request to /api, it gets redirected to our local web
+    // server
     '/bc/api/': {
-      target: 'http://localhost:3003',
-      pathRewrite: {
-        '^/bc/api/': ''
-      }
+      target: 'http://localhost:8080',
     },
     // When we get a request to /bc/uploads, it gets redirected to a local
-    // web server on port 80 with the /bc/ part of the url removed.
-    // So /bc/uploads/foo, goes to /uploads/foo
+    // web server
     '/bc/uploads/': {
-      target: 'http://localhost/',
-      pathRewrite: {
-        '^/bc/': ''
-      }
+      target: 'http://localhost:8080',
     }
   },
 

@@ -7,8 +7,7 @@
     "dev": "(cd site && npm run dev)",
     "generate": "(cd site && npm run generate)",
     "server": "(cd server && npm run server)",
-    "build-containers": "npm run generate && docker-compose build",
-    "start-containers": "docker-compose up",
+    "web-server": "(cd server && npm run web-server)",
     "preversion": "git checkout main && git pull origin main",
     "postversion": "git push origin main --tags"
   }

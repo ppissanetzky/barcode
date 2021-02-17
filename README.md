@@ -8,9 +8,11 @@ The application consists of two main parts:
 
 ## Development
 
-During **development**, we use Nuxt to start a local web server that builds the web application and also serves it on `http://localhost:3000`. We also start the node server which exposes its API on `http://localhost:3003`. The web application makes network requests to the node server.
+During **development**, we use Nuxt to start a local web server that builds the web application and also serves it on `http://localhost:3000`. We also start the node server which exposes its API on `http://localhost:3003`. Finally, we start a web server to proxy to the API server and serve uploaded images.
 
 ### Setup
+
+You will need to have node and [docker compose](https://docs.docker.com/compose/install/) installed.
 
 ```bash
 
@@ -18,27 +20,27 @@ During **development**, we use Nuxt to start a local web server that builds the 
 
 $ npm install
 
-# Make a copy of the environment file
-# See server/barcode.config.js for details about the options
-#
-# THE .env FILE SHOULD NEVER BE CHECKED IN TO GIT
+# Copy the environment file template to your home directory and rename it
 
-$ cd server
-$ cp .env.template .env
+$ cp server/barcode-env.template ~/barcode-env
 
 # Start the node API server at localhost:3003
 #
 # This will watch for file changes and restart the server automatically
 # The server will pretend that all requests come from the BC_TEST_USER
-# specified in .env
+# specified in barcode-env
 #
 # If the server has trouble starting, look at the values for
-# BC_UPLOADS_DIR and BC_DATABASE_DIR in the .env file. They should
+# BC_UPLOADS_DIR and BC_DATABASE_DIR in the barcode-env file. They should
 # point to existing directories on your machine that are writable
 
 $ npm run server
 
-# In a separate terminal, build the web application and serve
+# In a separate terminal, start the web server
+
+$ npm run web-server
+
+# In a third terminal, build the web application and serve
 # it at localhost:3000
 #
 # This starts a web server that builds and serves the web application
@@ -51,16 +53,14 @@ $ npm run dev
 
 ## Production
 
-In a **production** environment, the web application would be built using Nuxt commands and then all of its files would be copied to the web server. The node server has to be started as a separate process on the same host as the web server and exposed via the web server.
+In the production environment, we're using Docker containers. This makes the system much more portable: requiring no server configuration (aside from Docker and SSL certificates).
 
-In the current production environment we use `bareefers-build.sh` to build the site and copy it and `pm2-ecosystem.config.js` to manage the server processes.
+One container has the web server itself (nginx) and the static site contents. The second container has the API server and the database.
 
-## Containerized Production
+## API Keys
 
-In the next production environment, we're going to use Docker containers. This makes the system much more portable: requiring no server configuration (aside from Docker and SSL certificates).
+The node server needs an API key to access XenForo. Without this, a lot of things won't work.
 
-One container has the web server itself (nginx) and the static site contents. The second container has the API server and the database. You can try this out by running `npm run build-containers` and `npm run start-containers`. This will create both containers and start them on your machine. You can then browse to `http://localhost:8080`.
+It also needs another API key to use AWS services.
 
-## API Key
-
-The node server needs an API key to access XenForo. Contact admin@bareefers.org to get one. Without this, a lot of things won't work.
+Contact admin@bareefers.org to get keys.

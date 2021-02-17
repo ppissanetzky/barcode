@@ -1,0 +1,15 @@
+version: "3.7"
+services:
+  local-web-server:
+    image: nginx
+    ports:
+      - "8080:8080"
+    network_mode: host
+    volumes:
+      - type: bind
+        source: ${BC_UPLOADS_DIR}
+        target: /volumes/uploads
+        read_only: true
+      - type: bind
+        source: ./etc/nginx/conf.d
+        target: /etc/nginx/conf.d
