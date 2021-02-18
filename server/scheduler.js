@@ -4,14 +4,17 @@ const path = require('path');
 const Bree = require('bree');
 
 //-----------------------------------------------------------------------------
+// since the server is running in UTC, account for that.
+//-----------------------------------------------------------------------------
 
 const JOBS = [
-    // since the server is running in UTC, account for that.
-    ['backup-database', 'at 11:00 am'],
+    ['make-thumbnails', 'at 10:00 am'], // 2 am
 
-    ['dbtc-nag', 'every weekday at 5:00 pm'],
+    ['backup-database', 'at 11:00 am'], // 3 am
 
-    ['make-thumbnails', 'at 10:00 am'],
+    ['dbtc-nag', 'every weekday at 5:00 pm'], // 9 am
+
+    ['equipment-nag', 'at 6:00 pm'] // 10 am
 ];
 
 //-----------------------------------------------------------------------------

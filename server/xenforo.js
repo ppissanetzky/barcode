@@ -329,6 +329,15 @@ async function lookupUser(userId, forDisplayOnly) {
     }
 }
 
+async function getUserEmailAddress(userId) {
+    const {user} = await apiRequest(`users/${userId}/`, 'GET', {
+        // Without this, we don't get information about the secondary
+        // groups and we cannot determine whether the user is allowed
+        api_bypass_permissions: 1
+    });
+    return user.email;
+}
+
 async function lookupUserWithFallback(userId) {
     const user = await lookupUser(userId);
     if (!user) {
@@ -342,13 +351,13 @@ async function lookupUserWithFallback(userId) {
 // see: https://xenforo.com/community/pages/api-endpoints/#route_post_conversations_
 //-----------------------------------------------------------------------------
 
-async function startConversation(users, title, body) {
+async function startConversation(users, title, body, closed) {
     const response = await apiRequest('conversations/', 'POST', {
         'recipient_ids[]': users,
         title: title,
         message: body,
-        conversation_open: true,
-        open_invite: true
+        conversation_open: closed ? 0 : 1,
+        open_invite: closed ? 0 : 1
     },
     {
         'XF-Api-User': BARCODE_USER
@@ -619,7 +628,8 @@ module.exports = {
     postToForumThread,
     getDBTCThreadsForUser,
     getThreadPosts,
-    validateUserThread
+    validateUserThread,
+    getUserEmailAddress
 };
 
 (async function() {

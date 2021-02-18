@@ -5,11 +5,6 @@ const multer = require('multer');
 const _ = require('lodash');
 const {differenceInSeconds, differenceInMinutes, differenceInDays, formatDistance} = require('date-fns');
 
-// AWS SNS - for sending OTP via SMS
-const {SNSClient, PublishCommand} = require('@aws-sdk/client-sns');
-
-const {BC_SMS_MODE} = require('./barcode.config');
-
 const {
     INVALID_EQUIPMENT,
     INVALID_PHONE_NUMBER,
@@ -29,6 +24,8 @@ const {age, dateFromIsoString, nowAsIsoString} = require('./dates');
 const {lookupUser} = require('./xenforo');
 
 const db = require('./equipment-database');
+
+const {validatePhoneNumber, sendSms} = require('./aws');
 
 //-----------------------------------------------------------------------------
 // The router
@@ -99,35 +96,6 @@ function generateOTP() {
 }
 
 //-----------------------------------------------------------------------------
-// Phone number must be 10 digits
-//-----------------------------------------------------------------------------
-
-function validatePhoneNumber(phoneNumber) {
-    return phoneNumber &&
-        _.isString(phoneNumber) &&
-        phoneNumber.length === 10 &&
-        /\d{10}/.test(phoneNumber)
-}
-
-//-----------------------------------------------------------------------------
-// Use AWS to send the SMS. Credentials are in the environment
-//-----------------------------------------------------------------------------
-
-async function sendSms(phoneNumber, message) {
-    assert(validatePhoneNumber(phoneNumber), 'Invalid phone number');
-    assert(message, 'Empty message');
-
-    if (BC_SMS_MODE !== 'production') {
-        console.log('SMS sending disabled, would send to', phoneNumber, ':', `"${message}"`);
-        return;
-    }
-
-    const client = new SNSClient({region: 'us-west-1'});
-    return await client.send(new PublishCommand({
-        Message: message,
-        PhoneNumber: `+1${phoneNumber}`,
-    }));
-}
 
 async function sendOtp(phoneNumber, otp) {
     await sendSms(phoneNumber,

@@ -16,8 +16,7 @@ const SELECT_ITEMS = `
     SELECT
         items.*,
         CASE WHEN queue.userId IS NOT NULL THEN 1 ELSE 0 END AS inList,
-        CASE WHEN queue.dateReceived IS NOT NULL THEN 1 ELSE 0 END AS hasIt,
-        COUNT(DISTINCT queue.userId) AS queueLength
+        CASE WHEN queue.dateReceived IS NOT NULL THEN 1 ELSE 0 END AS hasIt
     FROM
         items
     LEFT OUTER JOIN
