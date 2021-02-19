@@ -211,7 +211,9 @@ async function getQueue(item) {
             entry.hasIt = true;
             entry.age = age(dateReceived, 'less than a day');
             entry.days = Math.floor(differenceInDays(now, dateFromIsoString(dateReceived)));
-            entry.overdue = entry.days > item.maxDays;
+            // If this user can hold equipment indefinitely, we don't mark
+            // it as overdue. That's where equipment is held when no one is in line
+            entry.overdue = !entry.user.canHoldEquipment && entry.days > item.maxDays;
             haves.push(entry);
         } else {
             waiters.push(entry);
