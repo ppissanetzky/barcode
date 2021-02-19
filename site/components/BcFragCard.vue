@@ -533,7 +533,7 @@ export default {
       return this.frag.isFan
     },
     canBecomeAFan () {
-      return !this.frag.isStatic && !this.ownsIt && !this.fragsAvailable
+      return !this.frag.isStatic && !this.ownsIt
     }
   },
   watch: {
