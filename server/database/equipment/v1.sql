@@ -31,8 +31,6 @@ CREATE TABLE items (
     -- How many days you have to be a supporting member
     -- in order to borrow it.
     supportingMemberDays    INTEGER NOT NULL,
-    -- A user that manages the item. They will be alerted
-    -- when it is grossly overdue
     -- This is the day that we will start sending alerts
     -- If it is zero, no alerts will be sent
     alertStartDay           INTEGER NOT NULL,
