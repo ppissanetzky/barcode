@@ -17,7 +17,7 @@ function lock(name, f) {
     return lockfile.lock(BC_DATABASE_DIR, {lockfilePath})
         .then(
             (release) => (new Promise((resolve) => resolve(f()))).finally(release),
-            () => console.log('Failed to get database backup lock')
+            () => console.log('Failed to get lock', name)
         )
 }
 
