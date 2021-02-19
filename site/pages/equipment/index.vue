@@ -640,7 +640,8 @@ export default {
       this.transferring = true
       const verb = item.hasIt ? 'to' : 'from'
       const url = `/api/equipment/queue/${item.itemId}/${verb}/${this.otherUserId}`
-      const { queue } = await this.$axios.$put(url)
+      const { ban, queue } = await this.$axios.$put(url)
+      this.ban = ban
       if (item.hasIt) {
         // If we had it and gave it to someone else, we no
         // longer have it and we're not in the list

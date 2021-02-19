@@ -2,7 +2,12 @@ const assert = require('assert');
 
 const {Database} = require('./db');
 
-const {dateFromIsoString, differenceInDays} = require('./dates');
+const {
+    dateFromIsoString,
+    differenceInDays,
+    addDays,
+    addYears
+} = require('./dates');
 
 //-----------------------------------------------------------------------------
 
@@ -40,6 +45,18 @@ function getBan(userId) {
     const [ban] = db.all(SELECT_BAN, {userId});
     // Can be undefined
     return ban;
+}
+
+const SELECT_ALL_BANS = `SELECT * FROM bans`;
+
+function getAllBans() {
+    return db.all(SELECT_ALL_BANS, {});
+}
+
+const DELETE_BAN = `DELETE FROM bans WHERE userId = $userId`;
+
+function deleteBan(userId) {
+    db.run(DELETE_BAN, {userId});
 }
 
 const SELECT_ITEM = `
@@ -209,8 +226,41 @@ const INSERT_HISTORY = `
     )
 `;
 
+const SELECT_BAN_TIER = `
+    SELECT
+        *
+    FROM
+        banTiers
+    WHERE
+        itemId = $itemId AND
+        $days > afterDays
+    ORDER BY
+        tier DESC
+    LIMIT
+        1
+`;
+
+const INSERT_BAN = `
+    INSERT INTO bans (
+        userId,
+        type,
+        reason,
+        issuedBy,
+        startedOn,
+        endsOn
+    )
+    VALUES (
+        $userId,
+        $type,
+        $reason,
+        $issuedBy,
+        $startedOn,
+        $endsOn
+    )
+`;
+
 function transferItem(itemId, fromUserId, toUserId) {
-    db.transaction(({all, run}) => {
+    return db.transaction(({all, run}) => {
         const now = new Date();
         // First, we set the date received to now for
         // the recipient
@@ -230,7 +280,7 @@ function transferItem(itemId, fromUserId, toUserId) {
         const isoStartDate = fromEntry.dateReceived;
         assert(isoStartDate);
         // Get the number of days they had it
-        const days = Math.max(Math.floor(differenceInDays(now, dateFromIsoString(isoStartDate))), 0)
+        const days = Math.max(differenceInDays(now, dateFromIsoString(isoStartDate)), 0)
         // Insert a history row
         run(INSERT_HISTORY, {
             itemId,
@@ -238,11 +288,27 @@ function transferItem(itemId, fromUserId, toUserId) {
             startDate: isoStartDate,
             days
         });
-        // Finally, delete the source user's row from the queue
+        // Delete the source user's row from the queue
         run(DELETE_FROM_QUEUE, {
             itemId,
             userId: fromUserId
         });
+        // See if a ban applies
+        const [banTier] = all(SELECT_BAN_TIER, {itemId, days});
+        if (banTier) {
+            const {banDays} = banTier;
+            const ban = {
+                userId: fromUserId,
+                type: 'automatic',
+                reason: `Kept item ${itemId} for ${days} days from ${isoStartDate}`,
+                issuedBy: 16211, // BARCODE
+                startedOn: now.toISOString(),
+                endsOn: addDays(now, banDays).toISOString()
+            };
+            run(INSERT_BAN, ban);
+            // Return the ban to let the caller know
+            return ban;
+        }
     });
 }
 
@@ -260,5 +326,7 @@ module.exports = {
     insertOtp,
     insertIntoQueue,
     removeFromQueue,
-    transferItem
+    transferItem,
+    getAllBans,
+    deleteBan
 };

@@ -374,11 +374,19 @@ router.put('/queue/:itemId/:verb/:otherUserId', async (req, res, next) => {
     if (!(destItem.inList && !destItem.hasIt)) {
         return next(NOT_YOURS());
     }
-    // OK, everything is good, move it
-    db.transferItem(itemId, source, dest);
-    // And return the new queue
+    // OK, everything is good, move it and see if that resulted
+    // in the source user being banned
+    const ban = db.transferItem(itemId, source, dest);
+    if (ban) {
+        // TODO: let the source user know that they are banned
+        console.log('BAN', ban);
+    }
+    // And return the new queue and ban
     const queue = await getQueue(sourceItem);
-    res.json({queue});
+    res.json({
+        queue,
+        ban: (ban && ban.userId === user.id) ? ban : null
+    });
 });
 
 //-----------------------------------------------------------------------------

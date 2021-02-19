@@ -95,4 +95,14 @@ lock('equipment-nag', async () => {
             await alert(item, entry, days);
         }
     }
+    // Now, delete expired bans
+    const bans = db.getAllBans();
+    for (const ban of bans) {
+        const {userId, endsOn} = ban;
+        const endDate = dateFromIsoString(endsOn);
+        if (endDate.getTime() < now.getTime()) {
+            console.log('Deleting ban', ban);
+            db.deleteBan(userId);
+        }
+    }
 });

@@ -3,7 +3,7 @@
 // This is used by both the server and the web app
 // ----------------------------------------------------------------------------
 
-const { parseISO, differenceInDays, formatDistance } = require('date-fns')
+const { parseISO, differenceInDays, formatDistance, addDays, addYears } = require('date-fns')
 
 // ----------------------------------------------------------------------------
 
@@ -96,5 +96,7 @@ module.exports = {
   differenceInDays,
   formatDistance,
   justTheUtcDate,
-  justTheLocalDate
+  justTheLocalDate,
+  addDays,
+  addYears
 }

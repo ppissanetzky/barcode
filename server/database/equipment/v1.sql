@@ -71,7 +71,7 @@ CREATE TABLE banTiers (
     tier                INTEGER NOT NULL,
     -- The number of days after which this ban takes effect
     afterDays           INTEGER NOT NULL,
-    -- How many days to ban for. Zero is forever
+    -- How many days to ban for.
     banDays             INTEGER NOT NULL,
 
     PRIMARY KEY (itemId, tier),
@@ -94,7 +94,7 @@ CREATE TABLE bans (
     issuedBy            INTEGER NOT NULL,
     -- The date the ban started
     startedOn           TEXT NOT NULL,
-    -- The date the ban ends - ignore if it is permanent
+    -- The date the ban ends
     endsOn              TEXT NOT NULL
 );
 
