@@ -44,9 +44,6 @@ const upload = multer();
 router.get('/', async (req, res) => {
     const {user} = req;
     const {items, ban} = db.getAllItems(user.id);
-    await Promise.all(items.map(async (item) => {
-        item.manager = await lookupUser(item.manager, true);
-    }));
     res.json({user, items, ban});
 });
 
@@ -263,33 +260,40 @@ router.post('/queue/:itemId', upload.none(), async (req, res, next) => {
     if (banned) {
         return next(BANNED());
     }
-    // Get the OTP from the database
-    const existing = db.getOtp(user.id);
-    // If it is not there, bail
-    if (!existing) {
-        return next(NO_OTP());
-    }
-    // If it is too old, delete it and bail
-    if (isOtpOld(existing)) {
-        db.deleteOtp(user.id);
-        return next(OTP_TOO_OLD());
-    }
-    // If there isn't an OTP in the request, also a hard error
-    if (!otp) {
-        return next(NO_OTP());
-    }
-    // If the OTP given does not match the one in the
-    // database, that is a soft error, could be a typo that
-    // can be corrected by trying again
-    if (otp !== existing.otp) {
-        return res.json({incorrect: true});
+    // If this user can hold equipment, we're not going to bother
+    // with the OTP
+    let phoneNumber = null
+    if (!user.canHoldEquipment) {
+        // Get the OTP from the database
+        const existing = db.getOtp(user.id);
+        // If it is not there, bail
+        if (!existing) {
+            return next(NO_OTP());
+        }
+        // If it is too old, delete it and bail
+        if (isOtpOld(existing)) {
+            db.deleteOtp(user.id);
+            return next(OTP_TOO_OLD());
+        }
+        // If there isn't an OTP in the request, also a hard error
+        if (!otp) {
+            return next(NO_OTP());
+        }
+        // If the OTP given does not match the one in the
+        // database, that is a soft error, could be a typo that
+        // can be corrected by trying again
+        if (otp !== existing.otp) {
+            return res.json({incorrect: true});
+        }
+        // Grab the phone number from the OTP row
+        phoneNumber = existing.phoneNumber;
     }
     // Now, everything is in order, we can add the user to the queue
     db.insertIntoQueue({
         itemId,
         timestamp: nowAsIsoString(),
         userId: user.id,
-        phoneNumber: existing.phoneNumber
+        phoneNumber
     });
     // And we can delete the OTP
     db.deleteOtp(user.id);

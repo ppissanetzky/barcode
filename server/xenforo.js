@@ -85,6 +85,10 @@ const ALLOWED_GROUPS = new Set([3, 5]);
 
 const IMPERSONATE_GROUPS = new Set([3]);
 
+// Anyone that belongs to these groups can hold equipment indefinitely
+
+const EQUIPMENT_GROUPS = new Set([3]);
+
 //-----------------------------------------------------------------------------
 // Utility function to make HTTPS requests
 //-----------------------------------------------------------------------------
@@ -153,6 +157,10 @@ function canXfUserImpersonate(xfUser) {
     return getUserGroups(xfUser).some((id) => IMPERSONATE_GROUPS.has(id));
 }
 
+function canXfUserHoldEquipment(xfUser) {
+    return getUserGroups(xfUser).some((id) => EQUIPMENT_GROUPS.has(id));
+}
+
 //-----------------------------------------------------------------------------
 // Construct our own user object from a XenForo user
 //-----------------------------------------------------------------------------
@@ -175,6 +183,7 @@ function makeUser(xfUser) {
         name: allowed ? username : username + ' (NSM)',
         allowed,
         canImpersonate: canXfUserImpersonate(xfUser),
+        canHoldEquipment: canXfUserHoldEquipment(xfUser),
         title: user_title,
         location: location,
         age: age,
@@ -616,6 +625,27 @@ async function postToForumThread(threadId, message) {
 
 //-----------------------------------------------------------------------------
 
+async function getAlerts() {
+    const {alerts} = await apiRequest('alerts/', 'GET', {
+        page: 1,
+        unviewed: 1,
+        unread: 1
+    }, {
+        'XF-Api-User': BARCODE_USER
+    });
+    return alerts;
+}
+
+async function markAllAlertsRead() {
+    await apiRequest('alerts/mark-all', 'POST', {
+        read: 1
+    }, {
+        'XF-Api-User': BARCODE_USER
+    });
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     validateXenForoUser,
     lookupUser,
@@ -629,76 +659,24 @@ module.exports = {
     getDBTCThreadsForUser,
     getThreadPosts,
     validateUserThread,
-    getUserEmailAddress
+    getUserEmailAddress,
+    getAlerts,
+    markAllAlertsRead
 };
 
-(async function() {
-    // const response = await getThreadPosts(26097);
-    // console.log(response.length);
+// (async function() {
+//     const alerts = await getAlerts();
+//     console.log('Got', alerts.length, 'alerts');
+//     for (const alert of alerts) {
+//         const {action, content_id, content_type, alert_text, alert_id} = alert;
+//         // If someone mentioned us in a post
+//         if (action === 'mention' && content_type === 'post') {
+//             console.log(alert_text);
+//             await apiRequest(`alerts/${alert_id}/mark`, 'POST', {
+//                 read: 1
+//             });
+//         }
+//     }
 
-    // const posts = JSON.parse(fs.readFileSync('./26097.json', 'utf-8'));
-    // const messages = posts.map(({message}) => message);
-    // messages.forEach((m, index) => {
-    //     console.log('============================================');
-    //     console.log(m);
-    //     console.log('--------------------------------------------');
-    //     const text = [];
-    //     const users = [];
-    //     bbob().process(m).tree.walk((thing) => {
-    //         if (typeof thing === 'object') {
-    //             if (thing.tag === 'user') {
-    //                 users.push({
-    //                     id: parseInt(Object.keys(thing.attrs)[0], 10),
-    //                     name: thing.content.join('').substr(1)
-    //                 });
-    //                 text.push(thing.content.join(''));
-    //             }
-    //             else if (thing.tag !== 'quote') {
-    //                 text.push('<' + thing.tag + '>');
-    //             }
-    //         }
-    //         else {
-    //             text.push(thing);
-    //         }
-    //     });
+// })();
 
-    //     console.log(`"${text.join('').trim()}"`);
-    //     console.log(users);
-
-        // const rx = /\[USER=([0-9]*)\]@([^\[]*)/g
-        // console.log('--------------------------------------------');
-        // const s = m.replace(/\[QUOTE.*\[\/QUOTE\]/g, '')
-        // console.log(s)
-
-        /*
-        const firstQuote = m.indexOf('[QUOTE');
-        if (firstQuote >= 0) {
-            const lastQuote = m.lastIndexOf('[/QUOTE]');
-            if (lastQuote >= 0) {
-                m = (m.slice(0, firstQuote) + m.slice(lastQuote + 8)).trim();
-            }
-        }
-        console.log(m);
-
-        while((match = rx.exec(m)) !== null) {
-            console.log(match[1], match[2]);
-        }
-        */
-//    })
-})();
-
-/* ALERT EXAMPLE
-
-(async function() {
-    const response = await apiRequest('alerts/', 'POST', {
-        to_user_id: 15211,
-        alert: 'This is an alert. Please go {link}. Talk to [USER="16188"]@barcode2[/USER]',
-        from_user_id: 0,
-        link_url: 'https://bareefers.org/barcode/equipment',
-        link_title: 'here'
-    }, {
-        'XF-Api-User': 16186
-    });
-    console.log(response);
-})();
-*/

@@ -270,21 +270,6 @@
                 </v-list-item-title>
               </v-list-item-content>
             </v-list-item>
-
-            <v-list-item>
-              <v-list-item-icon>
-                <v-icon>mdi-crown-outline</v-icon>
-              </v-list-item-icon>
-
-              <v-list-item-content>
-                <v-list-item-title>
-                  Managed by
-                  <a :href=" item.manager.viewUrl " target="_blank">
-                    {{ item.manager.name }}
-                  </a>
-                </v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
           </v-list>
           <v-divider />
 
@@ -497,20 +482,31 @@ export default {
     }
   },
   methods: {
-    showGetInLineDialogFor (item) {
-      // Before we show the dialog, we reset its state
-      // of its state
-      this.step = 1
-      this.phoneNumber = undefined
-      this.consent = false
-      this.sendingOtp = false
-      this.otpSendFailed = false
-      this.tooSoonToResend = true
-      this.otp = undefined
-      this.verifyingOtp = false
-      this.otpIncorrect = false
-      this.selectedItem = item
-      this.showGetInLineDialog = true
+    async showGetInLineDialogFor (item) {
+      // If this user can hold equipment, we skip the whole dialog and just
+      // put them in line
+      if (this.user && this.user.canHoldEquipment) {
+        const url = `/api/equipment/queue/${item.itemId}`
+        const { queue } = await this.$axios.$post(url)
+        // Now, the user is in the list
+        item.inList = true
+        // And we have the latest queue for this item
+        item.queue = queue
+      } else {
+        // Before we show the dialog, we reset its state
+        // of its state
+        this.step = 1
+        this.phoneNumber = undefined
+        this.consent = false
+        this.sendingOtp = false
+        this.otpSendFailed = false
+        this.tooSoonToResend = true
+        this.otp = undefined
+        this.verifyingOtp = false
+        this.otpIncorrect = false
+        this.selectedItem = item
+        this.showGetInLineDialog = true
+      }
     },
     showDropOutDialogFor (item) {
       this.droppingOut = false

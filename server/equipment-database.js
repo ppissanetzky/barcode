@@ -153,20 +153,14 @@ const INSERT_QUEUE = `
         timestamp,
         userId,
         phoneNumber,
-        dateReceived,
-        conversationStarted,
-        alertsSent,
-        managerAlerted
+        dateReceived
     )
     VALUES (
         $itemId,
         $timestamp,
         $userId,
         $phoneNumber,
-        NULL,
-        0,
-        0,
-        0
+        NULL
     )
 `;
 

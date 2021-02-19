@@ -15,6 +15,10 @@ async function alert(item, entry, days) {
     const {dateReceived, userId, phoneNumber} = entry;
     // Lookup the user
     const user = await lookupUser(userId, true);
+    // If the user can hold equipment, we don't alert
+    if (user.canHoldEquipment) {
+        return;
+    }
     // Log
     console.log('Will alert', user.name, dateReceived, days, 'days');
 
@@ -79,10 +83,6 @@ lock('equipment-nag', async () => {
             const {userId, dateReceived} = entry;
             // If it is not there, this user is waiting
             if (!dateReceived) {
-                continue;
-            }
-            // If the user is the manager, we don't alert
-            if (userId === item.manager) {
                 continue;
             }
             // Otherwise, the user has it, so figure out how many days

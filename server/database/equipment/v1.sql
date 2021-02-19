@@ -33,22 +33,11 @@ CREATE TABLE items (
     supportingMemberDays    INTEGER NOT NULL,
     -- A user that manages the item. They will be alerted
     -- when it is grossly overdue
-    manager                 INTEGER NOT NULL,
-    -- The number of days after the user receives the item
-    -- that we start a conversation to facilitate the
-    -- exchange. If it is zero, there will be
-    -- no conversation started
-    conversationStartDay    INTEGER NOT NULL,
-    -- The number of waiting people to include in the conversation
-    conversationWaiters     INTEGER NOT NULL,
     -- This is the day that we will start sending alerts
     -- If it is zero, no alerts will be sent
     alertStartDay           INTEGER NOT NULL,
-    -- The maximum number of alerts that we will send before
-    -- we alert the manager once. If it is zero,
-    -- we won't alert the person who has it at all and will
-    -- instead alert the manager once after maxDays
-    maxAlerts               INTEGER NOT NULL
+    -- The forum thread related to this item
+    threadId                INTEGER
 );
 
 -------------------------------------------------------------------------------
@@ -67,14 +56,8 @@ CREATE TABLE queue (
     -- The date the user received the item. If it is null, the user
     -- is waiting for the item
     dateReceived        TEXT,
-    -- Whether the conversation has been started or not
-    conversationStarted INTEGER NOT NULL DEFAULT 0,
-    -- How many alerts we have sent the user
-    alertsSent          INTEGER NOT NULL DEFAULT 0,
-    -- Whether we have alerted the manager
-    managerAlerted      INTEGER NOT NULL DEFAULT 0,
 
-    UNIQUE (userId),
+    UNIQUE (itemId, userId),
     FOREIGN KEY (itemId) REFERENCES items(itemId)
 );
 
