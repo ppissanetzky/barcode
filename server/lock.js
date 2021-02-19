@@ -1,4 +1,6 @@
 
+require('console-stamp')(console, {pattern: 'isoDateTime', metadata: process.pid});
+
 const path = require('path');
 const assert = require('assert');
 
@@ -6,6 +8,8 @@ const lockfile = require('proper-lockfile');
 const ms = require('ms');
 
 const {BC_DATABASE_DIR} = require('./barcode.config');
+
+const HOLD_LOCK = '5 minutes';
 
 //-----------------------------------------------------------------------------
 // Obtains a lock across all processes, so that we can run scheduler jobs
@@ -20,7 +24,10 @@ function lock(name, f) {
             (release) => new Promise(resolve => resolve(f()))
                 // Hold the lock for 5 minutes, so that quick tasks still
                 // exclude each other
-                .finally(() => setTimeout(release, ms('5 minutes')))
+                .finally(() => {
+                    console.log('Holding lock for', HOLD_LOCK);
+                    setTimeout(release, ms(HOLD_LOCK));
+                })
             ,
             () => console.log('Failed to get lock', name)
         )

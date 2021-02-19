@@ -8,6 +8,7 @@
     "@bbob/core": "^2.6.2",
     "better-sqlite3": "^7.1.2",
     "bree": "^6.0.0",
+    "console-stamp": "^0.2.9",
     "cookie": "^0.4.1",
     "cookie-parser": "^1.4.5",
     "date-fns": "^2.16.1",

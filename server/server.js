@@ -1,3 +1,6 @@
+
+require('console-stamp')(console, {pattern: 'isoDateTime', metadata: process.pid});
+
 const express = require('express');
 const cookieParser = require('cookie-parser');
 

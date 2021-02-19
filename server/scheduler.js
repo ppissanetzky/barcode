@@ -8,6 +8,7 @@ const Bree = require('bree');
 //-----------------------------------------------------------------------------
 
 const JOBS = [
+
     ['make-thumbnails', 'at 10:00 am'], // 2 am
 
     ['backup-database', 'at 11:00 am'], // 3 am
