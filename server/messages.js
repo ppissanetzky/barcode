@@ -35,6 +35,10 @@ handlebars.registerHelper('age', (date) => {
     return age(date, 'today', 'ago');
 });
 
+handlebars.registerHelper('equipmentUrl', (itemId) => {
+    return `${BC_SITE_BASE_URL}/equipment`;
+});
+
 //-----------------------------------------------------------------------------
 // Given the name of a template file in the 'messages' directory and
 // some data, this runs it through handlebars. Then it assumes the

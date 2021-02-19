@@ -1,8 +1,5 @@
 <template>
   <v-container fluid>
-    <h2 class="error--text">
-      This is not the real list yet
-    </h2>
     <!-- --------------------------------------------------------------------------- -->
     <!-- A row for the dialogs -->
     <!-- --------------------------------------------------------------------------- -->
@@ -219,6 +216,74 @@
           </v-card-text>
         </v-card>
       </v-dialog>
+
+      <!-- A dialog for the queue -->
+      <v-dialog
+        v-if="selectedItem"
+        v-model="showQueue"
+        max-width="375px"
+      >
+        <v-card>
+          <v-toolbar dense>
+            <v-toolbar-title>{{ selectedItem.name }}</v-toolbar-title>
+            <v-spacer />
+            <v-btn icon small @click="showQueue=false">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </v-toolbar>
+          <v-progress-linear v-if="loadingQueue" indeterminate />
+          <div v-else>
+            <v-card-text><h3>Have the {{ selectedItem.shortName }}</h3></v-card-text>
+            <v-simple-table>
+              <template v-slot:default>
+                <tbody>
+                  <tr
+                    v-for="entry in selectedItem.queue.haves"
+                    :key="entry.user.id"
+                  >
+                    <td class="text-left">
+                      <a :href="entry.user.viewUrl" target="_blank">{{ you(entry.user) }}</a>
+                      <span v-if="entry.overdue" class="error--text"><strong> for {{ entry.age }}</strong></span>
+                      <span v-else> for {{ entry.age }}</span>
+                    </td>
+                    <td class="text-right">
+                      {{ entry.user.location }}
+                    </td>
+                  </tr>
+                </tbody>
+              </template>
+            </v-simple-table>
+            <div v-if="selectedItem.queue.waiters.length">
+              <v-card-text><h3>Waiting for the {{ selectedItem.shortName }}</h3></v-card-text>
+              <v-simple-table>
+                <template v-slot:default>
+                  <tbody>
+                    <tr
+                      v-for="entry in selectedItem.queue.waiters"
+                      :key="entry.user.id"
+                    >
+                      <td
+                        class="text-left"
+                      >
+                        <a :href="entry.user.viewUrl" target="_blank">{{ you(entry.user) }}</a>
+                        <span> {{ entry.eta }}</span>
+                      </td>
+                      <td
+                        class="text-right"
+                      >
+                        {{ entry.user.location }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </template>
+              </v-simple-table>
+            </div>
+            <v-card-text v-else>
+              <h3>No one waiting</h3>
+            </v-card-text>
+          </div>
+        </v-card>
+      </v-dialog>
     </v-row>
 
     <!-- --------------------------------------------------------------------------- -->
@@ -233,8 +298,16 @@
         <v-card width="375px">
           <v-img
             height="300px"
+            contain
             :src="item.picture ? `/bc/${item.picture}` : `/bc/picture-placeholder.png`"
-          />
+          >
+            <v-app-bar flat color="rgba(0, 0, 0, 0)">
+              <v-spacer />
+              <v-btn icon color="primary" @click.stop="showQueueFor(item)">
+                <v-icon>mdi-human-queue</v-icon>
+              </v-btn>
+            </v-app-bar>
+          </v-img>
           <v-card-title v-text="item.name" />
           <v-list dense>
             <v-list-item>
@@ -329,69 +402,6 @@
               Get in line
             </v-btn>
           </v-card-text>
-          <v-divider />
-          <v-btn
-            small
-            text
-            class="ma-1"
-            color="secondary"
-            @click="showQueueFor(item)"
-          >
-            {{ item.showQueue ? 'Hide' : 'Show' }} queue
-            <v-icon>{{ item.showQueue ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-          </v-btn>
-
-          <v-expand-transition>
-            <div v-if="item.showQueue">
-              <v-divider />
-              <v-progress-linear v-if="loadingQueue" indeterminate />
-              <div v-else>
-                <v-card-text><h3>Have the {{ item.shortName }}</h3></v-card-text>
-                <v-simple-table dense>
-                  <template v-slot:default>
-                    <tbody>
-                      <tr
-                        v-for="entry in item.queue.haves"
-                        :key="entry.user.id"
-                      >
-                        <td class="text-left">
-                          <a :href="entry.user.viewUrl" target="_blank">{{ you(entry.user) }}</a>
-                          <span v-if="entry.overdue" class="error--text"><strong> for {{ entry.age }}</strong></span>
-                          <span v-else> for {{ entry.age }}</span>
-                        </td>
-                        <td class="text-right">
-                          {{ entry.user.location }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </template>
-                </v-simple-table>
-                <v-card-text><h3>Waiting for the {{ item.shortName }}</h3></v-card-text>
-                <v-simple-table dense>
-                  <template v-slot:default>
-                    <tbody>
-                      <tr
-                        v-for="entry in item.queue.waiters"
-                        :key="entry.user.id"
-                      >
-                        <td
-                          class="text-left"
-                        >
-                          <a :href="entry.user.viewUrl" target="_blank">{{ you(entry.user) }}</a>
-                          <span> {{ entry.eta }}</span>
-                        </td>
-                        <td
-                          class="text-right"
-                        >
-                          {{ entry.user.location }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </template>
-                </v-simple-table>
-              </div>
-            </div>
-          </v-expand-transition>
         </v-card>
       </v-col>
     </v-row>
@@ -407,7 +417,6 @@ export default {
     this.user = user
     items.forEach((item, index) => {
       item.index = index
-      item.showQueue = false
       item.queue = undefined
     })
     this.items = items
@@ -461,7 +470,7 @@ export default {
       // Targets for the transfer auto complete
       targets: [],
       // Set to true when the queue is visible
-      showQueue: []
+      showQueue: false
     }
   },
   computed: {
@@ -535,10 +544,8 @@ export default {
       this.showTransferDialog = true
     },
     async showQueueFor (item) {
-      item.showQueue = !item.showQueue
-      if (!item.showQueue) {
-        return
-      }
+      this.selectedItem = item
+      this.showQueue = true
       if (item.queue) {
         return
       }

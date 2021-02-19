@@ -27,6 +27,8 @@ const db = require('./equipment-database');
 
 const {validatePhoneNumber, sendSms} = require('./aws');
 
+const {uberPost} = require('./forum');
+
 //-----------------------------------------------------------------------------
 // The router
 //-----------------------------------------------------------------------------
@@ -299,6 +301,8 @@ router.post('/queue/:itemId', upload.none(), async (req, res, next) => {
     });
     // And we can delete the OTP
     db.deleteOtp(user.id);
+    // Post to the forum
+    uberPost(item.threadId, 'equipment-got-in-line', {item, user});
     // Return the new queue
     const queue = await getQueue(item);
     res.json({queue});
@@ -378,15 +382,19 @@ router.put('/queue/:itemId/:verb/:otherUserId', async (req, res, next) => {
     if (db.getBan(dest)) {
         return next(BANNED());
     }
-    // Lookup the source user
-    const sourceUser = await lookupUser(source, true);
+    // Lookup the users
+    const fromUser = await lookupUser(source, true);
+    const toUser = await lookupUser(dest, true);
     // OK, everything is good, move it and see if that resulted
     // in the source user being banned. Users that can hold
     // equipment are exempt from bans
-    const ban = db.transferItem(itemId, source, dest, sourceUser.canHoldEquipment);
+    const ban = db.transferItem(itemId, source, dest, fromUser.canHoldEquipment);
+    // Post that the item has been passed
+    await uberPost(sourceItem.threadId, 'equipment-passed', {item: sourceItem, fromUser, toUser});
     if (ban) {
-        // TODO: let the source user know that they are banned
         console.log('BAN', ban);
+        const until = dateFromIsoString(ban.endsOn).toLocaleDateString();
+        uberPost(sourceItem.threadId, 'equipment-banned', {item: sourceItem, user: fromUser, until});
     }
     // And return the new queue and ban
     const queue = await getQueue(sourceItem);
