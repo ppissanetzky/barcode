@@ -259,7 +259,7 @@ const INSERT_BAN = `
     )
 `;
 
-function transferItem(itemId, fromUserId, toUserId) {
+function transferItem(itemId, fromUserId, toUserId, exemptFromBans) {
     return db.transaction(({all, run}) => {
         const now = new Date();
         // First, we set the date received to now for
@@ -294,20 +294,29 @@ function transferItem(itemId, fromUserId, toUserId) {
             userId: fromUserId
         });
         // See if a ban applies
-        const [banTier] = all(SELECT_BAN_TIER, {itemId, days});
-        if (banTier) {
-            const {banDays} = banTier;
-            const ban = {
-                userId: fromUserId,
-                type: 'automatic',
-                reason: `Kept item ${itemId} for ${days} days from ${isoStartDate}`,
-                issuedBy: 16211, // BARCODE
-                startedOn: now.toISOString(),
-                endsOn: addDays(now, banDays).toISOString()
-            };
-            run(INSERT_BAN, ban);
-            // Return the ban to let the caller know
-            return ban;
+        if (!exemptFromBans) {
+            // See if there is an existing ban for this user
+            const [existingBan] = all(SELECT_BAN, {
+                userId: fromUserId
+            });
+            if (existingBan) {
+                return existingBan;
+            }
+            const [banTier] = all(SELECT_BAN_TIER, {itemId, days});
+            if (banTier) {
+                const {banDays} = banTier;
+                const ban = {
+                    userId: fromUserId,
+                    type: 'automatic',
+                    reason: `Kept item ${itemId} for ${days} days from ${isoStartDate}`,
+                    issuedBy: 16211, // BARCODE
+                    startedOn: now.toISOString(),
+                    endsOn: addDays(now, banDays).toISOString()
+                };
+                run(INSERT_BAN, ban);
+                // Return the ban to let the caller know
+                return ban;
+            }
         }
     });
 }

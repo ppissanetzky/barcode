@@ -374,9 +374,16 @@ router.put('/queue/:itemId/:verb/:otherUserId', async (req, res, next) => {
     if (!(destItem.inList && !destItem.hasIt)) {
         return next(NOT_YOURS());
     }
+    // The destination cannot be banned
+    if (db.getBan(dest)) {
+        return next(BANNED());
+    }
+    // Lookup the source user
+    const sourceUser = await lookupUser(source, true);
     // OK, everything is good, move it and see if that resulted
-    // in the source user being banned
-    const ban = db.transferItem(itemId, source, dest);
+    // in the source user being banned. Users that can hold
+    // equipment are exempt from bans
+    const ban = db.transferItem(itemId, source, dest, sourceUser.canHoldEquipment);
     if (ban) {
         // TODO: let the source user know that they are banned
         console.log('BAN', ban);
