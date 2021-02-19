@@ -1,8 +1,8 @@
 version: "3.7"
 services:
   api-server:
-    restart: always
-    image: barcode-api-server
+    restart: unless-stopped
+    image: ppissanetzky/barcode-api-server:${VERSION}
     volumes:
       - /home/barcode/barcode-data/uploads:/volumes/uploads
       - /home/barcode/barcode-data/databases:/volumes/databases
@@ -24,8 +24,8 @@ services:
       BC_UPLOADS_DIR: /volumes/uploads
 
   web-server:
-    restart: always
-    image: barcode-web-server
+    restart: unless-stopped
+    image: ppissanetzky/barcode-web-server:${VERSION}
     ports:
       - "80:80"
       - "443:443"

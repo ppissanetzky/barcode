@@ -1,5 +1,5 @@
 
-VERSION 	:= $(shell git describe --dirty)
+VERSION 	:= $(shell git describe)
 
 SITE_DIR	:= ../../site
 SERVER_DIR	:= ../../server
@@ -10,12 +10,13 @@ TARGET		:= barcode@barcode.bareefers.org
 
 build:
 	cd ${SITE_DIR} && npm i && npm run generate
-	docker build -t barcode-web-server -f web-server.dockerfile ${SITE_DIR}
-	docker build -t barcode-api-server -f api-server.dockerfile ${SERVER_DIR}
+	docker build -t ppissanetzky/barcode-web-server:${VERSION} -f web-server.dockerfile ${SITE_DIR}
+	docker build -t ppissanetzky/barcode-api-server:${VERSION} -f api-server.dockerfile ${SERVER_DIR}
+	docker push ppissanetzky/barcode-web-server:${VERSION}
+	docker push ppissanetzky/barcode-api-server:${VERSION}
+	echo "VERSION=${VERSION}" > ${TARGET_DIR}/version
 
 push:
-	docker save barcode-web-server | gzip -v > ${TARGET_DIR}/web-server.tgz
-	docker save barcode-api-server | gzip -v > ${TARGET_DIR}/api-server.tgz
 	ssh ${TARGET} "mkdir -p ~/${VERSION}"
 	scp -r ${TARGET_DIR}/* ${TARGET}:~/${VERSION}/
 	ssh ${TARGET} "cd ~/${VERSION} && ./start.sh"
