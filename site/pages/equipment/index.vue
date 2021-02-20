@@ -303,13 +303,96 @@
           >
             <v-app-bar flat color="rgba(0, 0, 0, 0)">
               <v-spacer />
-              <v-btn icon color="primary" @click.stop="showQueueFor(item)">
-                <v-icon>mdi-human-queue</v-icon>
-              </v-btn>
+              <v-menu bottom left>
+                <template v-slot:activator="{on, attrs}">
+                  <v-btn
+                    icon
+                    color="primary"
+                    v-bind="attrs"
+                    v-on="on"
+                  >
+                    <v-icon>mdi-dots-vertical</v-icon>
+                  </v-btn>
+                </template>
+                <v-list>
+                  <v-list-item>
+                    <v-btn
+                      small
+                      text
+                      @click.stop="showQueueFor(item)"
+                    >
+                      Show the queue
+                    </v-btn>
+                  </v-list-item>
+
+                  <div v-if="!ban">
+                    <v-list-item v-if="item.hasIt">
+                      <v-btn
+                        small
+                        text
+                        :loading="loadingQueue"
+                        @click.stop="showTransferDialogFor(item)"
+                      >
+                        You passed it on
+                      </v-btn>
+                    </v-list-item>
+
+                    <v-list-item v-if="!item.hasIt && item.inList">
+                      <v-btn
+                        small
+                        text
+                        @click.stop="showDropOutDialogFor(item)"
+                      >
+                        Drop out
+                      </v-btn>
+                    </v-list-item>
+                    <v-list-item v-if="!item.hasIt && item.inList">
+                      <v-btn
+                        text
+                        small
+                        :loading="loadingQueue"
+                        @click.stop="showTransferDialogFor(item)"
+                      >
+                        You received it
+                      </v-btn>
+                    </v-list-item>
+                    <v-list-item v-if="!item.hasIt && !item.inList">
+                      <v-btn
+                        text
+                        small
+                        @click.stop="showGetInLineDialogFor(item)"
+                      >
+                        Get in line
+                      </v-btn>
+                    </v-list-item>
+                  </div>
+
+                  <!-- <v-list-item v-if="showEdit">
+                    <v-btn
+                      icon
+                      color="primary"
+                      :to="`/add-new-item?fragId=${frag.fragId}`"
+                    >
+                      <v-icon>mdi-pencil</v-icon>
+                    </v-btn>
+                  </v-list-item>
+                  <v-list-item>
+                    <v-btn
+                      icon
+                      color="primary"
+                      @click="getShareLink"
+                    >
+                      <v-icon>mdi-export-variant</v-icon>
+                    </v-btn>
+                  </v-list-item> -->
+                </v-list>
+              </v-menu>
             </v-app-bar>
+
           </v-img>
+          <v-divider />
           <v-card-title v-text="item.name" />
-          <v-list dense>
+          <v-list>
             <v-list-item>
               <v-list-item-icon>
                 <v-icon>mdi-book-open-variant</v-icon>
@@ -344,64 +427,6 @@
               </v-list-item-content>
             </v-list-item>
           </v-list>
-          <v-divider />
-
-          <!-- If this user is banned -->
-
-          <v-card-text v-if="ban">
-            You are banned from borrowing the {{ item.shortName }}
-          </v-card-text>
-
-          <!-- If this user has it  -->
-
-          <v-card-text v-else-if="item.hasIt">
-            <p>
-              You have the {{ item.shortName }}.
-            </p>
-            <v-btn
-              small
-              color="secondary"
-              :loading="loadingQueue"
-              @click.stop="showTransferDialogFor(item)"
-            >
-              You passed it on
-            </v-btn>
-          </v-card-text>
-
-          <!-- If this user is waiting for it -->
-
-          <v-card-text v-else-if="item.inList">
-            <p>
-              You are in line, you can drop out if you no longer need the {{ item.shortName }} or you can tell us that you received it.
-            </p>
-            <v-btn
-              small
-              color="secondary"
-              @click.stop="showDropOutDialogFor(item)"
-            >
-              Drop out
-            </v-btn>
-            <v-btn
-              small
-              color="secondary"
-              :loading="loadingQueue"
-              @click.stop="showTransferDialogFor(item)"
-            >
-              You got the {{ item.shortName }}
-            </v-btn>
-          </v-card-text>
-
-          <!-- Otherwise, this user can get in line -->
-
-          <v-card-text v-else>
-            <v-btn
-              small
-              color="secondary"
-              @click.stop="showGetInLineDialogFor(item)"
-            >
-              Get in line
-            </v-btn>
-          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
