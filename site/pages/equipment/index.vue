@@ -219,7 +219,7 @@
 
       <!-- A dialog for the queue -->
       <v-dialog
-        v-if="selectedItem"
+        v-if="selectedItem && selectedItem.queue"
         v-model="showQueue"
         max-width="375px"
       >
