@@ -382,9 +382,10 @@ router.post('/frag/:fragId/journal', upload.single('picture'), (req, res, next) 
         picture,
         notes: body.notes || null
     });
-    // Update the cover picture for the frag
+    // Update the cover picture for the frag if the user said so, or
+    // the frag doesn't have a cover picture.
     let coverPicture;
-    if (body.makeCoverPicture && picture) {
+    if (picture && (body.makeCoverPicture || !frag.picture)) {
         db.updateFragPicture(user.id, fragId, picture);
         coverPicture = picture;
     }
