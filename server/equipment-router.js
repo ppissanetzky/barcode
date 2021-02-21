@@ -208,8 +208,10 @@ async function getQueue(item) {
     queue.forEach((entry) => {
         // Remove the phone number, it's only for the server
         delete entry.phoneNumber;
-        // Use our location for the user
-        entry.user.location = entry.location
+        // Use our location for the user if we have one
+        if (entry.location) {
+            entry.user.location = entry.location
+        }
         // If that user has the item
         const {dateReceived} = entry;
         if (dateReceived) {
