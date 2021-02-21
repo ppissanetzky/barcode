@@ -11,7 +11,7 @@ const {
 
 //-----------------------------------------------------------------------------
 
-const EQUIPMENT_DB_VERSION = 1;
+const EQUIPMENT_DB_VERSION = 2;
 
 const db = new Database('equipment', EQUIPMENT_DB_VERSION);
 
@@ -170,14 +170,16 @@ const INSERT_QUEUE = `
         timestamp,
         userId,
         phoneNumber,
-        dateReceived
+        dateReceived,
+        location
     )
     VALUES (
         $itemId,
         $timestamp,
         $userId,
         $phoneNumber,
-        NULL
+        NULL,
+        $location
     )
 `;
 

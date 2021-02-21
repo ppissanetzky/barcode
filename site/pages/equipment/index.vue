@@ -43,11 +43,45 @@
               </v-btn>
             </v-stepper-content>
 
-            <!-- Step 2 - enter phone number -->
+            <!-- Step 2 - location -->
             <v-stepper-step step="2" :complete="step > 2">
-              Enter your phone number
+              Enter your location
             </v-stepper-step>
             <v-stepper-content step="2">
+              <div v-if="user.location">
+                <p>
+                  Your city is set to "{{ user.location }}" in your forum profile. If this is incorrect, change it below.
+                </p>
+              </div>
+              <div v-else>
+                <p>
+                  Your forum profile is missing your location which is required to borrow items.
+                  If you add your location to your <a href="https://www.bareefers.org/forum/account/account-details" target="_blank">forum profile</a> you'll be able to skip this step in the future.
+                </p>
+                <p>
+                  Please enter your city below.
+                </p>
+              </div>
+              <v-text-field
+                v-model="city"
+                outlined
+                label="City"
+                :rules="[validateCity]"
+              />
+              <v-btn
+                text
+                :disabled="validateCity(city) !== true"
+                @click="++step"
+              >
+                Continue
+              </v-btn>
+            </v-stepper-content>
+
+            <!-- Step 3- enter phone number -->
+            <v-stepper-step step="3" :complete="step > 3">
+              Enter your phone number
+            </v-stepper-step>
+            <v-stepper-content step="3">
               <p>You must have a verified phone number to borrow the {{ selectedItem.shortName }}.</p>
               <p>We will send a code to this number via SMS. Please enter your phone number below.</p>
               <p
@@ -81,11 +115,11 @@
               </v-btn>
             </v-stepper-content>
 
-            <!-- Step3 - enter code -->
-            <v-stepper-step step="3" :complete="step > 3">
+            <!-- Step 4 - enter code -->
+            <v-stepper-step step="4" :complete="step > 4">
               Verify your phone number
             </v-stepper-step>
-            <v-stepper-content step="3">
+            <v-stepper-content step="4">
               <p>
                 We've sent a six digit code to {{ phoneNumberString }}, please enter it below when you receive it.
               </p>
@@ -114,11 +148,12 @@
                 Resend code
               </v-btn>
             </v-stepper-content>
-            <!-- Step 4 - finished -->
-            <v-stepper-step step="4" :complete="step > 3">
+
+            <!-- Step 5 - finished -->
+            <v-stepper-step step="5" :complete="step > 4">
               You're in line
             </v-stepper-step>
-            <v-stepper-content step="4">
+            <v-stepper-content step="5">
               <p>
                 That's it, you're in line.
               </p>
@@ -366,29 +401,9 @@
                       </v-btn>
                     </v-list-item>
                   </div>
-
-                  <!-- <v-list-item v-if="showEdit">
-                    <v-btn
-                      icon
-                      color="primary"
-                      :to="`/add-new-item?fragId=${frag.fragId}`"
-                    >
-                      <v-icon>mdi-pencil</v-icon>
-                    </v-btn>
-                  </v-list-item>
-                  <v-list-item>
-                    <v-btn
-                      icon
-                      color="primary"
-                      @click="getShareLink"
-                    >
-                      <v-icon>mdi-export-variant</v-icon>
-                    </v-btn>
-                  </v-list-item> -->
                 </v-list>
               </v-menu>
             </v-app-bar>
-
           </v-img>
           <v-divider />
           <v-card-title v-text="item.name" />
@@ -482,6 +497,8 @@ export default {
       verifyingOtp: false,
       // If the OTP was incorrect
       otpIncorrect: false,
+      // The city entered in the location step
+      city: undefined,
       // Set to true while we are dropping out
       droppingOut: false,
       // Set to true while we are loading an item's queue
@@ -538,6 +555,7 @@ export default {
         this.otp = undefined
         this.verifyingOtp = false
         this.otpIncorrect = false
+        this.city = this.user.location
         this.selectedItem = item
         this.showGetInLineDialog = true
       }
@@ -603,6 +621,12 @@ export default {
       }
       return true
     },
+    validateCity (value) {
+      if (!value) {
+        return 'Your city is required'
+      }
+      return true
+    },
     supportingMemberDate (supportingMemberDays) {
       const today = new Date()
       today.setDate(today.getDate() - supportingMemberDays)
@@ -631,13 +655,14 @@ export default {
       setTimeout(() => {
         this.tooSoonToResend = false
       }, 35000)
-      this.step = 3
+      this.step++
     },
     async verifyOtp () {
       const item = this.selectedItem
       this.verifyingOtp = true
       const formData = new FormData()
       formData.set('otp', cleanPhoneNumber(this.otp))
+      formData.set('location', this.city)
       const url = `/api/equipment/queue/${item.itemId}`
       const { incorrect, queue } = await this.$axios.$post(url, formData)
       this.verifyingOtp = false
@@ -651,7 +676,7 @@ export default {
       // And we have the latest queue for this item
       item.queue = queue
       // Final step
-      this.step = 4
+      this.step++
     },
     async dropOut () {
       const item = this.selectedItem

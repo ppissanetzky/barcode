@@ -208,6 +208,8 @@ async function getQueue(item) {
     queue.forEach((entry) => {
         // Remove the phone number, it's only for the server
         delete entry.phoneNumber;
+        // Use our location for the user
+        entry.user.location = entry.location
         // If that user has the item
         const {dateReceived} = entry;
         if (dateReceived) {
@@ -250,7 +252,7 @@ async function getQueue(item) {
 //-----------------------------------------------------------------------------
 
 router.post('/queue/:itemId', upload.none(), async (req, res, next) => {
-    const {user, params: {itemId}, body: {otp}} = req;
+    const {user, params: {itemId}, body: {otp, location}} = req;
     // Make sure the item is valid
     const item = db.getItemForUser(itemId, user.id);
     if (!item) {
@@ -298,7 +300,8 @@ router.post('/queue/:itemId', upload.none(), async (req, res, next) => {
         itemId,
         timestamp: nowAsIsoString(),
         userId: user.id,
-        phoneNumber
+        phoneNumber,
+        location
     });
     // And we can delete the OTP
     db.deleteOtp(user.id);
