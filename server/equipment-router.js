@@ -21,13 +21,14 @@ const {
 
 const {age, dateFromIsoString, nowAsIsoString} = require('./dates');
 
-const {lookupUser} = require('./xenforo');
+const {lookupUser, startConversation} = require('./xenforo');
 
 const db = require('./equipment-database');
 
 const {validatePhoneNumber, sendSms} = require('./aws');
 
 const {uberPost} = require('./forum');
+const { renderMessage } = require('./messages');
 
 //-----------------------------------------------------------------------------
 // The router
@@ -301,10 +302,11 @@ router.post('/queue/:itemId', upload.none(), async (req, res, next) => {
     });
     // And we can delete the OTP
     db.deleteOtp(user.id);
-    // Post to the forum
-    uberPost(item.threadId, 'equipment-got-in-line', {item, user});
-    // Return the new queue
+    // Get the new queue
     const queue = await getQueue(item);
+    // Post to the forum
+    uberPost(item.threadId, 'equipment-got-in-line', {item, user, queue});
+    // Return the queue
     res.json({queue});
 });
 
@@ -331,6 +333,8 @@ router.delete('/queue/:itemId', async (req, res, next) => {
     db.removeFromQueue(itemId, user.id);
     // Get the latest queue
     const queue = await getQueue(item);
+    // Post to the forum
+    uberPost(item.threadId, 'equipment-dropped-from-line', {item, user, queue});
     // Respond
     res.json({queue});
 });
@@ -389,15 +393,19 @@ router.put('/queue/:itemId/:verb/:otherUserId', async (req, res, next) => {
     // in the source user being banned. Users that can hold
     // equipment are exempt from bans
     const ban = db.transferItem(itemId, source, dest, fromUser.canHoldEquipment);
-    // Post that the item has been passed
-    await uberPost(sourceItem.threadId, 'equipment-passed', {item: sourceItem, fromUser, toUser});
     if (ban) {
         console.log('BAN', ban);
         const until = dateFromIsoString(ban.endsOn).toLocaleDateString();
-        uberPost(sourceItem.threadId, 'equipment-banned', {item: sourceItem, user: fromUser, until});
+        const [title, message] = await renderMessage('equipment-banned-pm',
+            {item: sourceItem, user: fromUser, until});
+        // Send the source user a PM to let them know they have been banned
+        startConversation([source], title, message, true);
     }
     // And return the new queue and ban
     const queue = await getQueue(sourceItem);
+    // Post that the item has been passed
+    uberPost(sourceItem.threadId, 'equipment-passed', {item: sourceItem, fromUser, toUser, queue});
+    // Return the new queue and the ban if it is for the caller
     res.json({
         queue,
         ban: (ban && ban.userId === user.id) ? ban : null
