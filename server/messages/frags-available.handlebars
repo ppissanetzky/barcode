@@ -12,5 +12,9 @@ no title - this is a post
 @{{user.name}} just made {{frag.fragsAvailable}} frag(s) available. [URL={{fragUrl frag.fragId}}]Get them[/URL] while they're fresh!
 
 {{#if fans.length}}
+{{#if fans.[1]}}
 {{#each fans}}@{{this.name}}, {{/each}}are in line for a frag.
+{{else}}
+{{#each fans}}@{{this.name}}{{/each}} is the only one in line for a frag.
+{{/if}}
 {{/if}}
