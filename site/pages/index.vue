@@ -16,7 +16,7 @@
 
     <v-row>
       <!-- A card for imports -->
-      <v-col v-if="imports.length" cols="auto">
+      <!-- <v-col v-if="imports.length" cols="auto">
         <v-card width="375px">
           <v-img
             height="300px"
@@ -36,7 +36,7 @@
             </v-btn>
           </v-card-text>
         </v-card>
-      </v-col>
+      </v-col> -->
 
       <!-- The cards of frags -->
 
@@ -63,10 +63,6 @@ export default {
     const { user, frags } = await this.$axios.$get('/api/dbtc/your-collection')
     this.user = user
     this.frags = frags
-    // Now, fetch the imports in the background
-    this.$axios.$get('/api/dbtc/imports').then(({ threads }) => {
-      this.imports = threads
-    })
   },
   data () {
     return {
