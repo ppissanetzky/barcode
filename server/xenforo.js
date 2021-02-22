@@ -203,9 +203,10 @@ async function validateXenForoUser(headers) {
 
     function authenticationFailed(reason) {
         console.error('AUTHENTICATION FAILED :', reason, ':', headers);
+        const loginLink = `${LOGIN_LINK}?_xfRedirect=${encodeURIComponent('https://bareefers.org/redirect.php?to=' + headers.referer)}`;
         return AUTHENTICATION_FAILED(
             'You must be logged in. Please click the button below to go to the login page.',
-            LOGIN_LINK,
+            loginLink,
             'Log in'
         );
     }
