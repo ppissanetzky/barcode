@@ -11,3 +11,7 @@ docker stop $(docker ps -aq)
 # Remove them
 
 docker container rm $(docker ps -aq)
+
+# Prune old networks
+
+docker network prune
