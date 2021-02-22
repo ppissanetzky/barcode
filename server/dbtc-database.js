@@ -411,6 +411,19 @@ function updateFragPicture(ownerId, fragId, picture) {
     db.run(UPDATE_PICTURE, {ownerId, fragId, picture})
 }
 
+const CLEAR_PICTURE = `
+    UPDATE
+        frags
+    SET
+        picture = NULL
+    WHERE
+        picture = $picture
+`;
+
+function clearFragPicture(picture) {
+    db.run(CLEAR_PICTURE, {picture});
+}
+
 //-----------------------------------------------------------------------------
 
 const SELECT_COLLECTION_PAGED = `
@@ -879,5 +892,6 @@ module.exports = {
     getFans,
     getLikes,
     getDbtcThreads,
-    getUserThreadIds
+    getUserThreadIds,
+    clearFragPicture
 }

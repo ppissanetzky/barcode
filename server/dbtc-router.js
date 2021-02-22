@@ -25,6 +25,8 @@ const {
 
 const {saveImageFromUrl, isGoodId} = require('./utility');
 
+const {resizeImage} = require('./image-resizer');
+
 //-----------------------------------------------------------------------------
 // Config
 //-----------------------------------------------------------------------------
@@ -181,6 +183,10 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
     });
     // Post to the forum out of band
     itemAdded(fragId);
+    // Also resize the image out of band
+    if (picture) {
+        resizeImage(picture);
+    }
     // Reply
     res.json({fragId, journal});
 });
@@ -350,6 +356,9 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
     else {
         fragGiven(user, recipient, newFragId);
     }
+    if (picture) {
+        resizeImage(picture);
+    }
     // Reply
     res.json({
         fragsAvailable,
@@ -391,6 +400,10 @@ router.post('/frag/:fragId/journal', upload.single('picture'), (req, res, next) 
     }
     // Post to the forum
     journalUpdated(user, frag, journal);
+    // Resize the picture if any
+    if (picture) {
+        resizeImage(picture);
+    }
     // Reply
     res.json({
         journal,
@@ -765,6 +778,10 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
     });
     // Add a post to the thread out of band
     itemImported(user, threadId, motherId, fragId);
+    // Resize the picture
+    if (picture) {
+        resizeImage(picture);
+    }
     // Send back the response now
     res.json({motherId, fragId});
 });
