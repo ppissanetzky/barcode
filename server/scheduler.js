@@ -15,7 +15,9 @@ const JOBS = [
 
     ['dbtc-nag', 'every weekday at 5:00 pm'], // 9 am
 
-    ['equipment-nag', 'at 6:00 pm'] // 10 am
+    ['equipment-nag', 'at 6:00 pm'], // 10 am
+
+    ['reply-to-mentions', 'every 10 minutes']
 ];
 
 //-----------------------------------------------------------------------------

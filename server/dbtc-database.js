@@ -862,6 +862,16 @@ function getUserThreadIds(userId) {
 
 //-----------------------------------------------------------------------------
 
+const SELECT_MOTHER_FOR_THREAD = `SELECT * FROM mothers WHERE threadId = $threadId`;
+
+function getMotherForThread(threadId) {
+    const [row] = db.all(SELECT_MOTHER_FOR_THREAD, {threadId});
+    // Can be undefined
+    return row;
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     selectAllFragsForUser,
     insertItem,
@@ -893,5 +903,6 @@ module.exports = {
     getLikes,
     getDbtcThreads,
     getUserThreadIds,
-    clearFragPicture
+    clearFragPicture,
+    getMotherForThread
 }

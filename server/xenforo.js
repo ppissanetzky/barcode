@@ -645,9 +645,15 @@ async function markAllAlertsRead() {
     });
 }
 
+async function getPost(postId) {
+    const {post} = await apiRequest(`posts/${postId}/`, 'GET', {});
+    return post;
+}
+
 //-----------------------------------------------------------------------------
 
 module.exports = {
+    BARCODE_USER,
     validateXenForoUser,
     lookupUser,
     lookupUserWithFallback,
@@ -662,7 +668,8 @@ module.exports = {
     validateUserThread,
     getUserEmailAddress,
     getAlerts,
-    markAllAlertsRead
+    markAllAlertsRead,
+    getPost
 };
 
 // (async function() {

@@ -1,5 +1,9 @@
 
-require('console-stamp')(console, {pattern: 'isoDateTime', metadata: process.pid});
+const cluster = require('cluster');
+
+require('console-stamp')(console, {
+    pattern: 'isoDateTime',
+    metadata: (cluster.worker && cluster.worker.id) || process.pid});
 
 const path = require('path');
 const assert = require('assert');
@@ -9,7 +13,7 @@ const ms = require('ms');
 
 const {BC_DATABASE_DIR} = require('./barcode.config');
 
-const HOLD_LOCK = '5 minutes';
+const HOLD_LOCK = '2 minutes';
 
 //-----------------------------------------------------------------------------
 // Obtains a lock across all processes, so that we can run scheduler jobs

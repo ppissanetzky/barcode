@@ -1,0 +1,16 @@
+{{!
+This one is used to create a new post when a user mentions @BARcode
+    userId - the ID of the user that mentioned
+    mother - The mother linked to this thread or undefined
+    item - The equipment item linked to this thread or undefined
+}}
+no title - this is a post
+
+BARcode can be found [URL=https://barcode.bareefers.org]here[/URL]. You can learn more about it from [URL=https://www.bareefers.org/forum/threads/what-is-barcode.28209/]this thread[/URL].
+
+{{#if mother}}
+This thread is linked to [URL={{motherUrl mother.motherId}}]{{mother.name}}[/URL].
+{{/if}}
+{{#if item}}
+This thread is about the [URL={{equipmentUrl item.itemId}}]{{item.name}}[/URL].
+{{/if}}

@@ -325,6 +325,16 @@ function transferItem(itemId, fromUserId, toUserId, exemptFromBans) {
 
 //-----------------------------------------------------------------------------
 
+const SELECT_ITEM_FOR_THREAD = `SELECT * FROM items WHERE threadId = $threadId`;
+
+function getItemForThread(threadId) {
+    const [row] = db.all(SELECT_ITEM_FOR_THREAD, {threadId});
+    // Can be undefined
+    return row;
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     getAllItems,
     getItemForUser,
@@ -339,5 +349,6 @@ module.exports = {
     removeFromQueue,
     transferItem,
     getAllBans,
-    deleteBan
+    deleteBan,
+    getItemForThread
 };
