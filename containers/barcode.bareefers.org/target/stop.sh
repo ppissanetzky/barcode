@@ -14,4 +14,4 @@ docker container rm $(docker ps -aq)
 
 # Prune old networks
 
-docker network prune
+docker network prune --force
