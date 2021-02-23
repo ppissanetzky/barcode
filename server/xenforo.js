@@ -646,7 +646,9 @@ async function markAllAlertsRead() {
 }
 
 async function getPost(postId) {
-    const {post} = await apiRequest(`posts/${postId}/`, 'GET', {});
+    const {post} = await apiRequest(`posts/${postId}/`, 'GET', {}, {
+        'XF-Api-User': BARCODE_USER
+    });
     return post;
 }
 
