@@ -20,7 +20,7 @@
             <h3
               class="text-center"
             >
-              If the item you'd like to add is already being tracked in a forum thread,
+              If the item you'd like to add is already being tracked in a DBTC forum thread,
               you should <router-link
                 to="/import"
               >

@@ -537,6 +537,10 @@ export default {
     }
   },
   watch: {
+    fragOrMother (value) {
+      // Reset our data when the frag changes
+      Object.assign(this.$data, this.$options.data())
+    },
     fragsAvailable (value) {
       this.updateLineage(true)
       this.updateKids(true)

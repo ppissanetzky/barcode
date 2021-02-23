@@ -1,6 +1,11 @@
 <template>
   <v-container fluid>
     <v-row>
+      <v-dialog v-if="selectedFrag" v-model="fragDialog" max-width="375px">
+        <bc-editable-frag-card :frag="selectedFrag" :user="user" />
+      </v-dialog>
+    </v-row>
+    <v-row>
       <v-col>
         <h1>Your collection</h1>
       </v-col>
@@ -8,38 +13,49 @@
     <!-- A prominent button to add a new item -->
     <v-row>
       <v-col>
-        <v-btn depressed color="primary" to="add-new-item">
+        <v-btn color="primary" to="add-new-item">
           Add a new item
         </v-btn>
       </v-col>
+      <v-col cols="auto">
+        <v-btn-toggle v-if="view" v-model="view" mandatory dense>
+          <v-btn value="cards">
+            <v-icon>mdi-card-text-outline</v-icon>
+          </v-btn>
+          <v-btn value="gallery">
+            <v-icon>mdi-view-grid-outline</v-icon>
+          </v-btn>
+        </v-btn-toggle>
+        <v-spacer />
+      </v-col>
     </v-row>
 
-    <v-row>
-      <!-- A card for imports -->
-      <!-- <v-col v-if="imports.length" cols="auto">
-        <v-card width="375px">
-          <v-img
-            height="300px"
-            src="/bc/import.jpg"
-          />
-          <v-card-title>They're waiting!</v-card-title>
-          <v-card-subtitle>
-            You have at least {{ imports.length }} DBTC thread{{ imports.length === 1 ? '' : 's' }} waiting to be imported.
-          </v-card-subtitle>
-          <v-card-text>
-            <v-btn
-              small
-              color="secondary"
-              to="/import"
-            >
-              Import one now
-            </v-btn>
-          </v-card-text>
-        </v-card>
-      </v-col> -->
+    <v-row v-if="view === 'gallery'" no-gutters>
+      <v-col
+        v-for="frag in frags"
+        :key="frag.fragId"
+        cols="4"
+      >
+        <v-img
+          aspect-ratio="1"
+          :src="frag.picture ? `/bc/uploads/${frag.picture}` : `/bc/picture-placeholder.png`"
+          class="ma-1"
+          @click.stop="showFragDialog(frag)"
+        >
+          <!-- Not needed for your collection -->
+          <!-- <v-avatar
+            v-if="frag.fragsAvailable + (frag.otherFragsAvailable || 0)"
+            color="yellow accent-4"
+            class="ma-1"
+            size="24px"
+            v-text="frag.fragsAvailable + (frag.otherFragsAvailable || 0)"
+          /> -->
+        </v-img>
+      </v-col>
+    </v-row>
 
+    <v-row v-else>
       <!-- The cards of frags -->
-
       <v-col
         v-for="frag in frags"
         :key="frag.fragId"
@@ -48,7 +64,6 @@
         <bc-editable-frag-card
           :frag="frag"
           :user="user"
-          :is-owner="frag.ownerId === user.id"
         />
       </v-col>
     </v-row>
@@ -61,14 +76,38 @@ export default {
   components: { BcEditableFragCard },
   async fetch () {
     const { user, frags } = await this.$axios.$get('/api/dbtc/your-collection')
+    const { yourCollectionView } = await this.$axios.$get('/api/user/settings')
     this.user = user
     this.frags = frags
+    this.view = yourCollectionView || 'cards'
   },
   data () {
     return {
       user: {},
       frags: {},
-      imports: []
+      imports: [],
+      selectedFrag: undefined,
+      fragDialog: false,
+      view: undefined
+    }
+  },
+  watch: {
+    fragDialog (value) {
+      if (!value) {
+        this.selectedFrag = undefined
+      }
+    },
+    view (value) {
+      if (value) {
+        const url = `/api/user/settings/yourCollectionView/${encodeURIComponent(value)}`
+        this.$axios.$put(url)
+      }
+    }
+  },
+  methods: {
+    showFragDialog (frag) {
+      this.selectedFrag = frag
+      this.fragDialog = true
     }
   }
 }

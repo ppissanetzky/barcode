@@ -17,7 +17,7 @@ const router = express.Router();
 router.get('/settings', (req, res) => {
     const {user} = req;
     const settings = db.getSettings(user.id);
-    res.json({settings});
+    res.json(settings);
 });
 
 router.put('/settings/:key/:value', (req, res) => {
@@ -25,7 +25,7 @@ router.put('/settings/:key/:value', (req, res) => {
     assert(key);
     db.setSetting(user.id, key, value);
     const settings = db.getSettings(user.id);
-    res.json({settings});
+    res.json(settings);
 });
 
 //-----------------------------------------------------------------------------
