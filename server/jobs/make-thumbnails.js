@@ -14,13 +14,15 @@ function source(name) {
 
 lock('make-thumbnails', () => {
 
-    return Promise.all(fs.readdirSync(BC_UPLOADS_DIR)
-        // Ignore all files with an extension
-        .filter((name) => !name.includes('.'))
-        .map(async (name) => {
+    return Promise.all(fs.readdirSync(BC_UPLOADS_DIR, {withFileTypes: true})
+        // Keep only regular files that don't have a . in the name
+        .filter((dirent) => dirent.isFile() && !dirent.name.includes('.'))
+        .map(async ({name}) => {
             try {
                 const resized = await resizeImage(name);
-                console.log(name, resized);
+                if (resized) {
+                    console.log('Resized', name);
+                }
             }
             catch (error) {
                 console.error(name, 'failed', error.message);
