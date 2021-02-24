@@ -24,14 +24,15 @@
                     v-for="item in list.data"
                     :key="item.ownerId"
                   >
-                    <td
-                      class="text-left"
-                    >
+                    <td v-if="list.notUsers" class="text-left">
                       {{ item.ownerName }}
                     </td>
-                    <td
-                      class="text-right"
-                    >
+                    <td v-else class="text-left">
+                      <router-link :to="`/stats/${item.ownerId}`">
+                        {{ item.ownerName }}
+                      </router-link>
+                    </td>
+                    <td class="text-right">
                       {{ item.count }}
                     </td>
                   </tr>
@@ -95,7 +96,8 @@ export default {
           name: 'Popular',
           desc: 'Have the most members waiting',
           color: 'brown',
-          data: []
+          data: [],
+          notUsers: true
         }
       ]
     }

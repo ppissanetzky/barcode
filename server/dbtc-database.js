@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const assert = require('assert');
 
+const _ = require('lodash');
+
 const {Database} = require('./db');
 
 const {nowAsIsoString, utcIsoStringFromString} = require('./dates');
@@ -644,6 +646,72 @@ function getDbtcTop10s() {
 }
 
 //-----------------------------------------------------------------------------
+// Selects all frags the given user has contributed to DBTC
+// Grouped by type
+//-----------------------------------------------------------------------------
+
+const DBTC_STATS_CONTRIBUTED = `
+    SELECT
+        type,
+        COUNT(fragId) AS count,
+        JSON_GROUP_ARRAY(JSON_OBJECT('name', mothers.name, 'fragId', fragId)) AS frags
+    FROM
+        mothers,
+        frags
+    WHERE
+        mothers.rules = 'dbtc' AND
+        mothers.motherId = frags.motherId AND
+        fragOf IS NULL AND
+        ownerId = $userId
+    GROUP BY 1
+    ORDER BY 1
+`;
+
+const DBTC_STATS_LINKS = `
+    SELECT
+        mothers.motherId AS motherId,
+        mothers.type AS type,
+        mothers.name AS name,
+        COUNT(DISTINCT given.ownerId) AS count
+    FROM
+        mothers,
+        frags AS sources
+    LEFT OUTER JOIN
+        frags AS given
+    ON
+        given.fragOf = sources.fragId
+    WHERE
+        mothers.rules = 'dbtc' AND
+        sources.motherId = mothers.motherId AND
+        sources.fragOf IS NOT NULL AND
+        sources.ownerId = $userId
+    GROUP BY 1, 2
+    ORDER BY type, count DESC
+`;
+
+function getDbtcStatsForUser(userId) {
+    const contributed = db.all(DBTC_STATS_CONTRIBUTED, {userId})
+        .map(({type, count, frags}) => ({
+            type,
+            count,
+            frags: JSON.parse(frags)
+        }));
+    const linksMap = db.all(DBTC_STATS_LINKS, {userId})
+        .reduce((result, {type, motherId, name, count}) => {
+            const existing = result[type] || [];
+            existing.push({motherId, name, count});
+            result[type] = existing;
+            return result;
+        }, {});
+    const links = _.map(linksMap, (value, key) => ({
+        type: key,
+        count: value.length,
+        mothers: value 
+    }));
+    return ({contributed, links});
+}
+
+//-----------------------------------------------------------------------------
 
 const UPDATE_MOTHER = `
     UPDATE
@@ -904,5 +972,6 @@ module.exports = {
     getDbtcThreads,
     getUserThreadIds,
     clearFragPicture,
-    getMotherForThread
+    getMotherForThread,
+    getDbtcStatsForUser
 }

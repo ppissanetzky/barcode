@@ -110,6 +110,12 @@
             <v-list-item-title>DBTC top 10</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item to="/stats">
+          <v-list-item-icon><v-icon>mdi-chart-box-outline</v-icon></v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>DBTC member stats</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-item to="/import">
           <v-list-item-icon><v-icon>mdi-import</v-icon></v-list-item-icon>
           <v-list-item-content>

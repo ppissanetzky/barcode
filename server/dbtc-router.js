@@ -803,6 +803,16 @@ router.get('/top10', async (req, res) => {
     res.json({...result});
 });
 
+router.get('/user-stats/:userId', async (req, res) => {
+    const {user, params: {userId}} = req;
+    const resultUser = userId === 'me' ? user : await lookupUser(userId);
+    const stats = db.getDbtcStatsForUser(resultUser.id);
+    res.json({
+        ...stats,
+        user: resultUser
+    });
+});
+
 //-----------------------------------------------------------------------------
 // TODO: Belongs in a '/user' API
 //-----------------------------------------------------------------------------
