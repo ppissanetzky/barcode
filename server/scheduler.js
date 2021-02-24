@@ -3,6 +3,8 @@ const path = require('path');
 
 const Bree = require('bree');
 
+const {BC_DISABLE_SCHEDULER} = require('./barcode.config');
+
 //-----------------------------------------------------------------------------
 // since the server is running in UTC, account for that.
 //-----------------------------------------------------------------------------
@@ -23,6 +25,10 @@ const JOBS = [
 //-----------------------------------------------------------------------------
 
 function scheduler() {
+    if (BC_DISABLE_SCHEDULER) {
+        console.warn('Scheduler is disabled');
+        return;
+    }
     const bree = new Bree({
         root: path.join(__dirname, 'jobs'),
         jobs: JOBS.map(([name, interval]) => ({name, interval}))

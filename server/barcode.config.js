@@ -97,13 +97,18 @@ module.exports = {
     get BC_SMS_MODE () { return get('BC_SMS_MODE') },
 
     //-------------------------------------------------------------------------
+    // Disable the scheduler when developing
+    //-------------------------------------------------------------------------
+
+    get BC_DISABLE_SCHEDULER () { return get('BC_DISABLE_SCHEDULER', true) },
+
 };
 
 //-----------------------------------------------------------------------------
 
-function get(name) {
+function get(name, optional) {
     const value = process.env[name];
-    if (!value) {
+    if (!value && !optional) {
         console.error(`MISSING ENVIRONMENT VARIABLE "${name}", SEE barcode.config.js`);
         process.exit(2);
     }

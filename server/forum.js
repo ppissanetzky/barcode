@@ -26,9 +26,6 @@ const POSTING_ENABLED =
     BC_FORUM_MODE === "production" ||
     parseInt(BC_FORUM_MODE, 10) > 0;
 
-console.log(`BC_FORUM_MODE=${BC_FORUM_MODE}`);
-console.log(`POSTING_ENABLED=${POSTING_ENABLED}`)
-
 //-----------------------------------------------------------------------------
 
 function getForumForType(type) {
