@@ -9,6 +9,7 @@
     "server": "(cd server && npm run server)",
     "web-server": "(cd server && npm run web-server)",
     "preversion": "git checkout main && git pull origin main",
-    "postversion": "git push origin main --tags"
+    "postversion": "git push origin main --tags",
+    "push": "(cd containers/barcode.bareefers.org/ && make build push)"
   }
 }
