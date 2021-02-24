@@ -51,7 +51,7 @@
           </v-card-text>
           <v-card-text v-else>
             <div v-for="l in links" :key="l.type">
-              <h3>{{ l.count }} {{ l.type }}</h3>
+              <h3>{{ l.count ? l.count : 'No' }} {{ l.type }}</h3>
               <v-simple-table dense>
                 <template v-slot:default>
                   <tbody>

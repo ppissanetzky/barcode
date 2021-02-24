@@ -705,8 +705,8 @@ function getDbtcStatsForUser(userId) {
         }, {});
     const links = _.map(linksMap, (value, key) => ({
         type: key,
-        count: value.length,
-        mothers: value 
+        count: value.reduce((result, {count}) => result + count, 0),
+        mothers: value
     }));
     return ({contributed, links});
 }
