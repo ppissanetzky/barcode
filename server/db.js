@@ -13,6 +13,21 @@ const BarcodeConfig = require('./barcode.config');
 const BC_DATABASE_DIR = BarcodeConfig.BC_DATABASE_DIR;
 
 //-----------------------------------------------------------------------------
+
+function all(bs3, query, params) {
+    const statement = bs3.prepare(query);
+    return statement.all(params || {});
+}
+
+// Returns the last row ID
+
+function run(bs3, query, params) {
+    const statement = bs3.prepare(query);
+    const info = statement.run(params || {});
+    return info.lastInsertRowid;
+}
+
+//-----------------------------------------------------------------------------
 // An async wrapper around sqlite that just stores the path and uses a cached
 // connection to run every statement
 //-----------------------------------------------------------------------------
@@ -30,31 +45,21 @@ class Database {
     // Returns the rows
 
     all(query, params) {
-        const statement = this.open().prepare(query);
-        return statement.all(params);
+        return all(this.open(), query, params);
     }
 
     // Returns the last row ID
 
     run(query, params) {
-        const statement = this.open().prepare(query);
-        const info = statement.run(params);
-        return info.lastInsertRowid;
+        return run(this.open(), query, params);
     }
 
     transaction(func) {
         const db = this.open();
         const executor = db.transaction(func);
         return executor({
-            run(query, params) {
-                const statement = db.prepare(query);
-                const info = statement.run(params);
-                return info.lastInsertRowid;
-            },
-            all(query, params) {
-                const statement = db.prepare(query);
-                return statement.all(params);
-            }
+            run: run.bind(null, db),
+            all: all.bind(null, db)
         });
     }
 
@@ -74,7 +79,6 @@ class Database {
                 return db;
             }
             // Otherwise, open it and see what version it currently is
-            console.log('Opening database', file);
             db = new BetterSqlite3(file);
 
             // Check the version with this pragma
@@ -83,12 +87,12 @@ class Database {
             // If it is already at the desired version, add it to the map
             // so we won't check it again and return it
             if (user_version === version) {
-                console.log(name, 'is version', user_version);
+                console.log(name, 'database is version', user_version);
                 this.migrated = true;
                 return db;
             }
 
-            console.log(name, 'is version', user_version, 'requesting version', version);
+            console.log(name, 'database is version', user_version, 'requesting version', version);
 
             // If it is at a higher version than the desired one, there is
             // a problem and we should not continue.
