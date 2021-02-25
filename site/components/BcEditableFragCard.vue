@@ -245,12 +245,31 @@
 
       <!-- Journal -->
       <v-tab-item value="journal">
-        <v-card-title>Journal</v-card-title>
-        <div
-          v-for="j in loadedJournals || []"
-          :key="j.journalId"
-        >
-          <v-card-text>
+        <v-card-title>
+          Journal
+        </v-card-title>
+        <v-card-subtitle v-if="!isPrivate">
+          <v-checkbox v-model="showCombinedJournals" label="Show combined journal" />
+        </v-card-subtitle>
+        <div v-if="showCombinedJournals">
+          <v-card-text v-for="(j, index) in combinedJournals" :key="index">
+            <v-row>
+              <v-col cols="auto">
+                <v-icon>
+                  {{ j.icon }}
+                </v-icon>
+              </v-col>
+              <v-col>
+                <h3>{{ you(j.user.name) }}</h3>
+                <v-img v-if="j.picture" :src="`/bc/uploads/${j.picture}`" aspect-ratio="1" />
+                <div v-if="j.notes" v-text="j.notes" />
+                <span class="caption" v-text="localeDateString(j.timestamp) + ' - ' + j.age" />
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </div>
+        <div v-else>
+          <v-card-text v-for="j in loadedJournals || []" :key="j.journalId">
             <v-row>
               <v-col cols="auto">
                 <v-icon>
@@ -350,7 +369,7 @@
 </template>
 <script>
 import { ValidationObserver, ValidationProvider } from 'vee-validate/dist/vee-validate.full.esm'
-import { age, utcIsoStringFromString, dateFromIsoString, differenceBetween } from '~/dates'
+import { age, utcIsoStringFromString, dateFromIsoString, differenceBetween, localeDateString } from '~/dates'
 import BcUserAutocomplete from '~/components/BcUserAutocomplete.vue'
 import BcDatePicker from '~/components/BcDatePicker.vue'
 import BcFragCard from '~/components/BcFragCard.vue'
@@ -433,6 +452,10 @@ export default {
     loadingJournal: false,
     journalMakeCoverPicture: false,
 
+    // For the combined journals
+    showCombinedJournals: false,
+    combinedJournals: undefined,
+
     // For RIP
     ripNotes: undefined,
     loadingRIP: false,
@@ -490,6 +513,12 @@ export default {
     journals (value) {
       if (value) {
         this.loadedJournals = value.map(journal => augment(journal))
+      }
+    },
+    showCombinedJournals (value) {
+      if (value && !this.combinedJournals) {
+        this.combinedJournals = []
+        this.loadCombinedJournals()
       }
     }
   },
@@ -647,6 +676,8 @@ export default {
       if (this.loadedJournals) {
         this.loadedJournals.unshift(augment(journal))
       }
+      this.showCombinedJournals = false
+      this.combinedJournals = undefined
     },
 
     async loadJournals () {
@@ -655,6 +686,24 @@ export default {
         const { journals } = await this.$axios.$get(`/api/dbtc/journals/${this.frag.fragId}`)
         this.loadedJournals = journals.map(journal => augment(journal))
       }
+    },
+
+    localeDateString (value) {
+      return localeDateString(value)
+    },
+
+    you (name) {
+      if (name === this.user.name) {
+        return 'You'
+      }
+      return name
+    },
+
+    async loadCombinedJournals () {
+      const motherId = this.frag.motherId
+      const url = `/api/dbtc/journals/kids/${encodeURIComponent(motherId)}`
+      const { journals } = await this.$axios.$get(url)
+      this.combinedJournals = journals
     }
   }
 }

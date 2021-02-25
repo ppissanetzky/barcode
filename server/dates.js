@@ -60,21 +60,30 @@ function utcIsoStringFromString (string) {
 }
 
 // ----------------------------------------------------------------------------
-// This one returns a human readable difference between now and the given ISO
-// string date or Date object, such as "2 months". If the difference is less
-// than one day, it returns textForToday. Otherwise it returns the difference
-// with the suffix if any
+
+function dateFromIsoStringOrDate(date) {
+  return date instanceof Date ? date : dateFromIsoString(date);
+}
+
+// ----------------------------------------------------------------------------
+// This one returns a human readable difference between two dates such as
+// "2 months". If the difference is less than one day, it returns textForToday.
+// Otherwise it returns the difference with the suffix if any.
+// ----------------------------------------------------------------------------
+
+function ageSince(oldIsoStringOrDate, newIsoStringOrDate, textForToday, suffix) {
+  const newDate = dateFromIsoStringOrDate(newIsoStringOrDate);
+  const oldDate = dateFromIsoStringOrDate(oldIsoStringOrDate);
+  if (differenceInDays(newDate, oldDate) < 1) {
+    return textForToday
+  }
+  return `${formatDistance(newDate, oldDate)}${suffix ? ' ' + suffix : ''}`
+}
+
 // ----------------------------------------------------------------------------
 
 function age (isoStringDateOrDate, textForToday, suffix) {
-  const today = new Date()
-  const then = (isoStringDateOrDate instanceof Date)
-    ? isoStringDateOrDate
-    : dateFromIsoString(isoStringDateOrDate)
-  if (differenceInDays(today, then) < 1) {
-    return textForToday
-  }
-  return `${formatDistance(today, then)}${suffix ? ' ' + suffix : ''}`
+  return ageSince(isoStringDateOrDate, new Date(), textForToday, suffix);
 }
 
 // ----------------------------------------------------------------------------
@@ -88,6 +97,7 @@ function differenceBetween (isoStringDateThen, isoStringDateNow) {
 
 module.exports = {
   age,
+  ageSince,
   utcIsoStringFromDate,
   utcIsoStringFromString,
   dateFromIsoString,

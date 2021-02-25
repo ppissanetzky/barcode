@@ -27,6 +27,8 @@ const {saveImageFromUrl, isGoodId} = require('./utility');
 
 const {resizeImage} = require('./image-resizer');
 
+const {ageSince} = require('./dates');
+
 //-----------------------------------------------------------------------------
 // Config
 //-----------------------------------------------------------------------------
@@ -65,6 +67,45 @@ const upload = multer({dest: BC_UPLOADS_DIR});
 const router = express.Router();
 
 //-----------------------------------------------------------------------------
+// Maps a journal entryType to its icons. It's a UI concern and it could
+// be in the database...
+//-----------------------------------------------------------------------------
+
+const JOURNAL_ICONS = new Map([
+    ['good',        'mdi-thumb-up-outline'],
+    ['bad',         'mdi-thumb-down-outline'],
+    ['gave',        'mdi-hand-heart-outline'],
+    ['acquired',    'mdi-emoticon-happy-outline'],
+    ['fragged',     'mdi-hand-saw'],
+    ['rip',         'mdi-emoticon-dead-outline'],
+    ['changed',     'mdi-pencil-outline'],
+    ['imported',    'mdi-import']
+]);
+
+const DEFAULT_JOURNAL_ICON = 'mdi-progress-check';
+
+function getJournalIcon(entryType) {
+    return JOURNAL_ICONS.get(entryType) || DEFAULT_JOURNAL_ICON;
+}
+
+//-----------------------------------------------------------------------------
+// If a frag is private only the owner can see it
+//-----------------------------------------------------------------------------
+
+function isPrivate(frag) {
+    assert(frag);
+    return frag.rules === 'private';
+}
+
+function isUserAllowedToSeeFrag(user, frag) {
+    assert(user);
+    if (isPrivate(frag)) {
+        return user.id === frag.ownerId;
+    }
+    return true;
+}
+
+//-----------------------------------------------------------------------------
 // My collection of frags
 //-----------------------------------------------------------------------------
 
@@ -94,8 +135,8 @@ router.get('/frag/:fragId', async (req, res, next) => {
     }
     // If the frag is private and the caller is not the owner,
     // we don't expose it
-    if (frag.rules === 'private' && user.id !== frag.ownerId) {
-        return next(INVALID_FRAG());
+    if (!isUserAllowedToSeeFrag(user, frag)) {
+        return next(NOT_YOURS());
     }
     frag.owner = await lookupUser(frag.ownerId, true);
     frag.ownsIt = frag.ownerId === user.id;
@@ -136,20 +177,60 @@ router.get('/share/:fragId', async (req, res, next) => {
 //-----------------------------------------------------------------------------
 
 router.get('/journals/:fragId', (req, res, next) => {
-    const {user, params} = req;
-    const {fragId} = params;
+    const {user, params: {fragId}} = req;
     const [frag, journals] = db.selectFrag(fragId);
     if (!frag) {
         return next(INVALID_FRAG());
     }
-    // If the frag is private and the caller is not the owner,
-    // we don't expose it
-    if (frag.rules === 'private' && user.id !== frag.ownerId) {
+    if (!isUserAllowedToSeeFrag(user, frag)) {
+        return next(NOT_YOURS());
+    }
+    res.json({journals});
+});
+
+//-----------------------------------------------------------------------------
+// Returns all journals for all kids of motherId
+//-----------------------------------------------------------------------------
+
+router.get('/journals/kids/:motherId', async (req, res, next) => {
+    const {user, params: {motherId}} = req;
+    const {frag, journals, frags} = db.getJournalsForMother(motherId);
+    if (!frag) {
         return next(INVALID_FRAG());
     }
-    res.json({
-        journals
-    });
+    if (!isUserAllowedToSeeFrag(user, frag)) {
+        return next(NOT_YOURS());
+    }
+    // Lookup the owner of the mother frag
+    frag.owner = await lookupUser(frag.ownerId, true);
+    // Now, augment journals
+    const today = new Date();
+    await Promise.all(journals.map(async (journal) => {
+        const journalUser = await lookupUser(journal.ownerId, true);
+        journal.user = {
+            id: journal.ownerId,
+            name: journalUser.name
+        };
+        journal.icon = getJournalIcon(journal.entryType);
+        // This is how long ago the journal entry was made
+        journal.age = ageSince(journal.timestamp, today, 'today', 'ago');
+        // This is how much time elapsed since this frag was acquired
+        // by the owner and the time the journal entry was made
+        const since = ageSince(journal.dateAcquired, journal.timestamp);
+        if (since) {
+            journal.age += ` (after ${since})`;
+        }
+        // Don't need it since it's in 'user'
+        delete journal.ownerId;
+        // Removed (imported) from notes if there
+        if (journal.notes) {
+            journal.notes = journal.notes.replace('(imported)', '');
+        }
+    }));
+    await Promise.all(frags.map(async (frag) => {
+        frag.owner = await lookupUser(frag.ownerId, true);
+    }));
+    res.json({user, frag, journals, frags});
 });
 
 //-----------------------------------------------------------------------------
@@ -259,7 +340,7 @@ router.put('/frag/:fragId/available/:fragsAvailable', (req, res, next) => {
         return next(INVALID_FRAG());
     }
     // If the frag is private, you cannot make frags available
-    if (frag.rules === 'private') {
+    if (isPrivate(frag)) {
         return next(INVALID_FRAG());
     }
     // Validate fragsAvailable
@@ -308,7 +389,7 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
         return next(INVALID_FRAG());
     }
     // If the frag is private, you cannot give a frag
-    if (frag.rules === 'private') {
+    if (isPrivate(frag)) {
         return next(INVALID_FRAG());
     }
     // Now make sure the new owner is allowed
@@ -473,8 +554,8 @@ router.get('/collection/:rules/p/:page', async (req, res, next) => {
 router.get('/kids/:motherId', async (req, res, next) => {
     const {user, params: {motherId}} = req;
     const frags = db.selectFragsForMother(motherId);
-    const isPrivate = frags.some(({rules}) => rules === 'private');
-    if (isPrivate) {
+    const private = frags.some(isPrivate);
+    if (private) {
         return next(NOT_YOURS());
     }
     // Now, get full user information about all of the
@@ -499,7 +580,7 @@ router.get('/tree/:motherId', async (req, res, next) => {
     if (frags.length === 0) {
         return next(INVALID_FRAG());
     }
-    if (frags.some((frag) => frag.rules === 'private' && frag.ownerId !== user.id)) {
+    if (frags.some((frag) => !isUserAllowedToSeeFrag(user, frag))) {
         return next(NOT_YOURS());
     }
     const map = new Map(frags.map((frag) => [frag.fragId, frag]));

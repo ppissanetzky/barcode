@@ -117,6 +117,66 @@ function getFragJournals(fragId) {
 }
 
 //-----------------------------------------------------------------------------
+// Reverse chronological journal entries for a given mother
+//-----------------------------------------------------------------------------
+
+const SELECT_MOTHER_JOURNALS = `
+    SELECT
+        frags.ownerId AS ownerId,
+        frags.dateAcquired AS dateAcquired,
+        journals.timestamp AS timestamp,
+        journals.entryType AS entryType,
+        journals.picture AS picture,
+        journals.notes AS notes
+    FROM
+        frags,
+        journals
+    WHERE
+        frags.motherId = $motherId AND
+        journals.fragId = frags.fragId AND
+        -- This removed the acquired entries that are not from the
+        -- owner, otherwise, every time someone gives a frag, we would
+        -- get two journal entries
+        NOT (journals.entryType = 'acquired' AND frags.ownerId != $ownerId)
+    ORDER BY
+        timestamp DESC
+`;
+
+//-----------------------------------------------------------------------------
+
+const SELECT_MOTHER = `SELECT * FROM motherFrags WHERE motherId = $motherId`;
+
+//-----------------------------------------------------------------------------
+// Just the frag part, since we will load the mother separately. Exclude
+// any that have been transferred but include dead ones.
+//-----------------------------------------------------------------------------
+
+const SELECT_JUST_FRAGS_FOR_MOTHER = `
+    SELECT
+        *
+    FROM
+        frags
+    WHERE
+        motherId = $motherId AND
+        (status IS NULL OR status != 'transferred')
+`;
+
+//-----------------------------------------------------------------------------
+
+function getJournalsForMother(motherId) {
+    const [frag] = db.all(SELECT_MOTHER, {motherId});
+    if (!frag) {
+        return {};
+    }
+    const journals = db.all(SELECT_MOTHER_JOURNALS, {
+        motherId,
+        ownerId: frag.ownerId
+    });
+    const frags = db.all(SELECT_JUST_FRAGS_FOR_MOTHER, {motherId});
+    return {frag, journals, frags};
+}
+
+//-----------------------------------------------------------------------------
 
 const INSERT_MOTHER = `
     INSERT INTO mothers
@@ -973,5 +1033,6 @@ module.exports = {
     getUserThreadIds,
     clearFragPicture,
     getMotherForThread,
-    getDbtcStatsForUser
+    getDbtcStatsForUser,
+    getJournalsForMother
 }

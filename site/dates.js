@@ -86,6 +86,15 @@ function differenceBetween (isoStringDateThen, isoStringDateNow) {
 
 // ----------------------------------------------------------------------------
 
+function localeDateString (isoStringOrDate) {
+  const date = isoStringOrDate instanceof Date
+    ? isoStringOrDate
+    : dateFromIsoString(isoStringOrDate)
+  return date.toLocaleDateString()
+}
+
+// ----------------------------------------------------------------------------
+
 module.exports = {
   age,
   utcIsoStringFromDate,
@@ -94,5 +103,6 @@ module.exports = {
   nowAsIsoString,
   differenceBetween,
   justTheUtcDate,
-  justTheLocalDate
+  justTheLocalDate,
+  localeDateString
 }
