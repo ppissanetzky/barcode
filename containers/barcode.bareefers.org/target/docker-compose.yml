@@ -46,5 +46,58 @@ services:
     depends_on:
       - api-server
 
+#------------------------------------------------------------------------------
+# DEMO
+#------------------------------------------------------------------------------
+
+  demo-api-server:
+    restart: unless-stopped
+    image: ppissanetzky/barcode-api-server:${VERSION}
+    volumes:
+      - /home/barcode/demo-barcode/uploads:/volumes/uploads
+      - /home/barcode/demo-barcode/databases:/volumes/databases
+    networks:
+      demo-barcode-net:
+    hostname: api-server
+    extra_hosts:
+      # This allows the API server to talk to our forum using
+      # its private IP address instead of the public one. It
+      # should be faster. The only caveat is that they must
+      # both be in the same data center - which they are.
+      - "bareefers.org:192.168.167.79"
+    env_file:
+      - /home/barcode/demo-barcode/demo-barcode-env
+    environment:
+      BC_FORUM_MODE: 0
+      BC_SMS_MODE: 0
+      BC_DISABLE_SCHEDULER: 1
+      BC_SITE_BASE_URL: http://barcode.bareefers.org:444/bc
+      BC_DATABASE_DIR: /volumes/databases
+      BC_UPLOADS_DIR: /volumes/uploads
+
+  demo-web-server:
+    restart: unless-stopped
+    image: ppissanetzky/barcode-web-server:${VERSION}
+    ports:
+      - "444:443"
+    volumes:
+      - type: bind
+        source: /home/barcode/demo-barcode/uploads
+        target: /volumes/uploads
+        read_only: true
+      - type: bind
+        source: /etc/letsencrypt
+        target: /etc/letsencrypt
+        read_only: true
+      - type: bind
+        source: ./etc/nginx/conf.d
+        target: /etc/nginx/conf.d
+    networks:
+      demo-barcode-net:
+    depends_on:
+      - demo-api-server
+
 networks:
   barcode-net:
+  demo-barcode-net:
+
