@@ -184,6 +184,7 @@ function makeUser(xfUser) {
         allowed,
         canImpersonate: canXfUserImpersonate(xfUser),
         canHoldEquipment: canXfUserHoldEquipment(xfUser),
+        isAdmin: canXfUserImpersonate(xfUser),
         title: user_title,
         location: location,
         age: age,

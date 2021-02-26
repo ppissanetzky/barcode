@@ -27,6 +27,14 @@ function run(bs3, query, params) {
     return info.lastInsertRowid;
 }
 
+// Returns the changes
+
+function change(bs3, query, params) {
+    const statement = bs3.prepare(query);
+    const info = statement.run(params || {});
+    return info.changes;
+}
+
 //-----------------------------------------------------------------------------
 // An async wrapper around sqlite that just stores the path and uses a cached
 // connection to run every statement
@@ -54,12 +62,19 @@ class Database {
         return run(this.open(), query, params);
     }
 
+    // Returns the number of changed rows
+
+    change(query, params) {
+        return change(this.open(), query, params);
+    }
+
     transaction(func) {
         const db = this.open();
         const executor = db.transaction(func);
         return executor({
             run: run.bind(null, db),
-            all: all.bind(null, db)
+            all: all.bind(null, db),
+            change: change.bind(null, db)
         });
     }
 

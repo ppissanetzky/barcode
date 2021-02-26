@@ -98,6 +98,9 @@ module.exports = {
 
     // When a transfer request doesn't have a correct verb
     BAD_TRANSFER:           error.bind(null, 'BTR'),
+
+    // Not an admin
+    NOT_ADMIN:              error.bind(null, 'NAD'),
 };
 
 //-----------------------------------------------------------------------------

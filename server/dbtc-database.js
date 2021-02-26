@@ -1001,6 +1001,7 @@ function getMotherForThread(threadId) {
 //-----------------------------------------------------------------------------
 
 module.exports = {
+    db,
     selectAllFragsForUser,
     insertItem,
     selectFrag,
