@@ -867,21 +867,21 @@ function getFans(motherId) {
 
 const SELECT_LIKES = `
     SELECT
-        MAX(CASE WHEN userId = $userId THEN 1 ELSE 0 END) isFan,
-        COUNT(userId) as likes
+        userId
     FROM
         fans
     WHERE
         motherId = $motherId
-    GROUP BY
-        motherId
+    ORDER BY
+        timestamp
 `;
 
 function getLikes(userId, motherId) {
-    const [row] = db.all(SELECT_LIKES, {userId, motherId});
+    const users = db.all(SELECT_LIKES, {motherId}).map(({userId}) => userId);
     return ({
-        isFan: row ? Boolean(row.isFan) : false,
-        likes: row ? row.likes : 0
+        isFan: users.some((id) => id === userId),
+        likes: users.length,
+        users
     });
 }
 

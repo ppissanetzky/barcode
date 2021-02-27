@@ -414,14 +414,28 @@
             <v-card-title v-if="likes === 0">
               No one waiting
             </v-card-title>
-            <v-card-title v-else-if="likes === 1">
-              1 member waiting for a frag
-            </v-card-title>
-            <v-card-title v-else>
-              {{ likes }} members waiting for a frag
-            </v-card-title>
+            <div v-else>
+              <v-card-title v-if="likes === 1">
+                1 member is waiting for a frag
+              </v-card-title>
+              <v-card-title v-else>
+                {{ likes }} members are waiting for a frag
+              </v-card-title>
+              <v-card-text>
+                <v-simple-table dense>
+                  <template v-slot:default>
+                    <tbody>
+                      <tr v-for="(fan, index) in fans" :key="fan.id">
+                        <td>
+                          {{ index + 1 }}. <a :href="fan.viewUrl" target="_blank">{{ you(fan, true) }}</a>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </template>
+                </v-simple-table>
+              </v-card-text>
+            </div>
             <div v-if="isAFan">
-              <v-card-text>You're already in line for a frag</v-card-text>
               <v-card-text>
                 <v-btn
                   small
@@ -485,6 +499,7 @@ export default {
 
     likes: 0,
     gotLikes: false,
+    fans: [],
 
     shareAlert: false,
     shareLink: undefined,
@@ -619,18 +634,20 @@ export default {
         return
       }
       this.$axios.$get(`/api/dbtc/fan/${this.frag.motherId}`)
-        .then(({ isFan, likes }) => {
+        .then(({ isFan, likes, users }) => {
           this.frag.isFan = isFan
           this.likes = likes
+          this.fans = users
           this.gotLikes = true
         })
     },
     becomeAFan () {
       this.loadingFan = true
       this.$axios.$put(`/api/dbtc/fan/${this.frag.motherId}`)
-        .then(({ isFan, likes }) => {
+        .then(({ isFan, likes, users }) => {
           this.frag.isFan = isFan
           this.likes = likes
+          this.fans = users
           this.gotLikes = true
         })
         .finally(() => {
@@ -640,9 +657,10 @@ export default {
     removeFan () {
       this.loadingFan = true
       this.$axios.$delete(`/api/dbtc/fan/${this.frag.motherId}`)
-        .then(({ isFan, likes }) => {
+        .then(({ isFan, likes, users }) => {
           this.frag.isFan = isFan
           this.likes = likes
+          this.fans = users
           this.gotLikes = true
         })
         .finally(() => {

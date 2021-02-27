@@ -621,22 +621,36 @@ router.get('/tree/:motherId', async (req, res, next) => {
 
 //-----------------------------------------------------------------------------
 // Become a fan or stop being a fan
+//-----------------------------------------------------------------------------
 
-router.put('/fan/:motherId', (req, res) => {
+async function getLikes(userId, motherId) {
+    const result = db.getLikes(userId, motherId);
+    const users = [];
+    for (const user of result.users) {
+        users.push(await lookupUser(user, true));
+    }
+    result.users = users;
+    return result;
+}
+
+router.put('/fan/:motherId', async (req, res) => {
     const {user, params: {motherId}} = req;
     db.addFan(user.id, motherId);
-    res.json(db.getLikes(user.id, motherId));
+    const result = await getLikes(user.id, motherId);
+    res.json(result);
 });
 
-router.delete('/fan/:motherId', (req, res) => {
+router.delete('/fan/:motherId', async (req, res) => {
     const {user, params: {motherId}} = req;
     db.removeFan(user.id, motherId);
-    res.json(db.getLikes(user.id, motherId));
+    const result = await getLikes(user.id, motherId);
+    res.json(result);
 });
 
-router.get('/fan/:motherId', (req, res) => {
+router.get('/fan/:motherId', async (req, res) => {
     const {user, params: {motherId}} = req;
-    res.json(db.getLikes(user.id, motherId));
+    const result = await getLikes(user.id, motherId);
+    res.json(result);
 });
 
 //-----------------------------------------------------------------------------
