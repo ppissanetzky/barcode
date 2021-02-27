@@ -195,7 +195,9 @@
                         :error-messages="errors"
                         required
                         outlined
-                        :disabled="isUpdating"
+                        persistent-hint
+                        :hint="isUpdating && rules !== frag.rules ? 'Collection changes are permanent' : ''"
+                        :disabled="isUpdating ? frag.rules !== 'private' : false"
                       />
                     </validation-provider>
                   </v-col>

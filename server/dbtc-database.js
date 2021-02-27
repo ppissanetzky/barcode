@@ -788,7 +788,8 @@ const UPDATE_MOTHER = `
         sourceType = $sourceType,
         source = $source,
         cost = $cost,
-        size = $size
+        size = $size,
+        rules = $rules
     WHERE
         motherId = $motherId
 `;

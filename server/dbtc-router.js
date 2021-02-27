@@ -293,6 +293,14 @@ router.post('/update/:fragId', upload.none(), (req, res, next) => {
     if (!frag) {
         return next(INVALID_FRAG());
     }
+    // See if the rules/collection are changing and reject an invalid move
+    if (frag.rules !== body.rules) {
+        // Only private frags can change rules
+        if (!isPrivate(frag)) {
+            return next(INVALID_RULES());
+        }
+        // If the new rules are bad, it will be caught by the foreign key
+    }
     // If the frag is a mother frag, we can update the mother
     if (!frag.fragOf) {
         db.updateMother({
@@ -322,6 +330,11 @@ router.post('/update/:fragId', upload.none(), (req, res, next) => {
             entryType: 'changed',
             notes: 'Changed ' + changed
         });
+    }
+    // If the rules changed to DBTC and it did not already have a thread,
+    // We're going to post that it was added to DBTC (if it was)
+    if (frag.rules !== updatedFrag.rules && !updatedFrag.threadId) {
+        itemAdded(fragId);
     }
     res.json({});
 });
