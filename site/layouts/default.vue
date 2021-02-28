@@ -110,12 +110,12 @@
             <v-list-item-title>DBTC top 10</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item to="/stats">
+        <!-- <v-list-item to="/stats">
           <v-list-item-icon><v-icon>mdi-chart-box-outline</v-icon></v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>DBTC member stats</v-list-item-title>
           </v-list-item-content>
-        </v-list-item>
+        </v-list-item> -->
         <v-list-item to="/import">
           <v-list-item-icon><v-icon>mdi-import</v-icon></v-list-item-icon>
           <v-list-item-content>
@@ -132,6 +132,12 @@
           <v-list-item-icon><v-icon>mdi-toolbox-outline</v-icon></v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>Equipment</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item to="/members">
+          <v-list-item-icon><v-icon>mdi-card-account-details-outline</v-icon></v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Members</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-divider />

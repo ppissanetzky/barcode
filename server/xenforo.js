@@ -12,7 +12,7 @@ const dbtcDatabase = require('./dbtc-database');
 
 const {AUTHENTICATION_FAILED, MEMBER_NEEDS_UPGRADE} = require('./errors');
 
-const {utcIsoStringFromDate, age} = require('./dates');
+const {utcIsoStringFromDate, utcIsoStringFromUnixTime, age} = require('./dates');
 
 const {isGoodId} = require('./utility');
 
@@ -88,6 +88,10 @@ const IMPERSONATE_GROUPS = new Set([3]);
 // Anyone that belongs to these groups can hold equipment indefinitely
 
 const EQUIPMENT_GROUPS = new Set([3]);
+
+// Tank journals forum ID
+
+const TANK_JOURNALS_FORUM_ID = 22;
 
 //-----------------------------------------------------------------------------
 // Utility function to make HTTPS requests
@@ -170,12 +174,14 @@ function makeUser(xfUser) {
         username,
         user_id,
         location,
-        avatar_urls: {m},
+        avatar_urls: {h},
         user_title,
         is_staff,
         register_date,
+        last_activity,
         view_url,
-        age
+        age,
+        message_count
     } = xfUser;
     const allowed = isXfUserAllowed(xfUser);
     return ({
@@ -189,9 +195,11 @@ function makeUser(xfUser) {
         location: location,
         age: age,
         isStaff: is_staff,
-        registerDate: register_date,
+        registerDate: utcIsoStringFromUnixTime(register_date),
+        lastActivity: utcIsoStringFromUnixTime(last_activity),
         viewUrl: view_url,
-        avatarUrl: m
+        avatarUrl: h,
+        messageCount: message_count
     });
 }
 
@@ -496,6 +504,15 @@ async function getDBTCThreadsForUser(userId) {
     return result.sort((a, b) => b.sortKey - a.sortKey);
 }
 
+async function getTankJournalsForUser(userId) {
+    const {threads} = await apiRequest(`forums/${TANK_JOURNALS_FORUM_ID}`, 'GET', {
+        with_threads: 1,
+        page: 1,
+        starter_id: userId
+    });
+    return threads ? threads.map(({title, view_url}) => ({title, url: view_url})) : [];
+}
+
 //-----------------------------------------------------------------------------
 // Make sure the thread belongs to the given user.
 //-----------------------------------------------------------------------------
@@ -672,7 +689,8 @@ module.exports = {
     getUserEmailAddress,
     getAlerts,
     markAllAlertsRead,
-    getPost
+    getPost,
+    getTankJournalsForUser
 };
 
 // (async function() {

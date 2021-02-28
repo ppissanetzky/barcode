@@ -10,7 +10,8 @@ const {
     getThreadsForItemType,
     getDBTCThreadsForUser,
     getThreadPosts,
-    validateUserThread
+    validateUserThread,
+    getTankJournalsForUser
 } = require('./xenforo');
 
 const {
@@ -27,7 +28,7 @@ const {saveImageFromUrl, isGoodId} = require('./utility');
 
 const {resizeImage} = require('./image-resizer');
 
-const {ageSince} = require('./dates');
+const {ageSince, age} = require('./dates');
 
 //-----------------------------------------------------------------------------
 // Config
@@ -918,6 +919,35 @@ router.get('/user-stats/:userId', async (req, res) => {
     res.json({
         ...stats,
         user: resultUser
+    });
+});
+
+//-----------------------------------------------------------------------------
+
+router.get('/member/:userId', async (req, res) => {
+    const {user, params: {userId}} = req;
+    const isMe = userId === user.id
+    const member = isMe ? user : await lookupUser(userId, true);
+    member.name = member.name.replace(' (NSM)', '');
+    const registerAge = age(member.registerDate, null, 'ago');
+    const tankJournals = await getTankJournalsForUser(member.id);
+    const availableFrags = db.selectAllFragsForUser(member)
+        .filter(({fragsAvailable}) => fragsAvailable)
+        .map(({fragId, name, fragsAvailable, rules}) => ({
+            fragId,
+            name,
+            collection: rules.toUpperCase(),
+            count: fragsAvailable
+        }))
+        .sort((a, b) => b.count - a.count)
+    const stats = db.getUserStats(member.id);
+    res.json({
+        ...member,
+        isMe,
+        registerAge,
+        tankJournals,
+        availableFrags,
+        stats
     });
 });
 

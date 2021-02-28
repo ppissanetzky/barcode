@@ -94,7 +94,7 @@
         label
         :color="ownsIt ? 'orange' : 'green lighten-2'"
         class="my-1 mr-1"
-        :href="frag.owner.viewUrl"
+        :href="`/member/${frag.owner.id}`"
         target="_blank"
       >
         {{ ownsIt ? 'Yours' : frag.owner.name }}
@@ -376,7 +376,7 @@
           <v-tab-item v-if="shouldShowKids" value="kids">
             <v-card-title>Owners and frags available</v-card-title>
             <v-card-text v-if="!kids.length">
-              Only <a :href="user.viewUrl" target="_blank">{{ you(frag.owner) }}</a>
+              Only <a :href="`/member/${user.id}`" target="_blank">{{ you(frag.owner) }}</a>
             </v-card-text>
             <v-card-text v-else>
               <v-simple-table>
@@ -386,7 +386,7 @@
                     :key="kid.fragId"
                   >
                     <td>
-                      <a :href="kid.owner.viewUrl" target="_blank">{{ you(kid.owner, true) }}</a>
+                      <a :href="`/member/${kid.owner.id}`" target="_blank">{{ you(kid.owner, true) }}</a>
                       {{ kid.owner.location ? ' in ' + kid.owner.location : '' }}
                     </td>
                     <td
@@ -427,7 +427,8 @@
                     <tbody>
                       <tr v-for="(fan, index) in fans" :key="fan.id">
                         <td>
-                          {{ index + 1 }}. <a :href="fan.viewUrl" target="_blank">{{ you(fan, true) }}</a>
+                          {{ index + 1 }}. <a :href="`/member/${fan.id}`" target="_blank">{{ you(fan, true) }}</a>
+                          <span v-if="fan.location"> in {{ fan.location }}</span>
                         </td>
                       </tr>
                     </tbody>

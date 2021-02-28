@@ -84,6 +84,13 @@ function differenceBetween (isoStringDateThen, isoStringDateNow) {
     dateFromIsoString(isoStringDateThen))
 }
 
+function differenceToNow (isoStringOrDate) {
+  const date = isoStringOrDate instanceof Date
+    ? isoStringOrDate
+    : dateFromIsoString(isoStringOrDate)
+  return formatDistance(new Date(), date)
+}
+
 // ----------------------------------------------------------------------------
 
 function localeDateString (isoStringOrDate) {
@@ -102,6 +109,7 @@ module.exports = {
   dateFromIsoString,
   nowAsIsoString,
   differenceBetween,
+  differenceToNow,
   justTheUtcDate,
   justTheLocalDate,
   localeDateString

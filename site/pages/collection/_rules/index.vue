@@ -106,6 +106,15 @@ export default {
     this.$axios.$get('/api/dbtc/enums').then(({ types }) => {
       this.types = types.map(({ type }) => type)
     })
+    const { ownerId, ownerName } = this.$route.query
+    if (ownerId) {
+      const member = {
+        id: ownerId,
+        name: ownerName
+      }
+      this.memberFilter = member
+      this.filters = { member }
+    }
     // Now wait for the next page
     await this.loadNextPage()
   },

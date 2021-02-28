@@ -749,6 +749,192 @@ const DBTC_STATS_LINKS = `
     ORDER BY type, count DESC
 `;
 
+//-----------------------------------------------------------------------------
+
+const STATS_CONTRIBUTED_ITEM_COUNT = `
+    SELECT
+        mothers.type AS type,
+        COUNT(DISTINCT ownerFrags.fragId) AS count
+    FROM
+        mothers,
+        frags as ownerFrags
+    WHERE
+        mothers.rules = $rules AND
+        ownerFrags.motherId = mothers.motherId AND
+        ownerFrags.fragOf IS NULL AND
+        ownerFrags.ownerId = $userId
+    GROUP BY 1
+    ORDER BY 1
+`;
+
+const STATS_CONTRIBUTED_FRAG_COUNT = `
+    SELECT
+        mothers.type AS type,
+        COUNT(DISTINCT recipientFrags.fragId) AS count
+    FROM
+        mothers,
+        frags as ownerFrags,
+        frags as recipientFrags
+    WHERE
+        mothers.rules = $rules AND
+        ownerFrags.motherId = mothers.motherId AND
+        ownerFrags.fragOf IS NULL AND
+        ownerFrags.ownerId = $userId AND
+        recipientFrags.fragOf = ownerFrags.fragId
+    GROUP BY 1
+    ORDER BY 1
+`;
+
+const STATS_GIVE_BACK_FRAG_COUNT = `
+    SELECT
+        mothers.type AS type,
+        COUNT(DISTINCT recipientFrags.fragId) AS count
+    FROM
+        mothers,
+        frags as ownerFrags,
+        frags as recipientFrags
+    WHERE
+        mothers.rules = $rules AND
+        ownerFrags.motherId = mothers.motherId AND
+        ownerFrags.fragOf IS NOT NULL AND
+        ownerFrags.ownerId = $userId AND
+        recipientFrags.fragOf = ownerFrags.fragId
+    GROUP BY 1
+    ORDER BY 1
+`;
+
+const STATS_COMPLETED_LINKS = `
+    SELECT
+        type,
+        SUM(CASE WHEN count >= 2 THEN 1 ELSE 0 END) AS count
+    FROM
+        (
+            SELECT
+                mothers.type AS type,
+                mothers.motherId AS motherId,
+                COUNT(DISTINCT recipientFrags.fragId) AS count
+            FROM
+                mothers,
+                frags as ownerFrags,
+                frags as recipientFrags
+            WHERE
+                mothers.rules = $rules AND
+                ownerFrags.motherId = mothers.motherId AND
+                ownerFrags.fragOf IS NOT NULL AND
+                ownerFrags.ownerId = $userId AND
+                recipientFrags.fragOf = ownerFrags.fragId
+            GROUP BY 1, 2
+        )
+    GROUP BY 1
+    ORDER BY 1
+
+`;
+
+const STATS_RECEIVED_FRAG_COUNT = `
+    SELECT
+        mothers.type AS type,
+        COUNT(DISTINCT recipientFrags.fragId) AS count
+    FROM
+        mothers,
+        frags as ownerFrags,
+        frags as recipientFrags
+    WHERE
+        mothers.rules = $rules AND
+        ownerFrags.motherId = mothers.motherId AND
+        recipientFrags.ownerId = $userId AND
+        recipientFrags.fragOf = ownerFrags.fragId
+    GROUP BY 1
+    ORDER BY 1
+`;
+
+const STATS_LIVE_FRAG_COUNT = `
+    SELECT
+        mothers.type AS type,
+        COUNT(DISTINCT recipientFrags.fragId) AS count
+    FROM
+        mothers,
+        frags as ownerFrags,
+        frags as recipientFrags
+    WHERE
+        mothers.rules = $rules AND
+        ownerFrags.motherId = mothers.motherId AND
+        recipientFrags.ownerId = $userId AND
+        recipientFrags.fragOf = ownerFrags.fragId AND
+        recipientFrags.isAlive = 1 AND
+        (recipientFrags.status IS NULL OR recipientFrags.status != 'transferred')
+    GROUP BY 1
+    ORDER BY 1
+`;
+
+function getUserStats(userId) {
+    return db.transaction(({all}) => {
+        const dbtcParams = {userId, rules: 'dbtc'};
+        const pifParams = {userId, rules: 'pif'};
+        const privateParams = {userId, rules: 'private'};
+        const result = {
+            dbtc: [
+                {
+                    title: 'Contributed items',
+                    data: all(STATS_CONTRIBUTED_ITEM_COUNT, dbtcParams)
+                },
+                {
+                    title: 'Contributed frags',
+                    data: all(STATS_CONTRIBUTED_FRAG_COUNT, dbtcParams)
+                },
+                {
+                    title: 'Frags put back',
+                    data: all(STATS_GIVE_BACK_FRAG_COUNT, dbtcParams),
+                },
+                {
+                    title: 'Completed links',
+                    data: all(STATS_COMPLETED_LINKS, dbtcParams)
+                        .filter(({count}) => count > 0),
+                },
+                {
+                    title: 'Frags received',
+                    data: all(STATS_RECEIVED_FRAG_COUNT, dbtcParams)
+                },
+                {
+                    title: 'Received frags alive',
+                    data: all(STATS_LIVE_FRAG_COUNT, dbtcParams)
+                }
+            ],
+            pif: [
+                {
+                    title: 'Contributed items',
+                    data: all(STATS_CONTRIBUTED_ITEM_COUNT, pifParams)
+                },
+                {
+                    title: 'Contributed frags',
+                    data: all(STATS_CONTRIBUTED_FRAG_COUNT, pifParams)
+                },
+                {
+                    title: 'Frags put back',
+                    data: all(STATS_GIVE_BACK_FRAG_COUNT, pifParams)
+                },
+                {
+                    title: 'Frags received',
+                    data: all(STATS_RECEIVED_FRAG_COUNT, pifParams)
+                },
+                {
+                    title: 'Received frags alive',
+                    data: all(STATS_LIVE_FRAG_COUNT, pifParams)
+                }
+            ],
+            private: [
+                {
+                    title: 'Items',
+                    data: all(STATS_CONTRIBUTED_ITEM_COUNT, privateParams)
+                }
+            ]
+        };
+        result.hasDbtc = result.dbtc.some(({data}) => data.length);
+        result.hasPif = result.pif.some(({data}) => data.length);
+        result.hasPrivate = result.private.some(({data}) => data.length);
+        return result;
+    });
+}
+
 function getDbtcStatsForUser(userId) {
     const contributed = db.all(DBTC_STATS_CONTRIBUTED, {userId})
         .map(({type, count, frags}) => ({
@@ -1036,5 +1222,6 @@ module.exports = {
     clearFragPicture,
     getMotherForThread,
     getDbtcStatsForUser,
-    getJournalsForMother
+    getJournalsForMother,
+    getUserStats
 }

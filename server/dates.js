@@ -47,6 +47,10 @@ function utcIsoStringFromDate (date) {
   return date.toISOString()
 }
 
+function utcIsoStringFromUnixTime (t) {
+  return utcIsoStringFromDate(new Date(t * 1000));
+}
+
 // ----------------------------------------------------------------------------
 // This one takes an ISO string and returns a UTC ISO string.
 // We have to make sure it works for a date only.
@@ -100,6 +104,7 @@ module.exports = {
   ageSince,
   utcIsoStringFromDate,
   utcIsoStringFromString,
+  utcIsoStringFromUnixTime,
   dateFromIsoString,
   nowAsIsoString,
   differenceBetween,

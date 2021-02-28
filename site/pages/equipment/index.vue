@@ -277,7 +277,7 @@
                     :key="entry.user.id"
                   >
                     <td class="text-left">
-                      <a :href="entry.user.viewUrl" target="_blank">{{ you(entry.user) }}</a>
+                      <a :href="`/member/${entry.user.id}`" target="_blank">{{ you(entry.user) }}</a>
                       <span v-if="entry.overdue" class="error--text"><strong> for {{ entry.age }}</strong></span>
                       <span v-else> for {{ entry.age }}</span>
                     </td>
@@ -300,7 +300,7 @@
                       <td
                         class="text-left"
                       >
-                        <a :href="entry.user.viewUrl" target="_blank">{{ you(entry.user) }}</a>
+                        <a :href="`/member/${entry.user.id}`" target="_blank">{{ you(entry.user) }}</a>
                         <span> {{ entry.eta }}</span>
                       </td>
                       <td
