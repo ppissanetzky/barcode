@@ -19,6 +19,10 @@ handlebars.registerHelper('pictureUrl', (picture) => {
     return `${BC_SITE_BASE_URL}/uploads/${picture}`;
 });
 
+handlebars.registerHelper('originalPictureUrl', (picture) => {
+    return `${BC_SITE_BASE_URL}/uploads/original/${picture}`;
+});
+
 handlebars.registerHelper('fragUrl', (fragId, tab) => {
     let url = `${BC_SITE_BASE_URL}/frag/${fragId}`;
     if (typeof tab === 'string') {
