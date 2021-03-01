@@ -155,8 +155,6 @@ router.get('/frag/:fragId', async (req, res, next) => {
 //-----------------------------------------------------------------------------
 
 router.post('/frags', express.json(), async (req, res, next) => {
-    console.log(req.headers);
-    console.log(req.body);
     const {user, body: {data: {fragIds}}} = req;
     if (!_.isArray(fragIds)) {
         return next(INVALID_FRAG());
