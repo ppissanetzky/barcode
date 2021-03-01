@@ -1,6 +1,7 @@
 
 const assert = require('assert');
 
+const _ = require('lodash');
 const express = require('express');
 const multer = require('multer');
 
@@ -147,6 +148,37 @@ router.get('/frag/:fragId', async (req, res, next) => {
         frag,
         journals
     });
+});
+
+//-----------------------------------------------------------------------------
+// A list of frags. Expects fragIds in a JSON payload
+//-----------------------------------------------------------------------------
+
+router.post('/frags', express.json(), async (req, res, next) => {
+    console.log(req.headers);
+    console.log(req.body);
+    const {user, body: {data: {fragIds}}} = req;
+    if (!_.isArray(fragIds)) {
+        return next(INVALID_FRAG());
+    }
+    const frags = fragIds.map((fragId) => {
+        const [frag] = db.selectFrag(fragId);
+        if (!frag) {
+            return next(INVALID_FRAG());
+        }
+        // If the frag is private and the caller is not the owner,
+        // we don't expose it
+        if (!isUserAllowedToSeeFrag(user, frag)) {
+            return next(NOT_YOURS());
+        }
+        return frag;
+    });
+    for (const frag of frags) {
+        frag.owner = await lookupUser(frag.ownerId, true);
+        frag.ownsIt = frag.ownerId === user.id;
+        frag.isFan = db.isFan(user.id, frag.motherId);
+    }
+    res.json({user, frags});
 });
 
 //-----------------------------------------------------------------------------
@@ -912,22 +944,12 @@ router.get('/top10', async (req, res) => {
     res.json({...result});
 });
 
-router.get('/user-stats/:userId', async (req, res) => {
-    const {user, params: {userId}} = req;
-    const resultUser = userId === 'me' ? user : await lookupUser(userId);
-    const stats = db.getDbtcStatsForUser(resultUser.id);
-    res.json({
-        ...stats,
-        user: resultUser
-    });
-});
-
 //-----------------------------------------------------------------------------
 
 router.get('/member/:userId', async (req, res) => {
     const {user, params: {userId}} = req;
-    const isMe = userId === user.id
-    const member = isMe ? user : await lookupUser(userId, true);
+    const member = await lookupUser(userId, true);
+    const isMe = member.id === user.id
     member.name = member.name.replace(' (NSM)', '');
     const registerAge = age(member.registerDate, null, 'ago');
     const tankJournals = await getTankJournalsForUser(member.id);

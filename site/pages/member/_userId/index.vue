@@ -41,7 +41,7 @@
           </div>
 
           <!-- DBTC stats -->
-          <div v-if="member.stats.hasDbtc">
+          <div v-if="member.stats.dbtc.length">
             <v-divider />
             <v-card-text>
               <div class="mb-4">
@@ -58,7 +58,11 @@
                   <h4>{{ line.title }}</h4>
                   <v-card-actions>
                     <span v-for="t in line.data" :key="t.type">
-                      <strong> {{ t.count }} </strong><span class="caption me-4">  {{ t.type }} </span>
+                      <strong> {{ t.count }} </strong>
+                      <span v-if="t.fragIds" class="caption me-4">
+                        <router-link :to="`/frags/${encodeURIComponent(t.fragIds.join(','))}`" target="_blank">  {{ t.type }} </router-link>
+                      </span>
+                      <span v-else class="caption me-4">  {{ t.type }} </span>
                     </span>
                   </v-card-actions>
                 </div>
@@ -67,7 +71,7 @@
           </div>
 
           <!-- PIF stats -->
-          <div v-if="member.stats.hasPif">
+          <div v-if="member.stats.pif.length">
             <v-divider />
             <v-card-text>
               <div class="mb-4">
@@ -84,7 +88,11 @@
                   <h4>{{ line.title }}</h4>
                   <v-card-actions>
                     <span v-for="t in line.data" :key="t.type">
-                      <strong> {{ t.count }} </strong><span class="caption me-4">  {{ t.type }} </span>
+                      <strong> {{ t.count }} </strong>
+                      <span v-if="t.fragIds" class="caption me-4">
+                        <router-link :to="`/frags/${encodeURIComponent(t.fragIds.join(','))}`" target="_blank">  {{ t.type }} </router-link>
+                      </span>
+                      <span v-else class="caption me-4">  {{ t.type }} </span>
                     </span>
                   </v-card-actions>
                 </div>
@@ -93,7 +101,7 @@
           </div>
 
           <!-- Private stats -->
-          <div v-if="member.stats.hasPrivate">
+          <div v-if="member.stats.private.length">
             <v-divider />
             <v-card-text>
               <h3 class="mb-4">
@@ -104,7 +112,11 @@
                   <h4>{{ line.title }}</h4>
                   <v-card-actions>
                     <span v-for="t in line.data" :key="t.type">
-                      <strong> {{ t.count }} </strong><span class="caption me-4">  {{ t.type }} </span>
+                      <strong> {{ t.count }} </strong>
+                      <span v-if="member.isMe && t.fragIds" class="caption me-4">
+                        <router-link :to="`/frags/${encodeURIComponent(t.fragIds.join(','))}`" target="_blank">  {{ t.type }} </router-link>
+                      </span>
+                      <span v-else class="caption me-4">  {{ t.type }} </span>
                     </span>
                   </v-card-actions>
                 </div>

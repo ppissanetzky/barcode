@@ -706,55 +706,12 @@ function getDbtcTop10s() {
 }
 
 //-----------------------------------------------------------------------------
-// Selects all frags the given user has contributed to DBTC
-// Grouped by type
-//-----------------------------------------------------------------------------
-
-const DBTC_STATS_CONTRIBUTED = `
-    SELECT
-        type,
-        COUNT(fragId) AS count,
-        JSON_GROUP_ARRAY(JSON_OBJECT('name', mothers.name, 'fragId', fragId)) AS frags
-    FROM
-        mothers,
-        frags
-    WHERE
-        mothers.rules = 'dbtc' AND
-        mothers.motherId = frags.motherId AND
-        fragOf IS NULL AND
-        ownerId = $userId
-    GROUP BY 1
-    ORDER BY 1
-`;
-
-const DBTC_STATS_LINKS = `
-    SELECT
-        mothers.motherId AS motherId,
-        mothers.type AS type,
-        mothers.name AS name,
-        COUNT(DISTINCT given.ownerId) AS count
-    FROM
-        mothers,
-        frags AS sources
-    LEFT OUTER JOIN
-        frags AS given
-    ON
-        given.fragOf = sources.fragId
-    WHERE
-        mothers.rules = 'dbtc' AND
-        sources.motherId = mothers.motherId AND
-        sources.fragOf IS NOT NULL AND
-        sources.ownerId = $userId
-    GROUP BY 1, 2
-    ORDER BY type, count DESC
-`;
-
-//-----------------------------------------------------------------------------
 
 const STATS_CONTRIBUTED_ITEM_COUNT = `
     SELECT
         mothers.type AS type,
-        COUNT(DISTINCT ownerFrags.fragId) AS count
+        COUNT(DISTINCT ownerFrags.fragId) AS count,
+        JSON_GROUP_ARRAY(ownerFrags.fragId) AS fragIds
     FROM
         mothers,
         frags as ownerFrags
@@ -770,7 +727,8 @@ const STATS_CONTRIBUTED_ITEM_COUNT = `
 const STATS_CONTRIBUTED_FRAG_COUNT = `
     SELECT
         mothers.type AS type,
-        COUNT(DISTINCT recipientFrags.fragId) AS count
+        COUNT(DISTINCT recipientFrags.fragId) AS count,
+        JSON_GROUP_ARRAY(recipientFrags.fragId) AS fragIds
     FROM
         mothers,
         frags as ownerFrags,
@@ -788,7 +746,8 @@ const STATS_CONTRIBUTED_FRAG_COUNT = `
 const STATS_GIVE_BACK_FRAG_COUNT = `
     SELECT
         mothers.type AS type,
-        COUNT(DISTINCT recipientFrags.fragId) AS count
+        COUNT(DISTINCT recipientFrags.fragId) AS count,
+        JSON_GROUP_ARRAY(recipientFrags.fragId) AS fragIds
     FROM
         mothers,
         frags as ownerFrags,
@@ -806,7 +765,8 @@ const STATS_GIVE_BACK_FRAG_COUNT = `
 const STATS_COMPLETED_LINKS = `
     SELECT
         type,
-        SUM(CASE WHEN count >= 2 THEN 1 ELSE 0 END) AS count
+        SUM(CASE WHEN count >= 2 THEN 1 ELSE 0 END) AS count,
+        JSON_GROUP_ARRAY(motherId) as motherIds
     FROM
         (
             SELECT
@@ -833,7 +793,8 @@ const STATS_COMPLETED_LINKS = `
 const STATS_RECEIVED_FRAG_COUNT = `
     SELECT
         mothers.type AS type,
-        COUNT(DISTINCT recipientFrags.fragId) AS count
+        COUNT(DISTINCT recipientFrags.fragId) AS count,
+        JSON_GROUP_ARRAY(recipientFrags.fragId) AS fragIds
     FROM
         mothers,
         frags as ownerFrags,
@@ -850,7 +811,8 @@ const STATS_RECEIVED_FRAG_COUNT = `
 const STATS_LIVE_FRAG_COUNT = `
     SELECT
         mothers.type AS type,
-        COUNT(DISTINCT recipientFrags.fragId) AS count
+        COUNT(DISTINCT recipientFrags.fragId) AS count,
+        JSON_GROUP_ARRAY(recipientFrags.fragId) AS fragIds
     FROM
         mothers,
         frags as ownerFrags,
@@ -866,8 +828,38 @@ const STATS_LIVE_FRAG_COUNT = `
     ORDER BY 1
 `;
 
+const STATS_DEAD_FRAG_COUNT = `
+    SELECT
+        mothers.type AS type,
+        COUNT(DISTINCT recipientFrags.fragId) AS count,
+        JSON_GROUP_ARRAY(recipientFrags.fragId) AS fragIds
+    FROM
+        mothers,
+        frags as ownerFrags,
+        frags as recipientFrags
+    WHERE
+        mothers.rules = $rules AND
+        ownerFrags.motherId = mothers.motherId AND
+        recipientFrags.ownerId = $userId AND
+        recipientFrags.fragOf = ownerFrags.fragId AND
+        (recipientFrags.isAlive = 0 OR recipientFrags.status = 'transferred')
+    GROUP BY 1
+    ORDER BY 1
+`;
+
 function getUserStats(userId) {
     return db.transaction(({all}) => {
+
+        function data(query, params) {
+            const result = all(query, params);
+            for (const row of result) {
+                if (row.fragIds) {
+                    row.fragIds = JSON.parse(row.fragIds);
+                }
+            }
+            return result;
+        }
+
         const dbtcParams = {userId, rules: 'dbtc'};
         const pifParams = {userId, rules: 'pif'};
         const privateParams = {userId, rules: 'private'};
@@ -875,86 +867,72 @@ function getUserStats(userId) {
             dbtc: [
                 {
                     title: 'Contributed items',
-                    data: all(STATS_CONTRIBUTED_ITEM_COUNT, dbtcParams)
+                    data: data(STATS_CONTRIBUTED_ITEM_COUNT, dbtcParams)
                 },
                 {
                     title: 'Contributed frags',
-                    data: all(STATS_CONTRIBUTED_FRAG_COUNT, dbtcParams)
+                    data: data(STATS_CONTRIBUTED_FRAG_COUNT, dbtcParams)
                 },
                 {
                     title: 'Frags put back',
-                    data: all(STATS_GIVE_BACK_FRAG_COUNT, dbtcParams),
+                    data: data(STATS_GIVE_BACK_FRAG_COUNT, dbtcParams),
                 },
                 {
                     title: 'Completed links',
-                    data: all(STATS_COMPLETED_LINKS, dbtcParams)
+                    data: data(STATS_COMPLETED_LINKS, dbtcParams)
                         .filter(({count}) => count > 0),
                 },
                 {
                     title: 'Frags received',
-                    data: all(STATS_RECEIVED_FRAG_COUNT, dbtcParams)
+                    data: data(STATS_RECEIVED_FRAG_COUNT, dbtcParams)
                 },
                 {
                     title: 'Received frags alive',
-                    data: all(STATS_LIVE_FRAG_COUNT, dbtcParams)
+                    data: data(STATS_LIVE_FRAG_COUNT, dbtcParams)
+                },
+                {
+                    title: 'Received frags that died or were transferred',
+                    data: data(STATS_DEAD_FRAG_COUNT, dbtcParams)
                 }
             ],
             pif: [
                 {
                     title: 'Contributed items',
-                    data: all(STATS_CONTRIBUTED_ITEM_COUNT, pifParams)
+                    data: data(STATS_CONTRIBUTED_ITEM_COUNT, pifParams)
                 },
                 {
                     title: 'Contributed frags',
-                    data: all(STATS_CONTRIBUTED_FRAG_COUNT, pifParams)
+                    data: data(STATS_CONTRIBUTED_FRAG_COUNT, pifParams)
                 },
                 {
                     title: 'Frags put back',
-                    data: all(STATS_GIVE_BACK_FRAG_COUNT, pifParams)
+                    data: data(STATS_GIVE_BACK_FRAG_COUNT, pifParams)
                 },
                 {
                     title: 'Frags received',
-                    data: all(STATS_RECEIVED_FRAG_COUNT, pifParams)
+                    data: data(STATS_RECEIVED_FRAG_COUNT, pifParams)
                 },
                 {
                     title: 'Received frags alive',
-                    data: all(STATS_LIVE_FRAG_COUNT, pifParams)
+                    data: data(STATS_LIVE_FRAG_COUNT, pifParams)
+                },
+                {
+                    title: 'Received frags that died or were transferred',
+                    data: data(STATS_DEAD_FRAG_COUNT, pifParams)
                 }
             ],
             private: [
                 {
                     title: 'Items',
-                    data: all(STATS_CONTRIBUTED_ITEM_COUNT, privateParams)
+                    data: data(STATS_CONTRIBUTED_ITEM_COUNT, privateParams)
                 }
             ]
         };
-        result.hasDbtc = result.dbtc.some(({data}) => data.length);
-        result.hasPif = result.pif.some(({data}) => data.length);
-        result.hasPrivate = result.private.some(({data}) => data.length);
+        ['dbtc', 'pif', 'private'].forEach((section) => {
+            result[section] = result[section].filter(({data}) => data.length);
+        });
         return result;
     });
-}
-
-function getDbtcStatsForUser(userId) {
-    const contributed = db.all(DBTC_STATS_CONTRIBUTED, {userId})
-        .map(({type, count, frags}) => ({
-            type,
-            count,
-            frags: JSON.parse(frags)
-        }));
-    const linksMap = db.all(DBTC_STATS_LINKS, {userId})
-        .reduce((result, {type, motherId, name, count}) => {
-            const existing = result[type] || [];
-            existing.push({motherId, name, count});
-            result[type] = existing;
-            return result;
-        }, {});
-    const links = _.map(linksMap, (value, key) => ({
-        type: key,
-        count: value.reduce((result, {count}) => result + count, 0),
-        mothers: value
-    }));
-    return ({contributed, links});
 }
 
 //-----------------------------------------------------------------------------
@@ -1221,7 +1199,6 @@ module.exports = {
     getUserThreadIds,
     clearFragPicture,
     getMotherForThread,
-    getDbtcStatsForUser,
     getJournalsForMother,
     getUserStats
 }

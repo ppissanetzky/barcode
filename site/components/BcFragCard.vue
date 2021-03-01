@@ -233,7 +233,7 @@
           <v-tab v-if="shouldShowKids" href="#kids">
             <v-icon>mdi-account-multiple-outline</v-icon>
           </v-tab>
-          <v-tab href="#like">
+          <v-tab v-if="!isPrivate" href="#like">
             <v-icon>mdi-human-queue</v-icon>
           </v-tab>
           <slot name="tabs" />
@@ -410,7 +410,7 @@
           </v-tab-item>
 
           <!-- Fan/Like -->
-          <v-tab-item value="like">
+          <v-tab-item v-if="!isPrivate" value="like">
             <v-card-title v-if="likes === 0">
               No one waiting
             </v-card-title>
