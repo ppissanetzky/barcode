@@ -12,7 +12,7 @@
           <v-card-subtitle>
             <div>{{ member.title }}{{ member.location ? ` · ${member.location}` : '' }}{{ ` · ${member.messageCount} messages` }}</div>
             <div>Joined {{ localeDateString(member.registerDate) + (member.registerAge ? ` · ${member.registerAge}` : '') }}</div>
-            <div>Last seen {{ differenceToNow(member.lastActivity) }} ago {{ '·' }} <a :href="member.viewUrl" target="_blank">view profile</a></div>
+            <div><span v-if="member.lastActivity">Last seen {{ differenceToNow(member.lastActivity) }} ago {{ '·' }} </span><a :href="member.viewUrl" target="_blank">view profile</a></div>
           </v-card-subtitle>
 
           <!-- Tank journals -->
