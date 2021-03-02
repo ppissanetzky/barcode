@@ -3,7 +3,8 @@
     <!-- Picture or placeholder -->
     <v-img
       height="300px"
-      :src="frag.picture ? `/bc/uploads/${frag.picture}` : `/bc/picture-placeholder.png`"
+      :class="randomColor"
+      :src="frag.picture ? `/bc/uploads/${frag.picture}` : `/bc/coral-placeholder.png`"
     >
       <v-alert
         :value="shareAlert"
@@ -475,6 +476,13 @@
 </template>
 <script>
 import { age } from '~/dates'
+const COLORS = ['red', 'pink', 'purple',
+  'indigo', 'blue', 'cyan', 'teal', 'green',
+  'lime', 'orange', 'amber', 'brown'
+]
+function randomColor () {
+  return COLORS[Math.floor(Math.random() * COLORS.length)] + ' lighten-5'
+}
 
 export default {
   props: {
@@ -550,7 +558,8 @@ export default {
     },
     canBecomeAFan () {
       return !this.frag.isStatic && !this.ownsIt
-    }
+    },
+    randomColor
   },
   watch: {
     fragOrMother (value) {
