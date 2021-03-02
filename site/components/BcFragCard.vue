@@ -70,6 +70,15 @@
               <v-icon>mdi-pencil</v-icon>
             </v-btn>
           </v-list-item>
+          <v-list-item v-if="shouldShowMarket">
+            <v-btn
+              icon
+              color="primary"
+              :to="`/market/add/${frag.fragId}`"
+            >
+              <v-icon>mdi-account-cash-outline</v-icon>
+            </v-btn>
+          </v-list-item>
           <v-list-item>
             <v-btn
               icon
@@ -509,6 +518,10 @@ export default {
     showOwner: {
       type: Boolean,
       default: false
+    },
+    market: {
+      type: Boolean,
+      default: false
     }
   },
   data: () => ({
@@ -542,6 +555,13 @@ export default {
     },
     shouldShowKids () {
       return !(this.isPrivate || this.frag.isStatic)
+    },
+    shouldShowMarket () {
+      return this.market &&
+        this.ownsIt &&
+        this.isPrivate &&
+        this.isAlive &&
+        !this.frag.isStatic
     },
     isAlive () {
       return this.frag.isAlive

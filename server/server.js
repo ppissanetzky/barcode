@@ -28,6 +28,7 @@ const dbtcRouter = require('./dbtc-router');
 const equipmentRouter = require('./equipment-router');
 const userRouter = require('./user-router');
 const adminRouter = require('./admin-router');
+const marketRouter = require('./market-router');
 
 //-----------------------------------------------------------------------------
 // The XenForo stuff
@@ -159,6 +160,7 @@ app.use('/dbtc', dbtcRouter);
 app.use('/equipment', equipmentRouter);
 app.use('/user', userRouter);
 app.use('/admin', adminRouter);
+app.use('/market', marketRouter);
 
 //-----------------------------------------------------------------------------
 

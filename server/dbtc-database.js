@@ -7,9 +7,11 @@ const {Database} = require('./db');
 
 const {nowAsIsoString, utcIsoStringFromString} = require('./dates');
 
+const {BC_MARKET_ENABLED} = require('./barcode.config');
+
 //-----------------------------------------------------------------------------
 
-const DBTC_DB_VERSION = 5;
+const DBTC_DB_VERSION = 6;
 
 const db = new Database('dbtc', DBTC_DB_VERSION);
 
@@ -47,7 +49,8 @@ const SELECT_RULES = 'SELECT * FROM rules ORDER BY rule';
 function getEnums() {
     const types = db.all(SELECT_TYPES, {});
     const rules = db.all(SELECT_RULES, {});
-    return {types, rules};
+    const market = BC_MARKET_ENABLED ? true : undefined;
+    return {types, rules, market};
 }
 
 const VALIDATE_RULES = 'SELECT rule FROM rules WHERE rule = $rules';

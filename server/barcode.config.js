@@ -102,6 +102,10 @@ module.exports = {
 
     get BC_DISABLE_SCHEDULER () { return get('BC_DISABLE_SCHEDULER', true) },
 
+    //-------------------------------------------------------------------------
+
+    get BC_MARKET_ENABLED () { return get('BC_MARKET_ENABLED', true) },
+
 };
 
 //-----------------------------------------------------------------------------

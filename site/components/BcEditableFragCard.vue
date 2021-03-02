@@ -4,6 +4,7 @@
     :frag-or-mother="frag"
     :user="user"
     :show-owner="showOwner"
+    :market="market"
     @update:tab="tabChanged($event)"
   >
     <template v-slot:first-tabs>
@@ -420,6 +421,10 @@ export default {
       default: null
     },
     showOwner: {
+      type: Boolean,
+      default: false
+    },
+    market: {
       type: Boolean,
       default: false
     }

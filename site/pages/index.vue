@@ -4,7 +4,7 @@
       <!-- A popup frag card dialog that shows up when you click
       on an item in gallery view -->
       <v-dialog v-if="selectedFrag" v-model="fragDialog" max-width="375px">
-        <bc-editable-frag-card :frag="selectedFrag" :user="user" />
+        <bc-editable-frag-card :frag="selectedFrag" :user="user" :market="market" />
       </v-dialog>
 
       <!-- Filter dialog -->
@@ -129,6 +129,7 @@
         <bc-editable-frag-card
           :frag="frag"
           :user="user"
+          :market="market"
         />
       </v-col>
     </v-row>
@@ -141,8 +142,9 @@ export default {
   components: { BcEditableFragCard },
   async fetch () {
     // Get the types in the background
-    this.$axios.$get('/api/dbtc/enums').then(({ types }) => {
+    this.$axios.$get('/api/dbtc/enums').then(({ types, market }) => {
       this.types = types.map(({ type }) => type)
+      this.market = market
     })
     const { user, frags } = await this.$axios.$get('/api/dbtc/your-collection')
     const { yourCollectionView } = await this.$axios.$get('/api/user/settings')
@@ -160,6 +162,7 @@ export default {
       selectedFrag: undefined,
       fragDialog: false,
       view: undefined,
+      market: undefined,
       // For filtering
       filters: undefined,
       types: [],
