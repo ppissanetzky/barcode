@@ -63,7 +63,9 @@ function validateRules(rules) {
 
 const SELECT_FRAGS_FOR_USER = `
     SELECT
-        *
+        mothers.*,
+        frags.*,
+        motherFans.fanCount
     FROM
         mothers,
         frags
@@ -87,7 +89,9 @@ function selectAllFragsForUser(user) {
 
 const SELECT_A_FRAG = `
     SELECT
-        *
+        mothers.*,
+        frags.*,
+        motherFans.fanCount
     FROM
         mothers,
         frags
@@ -153,6 +157,12 @@ const SELECT_MOTHER_JOURNALS = `
 //-----------------------------------------------------------------------------
 
 const SELECT_MOTHER = `SELECT * FROM motherFrags WHERE motherId = $motherId`;
+
+function getMotherFrag(motherId) {
+    const [frag] = db.all(SELECT_MOTHER, {motherId});
+    // Could be undefined
+    return frag;
+}
 
 //-----------------------------------------------------------------------------
 // Just the frag part, since we will load the mother separately. Exclude
@@ -584,7 +594,9 @@ function selectCollectionPaged(userId, rules, page, filters) {
 
 const SELECT_FRAGS_FOR_MOTHER = `
     SELECT
-        *
+        mothers.*,
+        frags.*,
+        motherFans.fanCount
     FROM
         mothers,
         frags
@@ -1212,5 +1224,6 @@ module.exports = {
     clearFragPicture,
     getMotherForThread,
     getJournalsForMother,
-    getUserStats
+    getUserStats,
+    getMotherFrag
 }

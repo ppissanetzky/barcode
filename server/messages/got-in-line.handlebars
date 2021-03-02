@@ -1,0 +1,16 @@
+{{!
+This one is used to create a post in an existing thread when someone gets in line
+for a frag that has frags available
+It receives:
+    user - the user object representing the user that got in line
+    frag - the mother/frag object
+    fans - an array of user objects
+There is no title
+}}
+no title - this is a post
+
+@{{user.name}} would like a frag of [URL={{fragUrl frag.fragId}}]this one[/URL].
+
+{{#if fans.[1]}}
+{{#each fans}}@{{this.name}}, {{/each}}are in line for a frag.
+{{/if}}

@@ -22,7 +22,8 @@ const {
     fragGiven,
     fragTransferred,
     journalUpdated,
-    fragDied
+    fragDied,
+    uberPost
 } = require('./forum');
 
 const {saveImageFromUrl, isGoodId} = require('./utility');
@@ -664,15 +665,32 @@ async function getLikes(userId, motherId) {
     return result;
 }
 
-router.put('/fan/:motherId', async (req, res) => {
+router.put('/fan/:motherId', async (req, res, next) => {
     const {user, params: {motherId}} = req;
-    db.addFan(user.id, motherId);
+    const frag = db.getMotherFrag(motherId);
+    if (!frag) {
+        return next(INVALID_FRAG());
+    }
+    if (!isUserAllowedToSeeFrag(user, frag)) {
+        return next(NOT_YOURS());
+    }
+    if (frag.ownerId !== user.id) {
+        db.addFan(user.id, motherId);
+    }
     const result = await getLikes(user.id, motherId);
+    uberPost(frag.threadId, 'got-in-line', {user, frag, fans: result.users});
     res.json(result);
 });
 
 router.delete('/fan/:motherId', async (req, res) => {
     const {user, params: {motherId}} = req;
+    const frag = db.getMotherFrag(motherId);
+    if (!frag) {
+        return next(INVALID_FRAG());
+    }
+    if (!isUserAllowedToSeeFrag(user, frag)) {
+        return next(NOT_YOURS());
+    }
     db.removeFan(user.id, motherId);
     const result = await getLikes(user.id, motherId);
     res.json(result);
@@ -680,6 +698,13 @@ router.delete('/fan/:motherId', async (req, res) => {
 
 router.get('/fan/:motherId', async (req, res) => {
     const {user, params: {motherId}} = req;
+    const frag = db.getMotherFrag(motherId);
+    if (!frag) {
+        return next(INVALID_FRAG());
+    }
+    if (!isUserAllowedToSeeFrag(user, frag)) {
+        return next(NOT_YOURS());
+    }
     const result = await getLikes(user.id, motherId);
     res.json(result);
 });

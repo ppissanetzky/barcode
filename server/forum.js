@@ -70,6 +70,10 @@ function itemAdded(fragId) {
 
 function uberPost(threadId, messageName, context) {
     later(async () => {
+        if (!threadId) {
+            console.log(`Not posting "${messageName}" because there is no thread ID`);
+            return;
+        }
         const [, message] = await renderMessage(messageName, context);
         console.log(`New post in thread ${threadId}`);
         console.log(`"${message}"`);

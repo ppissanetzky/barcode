@@ -658,6 +658,7 @@ export default {
       this.$axios.$get(`/api/dbtc/fan/${this.frag.motherId}`)
         .then(({ isFan, likes, users }) => {
           this.frag.isFan = isFan
+          this.frag.fanCount = likes
           this.likes = likes
           this.fans = users
           this.gotLikes = true
@@ -668,6 +669,7 @@ export default {
       this.$axios.$put(`/api/dbtc/fan/${this.frag.motherId}`)
         .then(({ isFan, likes, users }) => {
           this.frag.isFan = isFan
+          this.frag.fanCount = likes
           this.likes = likes
           this.fans = users
           this.gotLikes = true
@@ -681,6 +683,7 @@ export default {
       this.$axios.$delete(`/api/dbtc/fan/${this.frag.motherId}`)
         .then(({ isFan, likes, users }) => {
           this.frag.isFan = isFan
+          this.frag.fanCount = likes
           this.likes = likes
           this.fans = users
           this.gotLikes = true
