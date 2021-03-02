@@ -9,7 +9,7 @@ const {nowAsIsoString, utcIsoStringFromString} = require('./dates');
 
 //-----------------------------------------------------------------------------
 
-const DBTC_DB_VERSION = 4;
+const DBTC_DB_VERSION = 5;
 
 const db = new Database('dbtc', DBTC_DB_VERSION);
 
@@ -67,6 +67,10 @@ const SELECT_FRAGS_FOR_USER = `
     FROM
         mothers,
         frags
+    LEFT OUTER JOIN
+        motherFans
+    ON
+        mothers.motherId = motherFans.motherId
     WHERE
         frags.motherId = mothers.motherId AND
         frags.ownerId = $userId
@@ -87,6 +91,10 @@ const SELECT_A_FRAG = `
     FROM
         mothers,
         frags
+    LEFT OUTER JOIN
+        motherFans
+    ON
+        mothers.motherId = motherFans.motherId
     WHERE
         frags.motherId = mothers.motherId AND
         frags.fragId = $fragId
@@ -580,6 +588,10 @@ const SELECT_FRAGS_FOR_MOTHER = `
     FROM
         mothers,
         frags
+    LEFT OUTER JOIN
+        motherFans
+    ON
+        mothers.motherId = motherFans.motherId
     WHERE
         mothers.motherId = $motherId AND
         frags.motherId = mothers.motherId

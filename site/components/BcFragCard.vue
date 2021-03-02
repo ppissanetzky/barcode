@@ -178,6 +178,18 @@
         You're in line
       </v-chip>
 
+      <!-- A chip that shows how many people are in line -->
+
+      <v-chip
+        v-if="frag.fanCount && isAlive"
+        small
+        label
+        color="deep-orange lighten-1"
+        class="my-1 mr-1"
+      >
+        {{ frag.fanCount }} waiting
+      </v-chip>
+
       <!-- A chip to show the total number of available frags -->
 
       <v-chip
