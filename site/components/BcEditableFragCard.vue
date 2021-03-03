@@ -132,7 +132,6 @@
                 v-model="dateGiven"
                 label="Date given"
                 name="date given"
-                rules="required"
               />
             </v-card-text>
 

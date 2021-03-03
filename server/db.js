@@ -13,37 +13,52 @@ const BarcodeConfig = require('./barcode.config');
 const BC_DATABASE_DIR = BarcodeConfig.BC_DATABASE_DIR;
 
 //-----------------------------------------------------------------------------
+// A persistent connection
+//-----------------------------------------------------------------------------
 
-function all(bs3, query, params) {
-    const statement = bs3.prepare(query);
-    return statement.all(params || {});
-}
+class DatabaseConnection {
 
-// Returns the last row ID
+    constructor(database) {
+        this.bs3 = database.open();
+    }
 
-function run(bs3, query, params) {
-    const statement = bs3.prepare(query);
-    const info = statement.run(params || {});
-    return info.lastInsertRowid;
-}
+    all(query, params) {
+        const statement = this.bs3.prepare(query);
+        return statement.all(params || {});
+    }
 
-// Returns the changes
+    // Returns the last row ID
 
-function change(bs3, query, params) {
-    const statement = bs3.prepare(query);
-    const info = statement.run(params || {});
-    return info.changes;
+    run(query, params) {
+        const statement = this.bs3.prepare(query);
+        const info = statement.run(params || {});
+        return info.lastInsertRowid;
+    }
+
+    // Returns the changes
+
+    change(query, params) {
+        const statement = this.bs3.prepare(query);
+        const info = statement.run(params || {});
+        return info.changes;
+    }
+
+    transaction(func) {
+        const executor = this.bs3.transaction(func);
+        return executor();
+    }
 }
 
 //-----------------------------------------------------------------------------
-// An async wrapper around sqlite that just stores the path and uses a cached
-// connection to run every statement
+// An async wrapper around sqlite that just stores the path and uses a new
+// connection to run every statement or transaction
 //-----------------------------------------------------------------------------
 
 class Database {
 
     constructor(name, version) {
         this.name = name;
+        this.file = path.join(BC_DATABASE_DIR, `${name}.sqlite3`);
         this.version = version;
         this.migrated = false;
         // Open it once now to migrate it if necessary
@@ -53,29 +68,30 @@ class Database {
     // Returns the rows
 
     all(query, params) {
-        return all(this.open(), query, params);
+        const connection = new DatabaseConnection(this);
+        return connection.all(query, params);
     }
 
     // Returns the last row ID
 
     run(query, params) {
-        return run(this.open(), query, params);
+        const connection = new DatabaseConnection(this);
+        return connection.run(query, params);
     }
 
     // Returns the number of changed rows
 
     change(query, params) {
-        return change(this.open(), query, params);
+        const connection = new DatabaseConnection(this);
+        return connection.change(query, params);
     }
 
     transaction(func) {
-        const db = this.open();
-        const executor = db.transaction(func);
-        return executor({
-            run: run.bind(null, db),
-            all: all.bind(null, db),
-            change: change.bind(null, db)
-        });
+        const connection = new DatabaseConnection(this);
+        const all = connection.all.bind(connection);
+        const run = connection.run.bind(connection);
+        const change = connection.change.bind(connection);
+        return connection.transaction(() => func({all, run, change}));
     }
 
     //-------------------------------------------------------------------------
@@ -83,24 +99,20 @@ class Database {
     //-------------------------------------------------------------------------
 
     open() {
-        const {name, version, migrated} = this;
+        const {name, file, version, migrated} = this;
         let db;
-        // The full file name of the database file
-        const file = path.join(BC_DATABASE_DIR, `${name}.sqlite3`);
         try {
-            // If we have already migrated it, return a new DB
+            db = new BetterSqlite3(file);
+            // If we have already migrated it, return it
             if (migrated) {
-                db = new BetterSqlite3(file);
                 return db;
             }
-            // Otherwise, open it and see what version it currently is
-            db = new BetterSqlite3(file);
 
             // Check the version with this pragma
             let [{user_version}] = db.pragma('user_version');
 
-            // If it is already at the desired version, add it to the map
-            // so we won't check it again and return it
+            // If it is already at the desired version mark it as migrated
+            // and return it
             if (user_version === version) {
                 console.log(name, 'database is version', user_version);
                 this.migrated = true;
@@ -157,5 +169,6 @@ class Database {
 //-----------------------------------------------------------------------------
 
 module.exports = {
-    Database
+    Database,
+    DatabaseConnection
 };

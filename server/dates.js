@@ -21,6 +21,18 @@ function dateFromIsoString (string) {
 
 // ----------------------------------------------------------------------------
 
+function validIsoString (string) {
+  try {
+    const date = dateFromIsoString(string);
+    return (date instanceof Date) && !isNaN(date);
+  }
+  catch (error) {
+    return false
+  }
+}
+
+// ----------------------------------------------------------------------------
+
 function justTheUtcDate (stringOrDate) {
   if (stringOrDate instanceof Date) {
     return utcIsoStringFromDate(stringOrDate).substr(0, 10)
@@ -113,5 +125,6 @@ module.exports = {
   justTheUtcDate,
   justTheLocalDate,
   addDays,
-  addYears
+  addYears,
+  validIsoString
 }

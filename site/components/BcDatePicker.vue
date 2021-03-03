@@ -9,25 +9,19 @@
     min-width="290px"
   >
     <template v-slot:activator="{ on, attrs }">
-      <validation-provider
-        v-slot="{ errors }"
+      <v-text-field
+        v-model="theDate"
+        :label="label"
+        v-bind="attrs"
+        :hint="hint"
         :rules="rules"
-        :name="name"
-      >
-        <v-text-field
-          v-model="theDate"
-          :label="label"
-          v-bind="attrs"
-          :hint="hint"
-          persistent-hint
-          :error-messages="errors"
-          readonly
-          required
-          outlined
-          hide-details
-          v-on="on"
-        />
-      </validation-provider>
+        persistent-hint
+        readonly
+        required
+        outlined
+        hide-details
+        v-on="on"
+      />
     </template>
     <v-date-picker
       v-model="theDate"
@@ -54,17 +48,12 @@
   </v-menu>
 </template>
 <script>
-import { ValidationProvider } from 'vee-validate/dist/vee-validate.full.esm'
 import formatISO from 'date-fns/formatISO'
 
 // Today's date time converted to local and stripped of its time
 const today = formatISO(new Date(), { representation: 'date' })
 
 export default {
-
-  components: {
-    ValidationProvider
-  },
 
   props: {
     label: {
@@ -79,10 +68,6 @@ export default {
       type: String,
       default: undefined
     },
-    rules: {
-      type: String,
-      default: 'required|length:10'
-    },
     // This is for v-model support
     value: {
       type: String,
@@ -91,6 +76,10 @@ export default {
     max: {
       type: String,
       default: today
+    },
+    rules: {
+      type: Array,
+      default: () => []
     }
   },
 

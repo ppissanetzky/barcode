@@ -11,7 +11,7 @@ const {BC_MARKET_ENABLED} = require('./barcode.config');
 
 //-----------------------------------------------------------------------------
 
-const DBTC_DB_VERSION = 6;
+const DBTC_DB_VERSION = 5;
 
 const db = new Database('dbtc', DBTC_DB_VERSION);
 

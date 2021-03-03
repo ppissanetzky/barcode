@@ -184,13 +184,6 @@ function makeUser(xfUser) {
         message_count
     } = xfUser;
     const allowed = isXfUserAllowed(xfUser);
-    let lastActivity
-    try {
-        lastActivity = utcIsoStringFromUnixTime(last_activity);
-    }
-    catch (error) {
-        console.error('Failed to convert last activity', last_activity);
-    }
     return ({
         id: parseInt(user_id, 10),
         name: allowed ? username : username + ' (NSM)',
@@ -203,10 +196,14 @@ function makeUser(xfUser) {
         age: age,
         isStaff: is_staff,
         registerDate: utcIsoStringFromUnixTime(register_date),
-        lastActivity,
+        // Users can decide whether their activity is seen. When they
+        // opt out, last_activity is undefined
+        lastActivity: last_activity ? utcIsoStringFromUnixTime(last_activity) : undefined,
         viewUrl: view_url,
         avatarUrl: h,
-        messageCount: message_count
+        messageCount: message_count,
+        // For the market, when we introduce users from other sources
+        userIdSource: 'forum'
     });
 }
 
