@@ -28,7 +28,7 @@
                       {{ item.ownerName }}
                     </td>
                     <td v-else class="text-left">
-                      <router-link :to="`/stats/${item.ownerId}`">
+                      <router-link :to="`/member/${item.ownerId}`">
                         {{ item.ownerName }}
                       </router-link>
                     </td>
