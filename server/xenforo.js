@@ -203,7 +203,7 @@ function makeUser(xfUser) {
         avatarUrl: h,
         messageCount: message_count,
         // For the market, when we introduce users from other sources
-        userIdSource: 'forum'
+        externalUserId: `forum:${user_id}`
     });
 }
 

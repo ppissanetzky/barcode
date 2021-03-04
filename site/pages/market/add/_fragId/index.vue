@@ -37,7 +37,7 @@
                           </v-row>
                         </v-container>
                         <div v-else-if="p.src" class="text-right pa-0">
-                          <v-btn icon :disabled="submitting" @click="removePicture(p)">
+                          <v-btn icon :disabled="submitting" @click="removePicture(p.idx)">
                             <v-icon color="white">
                               mdi-close-circle
                             </v-icon>
@@ -115,12 +115,17 @@ export default {
   components: { BcDatePicker },
   async fetch () {
     const fragId = this.$route.params.fragId
-    const { user, seller, frag, fragListings } = await this.$axios.$get(`/api/market/frag/${fragId}`)
+    const { user, seller, frag, pictureSetId } = await this.$axios.$get(`/api/market/frag/${fragId}`)
+    if (!seller) {
+      return this.$router.replace({
+        path: '/market/seller',
+        query: { fragId }
+      })
+    }
     this.user = user
-    // Can be undefined
     this.seller = seller
     this.frag = frag
-    this.fragListings = fragListings
+    this.pictureSetId = pictureSetId
     // Populate initial values from the frag
     this.title = frag.name
     this.location = user.location
@@ -131,7 +136,7 @@ export default {
     user: {},
     seller: undefined,
     frag: undefined,
-    fragListings: [],
+    pictureSetId: undefined,
     // Stuff the user enters
     title: undefined,
     description: undefined,
@@ -139,11 +144,7 @@ export default {
     price: undefined,
     location: undefined,
     picture: undefined,
-    pictures: [
-      { src: undefined, picture: undefined, loading: false, file: undefined },
-      { src: undefined, picture: undefined, loading: false, file: undefined },
-      { src: undefined, picture: undefined, loading: false, file: undefined }
-    ],
+    pictures: [],
     // Submitting
     submitting: false,
     valid: false
@@ -157,7 +158,7 @@ export default {
       return this.frag ? differenceToNow(this.frag.dateAcquired) : undefined
     },
     pictureCount () {
-      return this.pictures.filter(({ file }) => file).length
+      return this.pictures.length
     }
   },
 
@@ -194,27 +195,14 @@ export default {
       return true
     },
 
-    removePicture (p) {
-      p.src = undefined
-      p.file = undefined
-      p.picture = undefined
-      p.loading = false
-      const pics = this.pictures
-      pics.forEach((item, index) => {
-        if (!item.file) {
-          for (let i = index + 1; i < pics.length; ++i) {
-            const other = pics[i]
-            if (other.file) {
-              item.src = other.src
-              item.file = other.file
-              item.picture = other.picture
-              other.src = undefined
-              other.file = undefined
-              other.picture = undefined
-              break
-            }
-          }
-        }
+    removePicture (idx) {
+      // Remove it from the array
+      this.pictures = this.pictures.filter(item => item.idx !== idx)
+      // Now, call the server to delete it
+      const url = `/api/market/picture/${this.pictureSetId}/${idx}`
+      this.$axios.$delete(url).then(({ pictures }) => {
+        this.pictures = pictures
+        this.$refs.form.validate()
       })
       this.$refs.form.validate()
     },
@@ -227,10 +215,7 @@ export default {
         formData.set('description', this.description)
         formData.set('cutTimestamp', utcIsoStringFromString(this.dateCut))
         formData.set('price', this.price)
-        formData.set('pictures',
-          this.pictures.filter(({ picture }) => picture)
-            .map(({ picture }) => picture)
-            .join(','))
+        formData.set('pictureSetId', this.pictureSetId)
         formData.set('location', this.location)
         const url = `/api/market/frag/${this.frag.fragId}`
         const { error } = await this.$axios.$post(url, formData)
@@ -245,31 +230,19 @@ export default {
     pictureChanged (file) {
       console.log('PIC CHANGED', file)
       if (file) {
-        const pics = this.pictures
-        const gap = pics.find(({ file }) => !file)
-        const exists = pics.some(other => other.file && other.file.name === file.name)
-        if (gap && !exists) {
-          gap.file = file
-          gap.loading = true
-          const formData = new FormData()
-          formData.set('picture', file)
-          this.$axios.$post('/api/market/picture', formData)
-            .then(({ picture, src }) => {
-              // If there is no src, something went wrong
-              if (!src) {
-                gap.file = undefined
-              } else {
-                gap.picture = picture
-                gap.src = src
-              }
-            })
-            .catch(() => {
-              gap.file = undefined
-            })
-            .finally(() => {
-              gap.loading = false
-            })
-        }
+        this.pictures = [
+          ...this.pictures,
+          {
+            loading: true
+          }
+        ]
+        const formData = new FormData()
+        formData.set('picture', file)
+        const url = `/api/market/picture/${this.pictureSetId}`
+        this.$axios.$post(url, formData).then(({ pictures }) => {
+          this.pictures = pictures
+        })
+        // Now, remove the picture that was added to the input
         this.$nextTick(() => {
           this.picture = undefined
         })

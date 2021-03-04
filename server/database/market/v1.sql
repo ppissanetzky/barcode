@@ -7,11 +7,9 @@ PRAGMA user_version = 1;
 CREATE TABLE sellers (
     -- Internal ID
     sellerId            INTEGER PRIMARY KEY,
-    -- The source of this user ID, which could be the forum, facebook, google, etc
-    userIdSource        TEXT NOT NULL DEFAULT 'forum',
-    -- External user ID
-    -- We're going to start with forum user IDs
-    userId              TEXT NOT NULL,
+    -- External user ID of the form <source>:<id>
+    -- For forum users it will be something like 'forum:15211'
+    externalUserId      TEXT NOT NULL,
     -- A random, unique code that can be used in perma-links
     -- to the seller's items
     linkCode            TEXT NOT NULL,
@@ -19,6 +17,8 @@ CREATE TABLE sellers (
     name                TEXT NOT NULL,
     -- The seller's location
     location            TEXT NOT NULL,
+    -- The seller's logo (an upload)
+    logo                TEXT,
     -- The seller's rating - 0 to 5
     -- ((Overall Rating * Total Rating) + new Rating) / (Total Rating + 1)
     rating              REAL NOT NULL DEFAULT 0,
@@ -27,7 +27,7 @@ CREATE TABLE sellers (
     -- When we allow sellers to customize their "store"
     theme               TEXT,
 
-    UNIQUE (userIdSource, userId),
+    UNIQUE (externalUserId),
     UNIQUE (linkCode)
 );
 
@@ -39,6 +39,25 @@ CREATE TABLE deliveryMethods (
 );
 
 INSERT INTO deliveryMethods VALUES ('LP', 'Local pickup');
+
+-------------------------------------------------------------------------------
+
+CREATE TABLE pictureSets (
+    pictureSetId        INTEGER PRIMARY KEY,
+    sellerId            INTEGER NOT NULL,
+    maximum             INTEGER NOT NULL,
+
+    FOREIGN KEY (sellerId) REFERENCES sellers (sellerId)
+);
+
+CREATE TABLE pictures (
+    pictureSetId        INTEGER NOT NULL,
+    idx                 INTEGER NOT NULL,
+    picture             TEXT NOT NULL,
+
+    PRIMARY KEY (pictureSetId, idx),
+    FOREIGN KEY (pictureSetId) REFERENCES pictureSets (pictureSetId)
+);
 
 -------------------------------------------------------------------------------
 
@@ -58,9 +77,6 @@ CREATE TABLE fragListings (
     title               TEXT NOT NULL,
     -- Description (could be markdown?)
     descritpion         TEXT NOT NULL,
-    -- The date the mother colony was acquired
-    -- We populate this from the mother frag
-    acquiredTimestamp   TEXT NOT NULL,
     -- The date the frag was cut or split
     cutTimestamp        TEXT NOT NULL,
     -- Price, no decimals
@@ -69,8 +85,8 @@ CREATE TABLE fragListings (
     currency            TEXT NOT NULL DEFAULT 'USD',
     -- How the item can be delivered - TBD
     deliveryMethodId    TEXT NOT NULL DEFAULT 'LP',
-    -- Comma separated list of uploads
-    pictures            TEXT NOT NULL,
+    -- References a picture set
+    pictureSetId        INTEGER NOT NULL,
     -- The status of the listing.
     -- draft - means that it is not live in the market
     -- live - it's visible in the market
@@ -82,8 +98,9 @@ CREATE TABLE fragListings (
     -- it can go from draft, live or pending to sold only once
     status              TEXT NOT NULL DEFAULT 'draft',
 
-    FOREIGN KEY (sellerId) REFERENCES sellers (sellerId),
-    FOREIGN KEY (deliveryMethodId) REFERENCES deliveryMethods (deliveryMethodId),
+    FOREIGN KEY (sellerId)          REFERENCES sellers (sellerId),
+    FOREIGN KEY (pictureSetId)      REFERENCES pictureSets (pictureSetId),
+    FOREIGN KEY (deliveryMethodId)  REFERENCES deliveryMethods (deliveryMethodId),
 
     CHECK (status IN ('draft', 'live', 'pending', 'sold'))
 );

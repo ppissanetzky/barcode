@@ -101,6 +101,18 @@ module.exports = {
 
     // Not an admin
     NOT_ADMIN:              error.bind(null, 'NAD'),
+
+    // Not a seller
+    NOT_SELLER:             error.bind(null, 'NSL'),
+
+    // Invalid picture set
+    INVALID_PICTURE_SET:    error.bind(null, 'IPS'),
+
+    // Missing picture
+    MISSING_PICTURE:        error.bind(null, 'MIP'),
+
+    // Invalid picture
+    INVALID_PICTURE_INDEX:  error.bind(null, 'IPI')
 };
 
 //-----------------------------------------------------------------------------
