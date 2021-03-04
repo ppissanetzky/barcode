@@ -22,13 +22,25 @@ class DatabaseConnection {
         this.bs3 = database.open();
     }
 
+    // Attaches the other database to this one, using its name
+    attach(database) {
+        const {file, name} = database;
+        this.run('ATTACH $file AS $name', {file, name});
+    }
+
+    // Returns an array of rows - which can be empty
     all(query, params) {
         const statement = this.bs3.prepare(query);
         return statement.all(params || {});
     }
 
-    // Returns the last row ID
+    // Returns just the first row or undefined if there are no rows
+    first(query, params) {
+        const statement = this.bs3.prepare(query);
+        return statement.get(params || {});
+    }
 
+    // Returns the last row ID
     run(query, params) {
         const statement = this.bs3.prepare(query);
         const info = statement.run(params || {});
@@ -36,7 +48,6 @@ class DatabaseConnection {
     }
 
     // Returns the changes
-
     change(query, params) {
         const statement = this.bs3.prepare(query);
         const info = statement.run(params || {});
