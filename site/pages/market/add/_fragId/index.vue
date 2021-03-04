@@ -113,6 +113,7 @@ import BcDatePicker from '~/components/BcDatePicker.vue'
 import { localeDateString, differenceToNow, utcIsoStringFromString } from '~/dates'
 export default {
   components: { BcDatePicker },
+  layout: 'market',
   async fetch () {
     const fragId = this.$route.params.fragId
     const { user, seller, frag, pictureSetId } = await this.$axios.$get(`/api/market/frag/${fragId}`)

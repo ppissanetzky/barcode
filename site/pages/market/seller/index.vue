@@ -44,6 +44,7 @@
 </template>
 <script>
 export default {
+  layout: 'market',
   async fetch () {
     // If we came from the add a frag page, we will have an incoming fragId
     this.fragId = this.$route.query.fragId
