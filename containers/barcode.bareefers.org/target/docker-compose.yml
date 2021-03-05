@@ -19,6 +19,8 @@ services:
     environment:
       BC_FORUM_MODE: production
       BC_SMS_MODE: production
+      BC_SESSION_COOKIE_NAME: bc-a
+      BC_SESSION_COOKIE_SECURE: production
       BC_SITE_BASE_URL: http://barcode.bareefers.org/bc
       BC_DATABASE_DIR: /volumes/databases
       BC_UPLOADS_DIR: /volumes/uploads
@@ -70,7 +72,10 @@ services:
     environment:
       BC_FORUM_MODE: 0
       BC_SMS_MODE: 0
+      BC_MARKET_ENABLED: 1
       BC_DISABLE_SCHEDULER: 1
+      BC_SESSION_COOKIE_NAME: bc-demo
+      BC_SESSION_COOKIE_SECURE: production
       BC_SITE_BASE_URL: http://barcode.bareefers.org:444/bc
       BC_DATABASE_DIR: /volumes/databases
       BC_UPLOADS_DIR: /volumes/uploads
