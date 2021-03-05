@@ -76,6 +76,10 @@ class Database {
         this.open();
     }
 
+    connect() {
+        return new DatabaseConnection(this);
+    }
+
     // Returns the rows
 
     all(query, params) {
