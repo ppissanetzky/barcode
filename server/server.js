@@ -3,12 +3,18 @@ require('console-stamp')(console, {pattern: 'isoDateTime', metadata: process.pid
 
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
 
 //-----------------------------------------------------------------------------
 // Configuration
 //-----------------------------------------------------------------------------
 
-const {BC_PRODUCTION} = require('./barcode.config');
+const {
+    BC_PRODUCTION,
+    BC_SESSION_COOKIE_SECRETS,
+    BC_SESSION_COOKIE_NAME,
+    BC_SESSION_COOKIE_SECURE
+} = require('./barcode.config');
 
 //-----------------------------------------------------------------------------
 
@@ -17,6 +23,8 @@ const scheduler = require('./scheduler');
 //-----------------------------------------------------------------------------
 
 const {ExplicitError} = require('./errors');
+
+const SessionStore = require('./session-store')(session);
 
 //-----------------------------------------------------------------------------
 // The routers
@@ -37,12 +45,6 @@ const marketRouter = require('./market-router');
 const {validateXenForoUser, lookupUser} = require('./xenforo');
 
 //-----------------------------------------------------------------------------
-// The name of the impersonate cookie
-//-----------------------------------------------------------------------------
-
-const IMPERSONATE_COOKIE = 'bc-imp';
-
-//-----------------------------------------------------------------------------
 // Create the express app
 //-----------------------------------------------------------------------------
 
@@ -58,7 +60,26 @@ app.set('etag', false);
 // To parse cookies
 //-----------------------------------------------------------------------------
 
-app.use(cookieParser());
+app.use(cookieParser(BC_SESSION_COOKIE_SECRETS.split(',')));
+
+//-----------------------------------------------------------------------------
+// To track sessions
+// See:
+// https://github.com/expressjs/session#options
+// https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#secure-attribute
+//-----------------------------------------------------------------------------
+
+app.set('trust proxy', 1);
+
+app.use(session({
+    secret: BC_SESSION_COOKIE_SECRETS.split(','),
+    name: BC_SESSION_COOKIE_NAME,
+    httpOnly: true,
+    sameSite: true,
+    secure: BC_SESSION_COOKIE_SECURE === 'production',
+    resave: false,
+    store: new SessionStore()
+}));
 
 //-----------------------------------------------------------------------------
 // To parse application/x-www-form-urlencoded in posts
@@ -82,30 +103,28 @@ app.use('/public', publicRouter);
 
 app.use((req, res, next) => {
     Promise.resolve().then(async () => {
+        const {session} = req;
         let [user] = await validateXenForoUser(req.headers);
-        // See if there is an impersonate cookie
-        const impersonateUserId = parseInt(req.cookies[IMPERSONATE_COOKIE], 10);
+        // See if there is an impersonate user ID in the session
+        const {impersonateUserId} = session;
         // We start out not impersonating
         let impersonating = false
-        if (user.canImpersonate) {
-            res.setHeader('bc-can-impersonate', true);
-            if (impersonateUserId) {
-                const impersonateUser = await lookupUser(impersonateUserId);
-                if (impersonateUser) {
-                    req.originalUser = user;
-                    user = impersonateUser;
-                    impersonating = true;
-                    res.setHeader('bc-impersonating', user.id);
-                }
+        if (user.canImpersonate && impersonateUserId) {
+            const impersonateUser = await lookupUser(impersonateUserId);
+            if (impersonateUser) {
+                req.originalUser = user
+                user = impersonateUser;
+                impersonating = true;
             }
-        }
-        if (impersonateUserId && !impersonating) {
-            res.cookie(IMPERSONATE_COOKIE, 0);
         }
         // Set the user on the request
         req.user = user;
-        // Reply with the user's name in a response header
-        res.setHeader('bc-user', user.name);
+        // If there was an ID in the session, but we are no longer
+        // impersonating, remove it from the session
+        if (impersonateUserId && !impersonating) {
+            delete session.impersonateUserId;
+            return session.save(() => next());
+        }
         // Done
         next();
     })
@@ -125,32 +144,37 @@ if (!BC_PRODUCTION) {
 
 //-----------------------------------------------------------------------------
 
+app.get('/impersonate', async (req, res) => {
+    const {user, originalUser} = req;
+    const name = user.name;
+    const canImpersonate = originalUser ? originalUser.canImpersonate : user.canImpersonate;
+    const impersonating = Boolean(originalUser);
+    res.json({name, canImpersonate, impersonating});
+});
+
 app.put('/impersonate/:userId', async (req, res) => {
-    const {user, params} = req;
-    const {userId} = params;
-    if (user.canImpersonate) {
+    const {session, user, originalUser, params: {userId}} = req;
+    const canImpersonate = (originalUser || user).canImpersonate;
+    const impersonating = Boolean(originalUser);
+    if (!impersonating && canImpersonate) {
         const otherUser = await lookupUser(userId);
         if (otherUser) {
-            res.cookie(IMPERSONATE_COOKIE, otherUser.id);
-            res.setHeader('bc-user', otherUser.name);
-            res.setHeader('bc-impersonating', otherUser.id);
+            session.impersonateUserId = otherUser.id;
+            return session.save(() => res.json({}));
         }
     }
     res.json({});
 });
 
-//-----------------------------------------------------------------------------
-
 app.delete('/impersonate', (req, res) => {
-    const {originalUser} = req;
-    res.cookie(IMPERSONATE_COOKIE, 0);
-    if (originalUser) {
-        res.setHeader('bc-user', originalUser.name);
+    const {session, originalUser} = req;
+    const impersonating = Boolean(originalUser);
+    if (impersonating) {
+        delete session.impersonateUserId;
+        delete req.originalUser;
+        req.user = originalUser;
+        return session.save(() => res.json());
     }
-    else {
-        console.error('No original user for', req.headers);
-    }
-    res.setHeader('bc-impersonating', 0);
     res.json({});
 });
 

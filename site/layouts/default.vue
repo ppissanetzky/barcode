@@ -9,32 +9,22 @@
         />
       </router-link>
       <v-spacer />
+      <v-btn
+        small
+        :color="impersonating ? 'red' : ''"
+        @click.stop="showImpersonate = canImpersonate"
+      >
+        <v-icon left>mdi-account-circle-outline</v-icon>
+        {{ name }}
+      </v-btn>
       <v-dialog
-        v-if="user"
         v-model="showImpersonate"
-        :disabled="!canImpersonate"
         max-width="375px"
       >
-        <template v-slot:activator="{ on, attrs }">
-          <v-chip
-            label
-            outlined
-            :color="impersonating ? 'red' : ''"
-            v-bind="attrs"
-            v-on="on"
-          >
-            <v-icon left>
-              mdi-account-circle-outline
-            </v-icon>
-            {{ user }}
-          </v-chip>
-        </template>
-
         <v-card v-if="impersonating">
-          <v-card-title>Stop impersonating {{ user }}</v-card-title>
+          <v-card-title>Stop impersonating {{ name }}</v-card-title>
           <v-card-actions>
             <v-btn
-              text
               @click="showImpersonate=false"
             >
               Cancel
@@ -157,22 +147,27 @@
 
 <script>
 export default {
+  async fetch () {
+    const { name, canImpersonate, impersonating } = await this.$axios.$get('/api/impersonate')
+    this.name = name
+    this.canImpersonate = canImpersonate
+    this.impersonating = impersonating
+  },
   data () {
     return {
+      // The current user name
+      name: undefined,
+      // Whether the original user can impersonate
+      canImpersonate: undefined,
+      // True if impersonating
+      impersonating: undefined,
+
+      // Show the navigation drawer or not
       drawer: false,
+      // Show the impersonate dialog
       showImpersonate: false,
+      // The user selected in the impersonate dialog
       impersonateUser: undefined
-    }
-  },
-  computed: {
-    user () {
-      return this.$store.state.user.name
-    },
-    impersonating () {
-      return this.$store.state.user.impersonating
-    },
-    canImpersonate () {
-      return this.$store.state.user.canImpersonate
     }
   },
   methods: {

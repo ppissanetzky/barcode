@@ -103,8 +103,39 @@ module.exports = {
     get BC_DISABLE_SCHEDULER () { return get('BC_DISABLE_SCHEDULER', true) },
 
     //-------------------------------------------------------------------------
+    // Enable the market
+    //-------------------------------------------------------------------------
 
     get BC_MARKET_ENABLED () { return get('BC_MARKET_ENABLED', true) },
+
+    //-------------------------------------------------------------------------
+    // This is a comma-separated string of secrets that are used to sign
+    // session cookies. It should be specified in barcode-env and never
+    // checked in.
+    //
+    // The first secret in the array is used to sign, but all of them are
+    // used to verify. This allows us to rotate secretes by adding a new one
+    // as the first one in the list. If we change the first one (instead of
+    // adding a new one) then existing session cookies will no longer work.
+    //
+    // See https://github.com/expressjs/session#secret
+    //-------------------------------------------------------------------------
+
+    get BC_SESSION_COOKIE_SECRETS () { return get('BC_SESSION_COOKIE_SECRETS') },
+
+    //-------------------------------------------------------------------------
+    // This is the name of the session cookie and should be different for every
+    // installation of BARcode. It is not a secret, so it can be checked in
+    //-------------------------------------------------------------------------
+
+    get BC_SESSION_COOKIE_NAME () { return get('BC_SESSION_COOKIE_NAME') },
+
+    //-------------------------------------------------------------------------
+    // This must always be 'production' in production, but can be something
+    // else during development.
+    //-------------------------------------------------------------------------
+
+    get BC_SESSION_COOKIE_SECURE () { return get('BC_SESSION_COOKIE_SECURE') }
 
 };
 

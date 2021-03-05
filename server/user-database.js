@@ -4,7 +4,7 @@ const {Database} = require('./db');
 
 //-----------------------------------------------------------------------------
 
-const USERS_DB_VERSION = 1;
+const USERS_DB_VERSION = 2;
 
 const db = new Database('user', USERS_DB_VERSION);
 
@@ -36,6 +36,7 @@ function setSetting(userId, key, value) {
 //-----------------------------------------------------------------------------
 
 module.exports = {
+    database: db,
     getSettings,
     setSetting
 };
