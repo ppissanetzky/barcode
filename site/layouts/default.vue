@@ -12,7 +12,7 @@
       <v-btn
         small
         :color="impersonating ? 'red' : ''"
-        @click.stop="showImpersonate = canImpersonate"
+        @click.stop="showImpersonate = canImpersonate || impersonating"
       >
         <v-icon left>mdi-account-circle-outline</v-icon>
         {{ name }}

@@ -4,6 +4,7 @@ require('console-stamp')(console, {pattern: 'isoDateTime', metadata: process.pid
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+const passport = require('passport');
 
 //-----------------------------------------------------------------------------
 // Configuration
@@ -24,14 +25,24 @@ const scheduler = require('./scheduler');
 
 const {ExplicitError} = require('./errors');
 
+//-----------------------------------------------------------------------------
+// This thing saves sessions to the users database. It is used by
+// express-session
+//-----------------------------------------------------------------------------
+
 const SessionStore = require('./session-store')(session);
+
+//-----------------------------------------------------------------------------
+// This is a Passport strategy to sign in to the forum using XenForo's cookies
+//-----------------------------------------------------------------------------
+
+const XenForoPassportStrategy = require('./xenforo-passport-strategy');
 
 //-----------------------------------------------------------------------------
 // The routers
 //-----------------------------------------------------------------------------
 
 const publicRouter = require('./public-router');
-
 const dbtcRouter = require('./dbtc-router');
 const equipmentRouter = require('./equipment-router');
 const userRouter = require('./user-router');
@@ -42,7 +53,7 @@ const marketRouter = require('./market-router');
 // The XenForo stuff
 //-----------------------------------------------------------------------------
 
-const {validateXenForoUser, lookupUser} = require('./xenforo');
+const {lookupUser} = require('./xenforo');
 
 //-----------------------------------------------------------------------------
 // Create the express app
@@ -57,29 +68,28 @@ const app = express();
 app.set('etag', false);
 
 //-----------------------------------------------------------------------------
-// To parse cookies
-//-----------------------------------------------------------------------------
-
-app.use(cookieParser(BC_SESSION_COOKIE_SECRETS.split(',')));
-
-//-----------------------------------------------------------------------------
-// To track sessions
-// See:
-// https://github.com/expressjs/session#options
-// https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#secure-attribute
+// Trust the proxy
 //-----------------------------------------------------------------------------
 
 app.set('trust proxy', 1);
 
-app.use(session({
-    secret: BC_SESSION_COOKIE_SECRETS.split(','),
-    name: BC_SESSION_COOKIE_NAME,
-    httpOnly: true,
-    sameSite: true,
-    secure: BC_SESSION_COOKIE_SECURE === 'production',
-    resave: false,
-    store: new SessionStore()
-}));
+//-----------------------------------------------------------------------------
+// Disable this response header, so we don't reveal too much
+//-----------------------------------------------------------------------------
+
+app.set('x-powered-by', false);
+
+//-----------------------------------------------------------------------------
+// These come from an environment variable that is comma-separated
+//-----------------------------------------------------------------------------
+
+const COOKIE_SECRETS = BC_SESSION_COOKIE_SECRETS.split(',');
+
+//-----------------------------------------------------------------------------
+// To parse cookies.
+//-----------------------------------------------------------------------------
+
+app.use(cookieParser(COOKIE_SECRETS));
 
 //-----------------------------------------------------------------------------
 // To parse application/x-www-form-urlencoded in posts
@@ -88,47 +98,90 @@ app.use(session({
 app.use(express.urlencoded({extended: true}));
 
 //-----------------------------------------------------------------------------
+// To track sessions
+// See:
+// https://github.com/expressjs/session#options
+// https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html#secure-attribute
+//-----------------------------------------------------------------------------
+
+app.use(session({
+    secret: COOKIE_SECRETS,
+    name: BC_SESSION_COOKIE_NAME,
+    httpOnly: true,
+    sameSite: true,
+    secure: BC_SESSION_COOKIE_SECURE === 'production',
+    resave: false,
+    saveUninitialized: false,
+    store: new SessionStore()
+}));
+
+//-----------------------------------------------------------------------------
+// Passport
+//-----------------------------------------------------------------------------
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+//-----------------------------------------------------------------------------
+// This is used to convert a 'user' object to its representation in the
+// session store. We could store just the ID and then look it up but, for now,
+// We're putting the entire object in the session.
+//-----------------------------------------------------------------------------
+
+passport.serializeUser((user, done) => done(null, user));
+
+//-----------------------------------------------------------------------------
+// This one takes whatever we put in the session and converts it to a 'user'
+// object that is attached to each request.
+
+passport.deserializeUser((user, done) => done(null, user));
+
+//-----------------------------------------------------------------------------
+// Add our forum login strategy to passport
+//-----------------------------------------------------------------------------
+
+passport.use(new XenForoPassportStrategy());
+
+//-----------------------------------------------------------------------------
 // CAREFUL - THESE ROUTES DO NOT GET USER VALIDATION. THEY ARE PUBLIC
 //-----------------------------------------------------------------------------
 
 app.use('/public', publicRouter);
 
 //-----------------------------------------------------------------------------
-// This function has to validate the incoming request's session against
-// XenForo and augment the request with 'user'. If it cannot do that, it
-// should fail - preventing access to the application if there is no user.
-//-----------------------------------------------------------------------------
-// THIS CALL MUST BE BEFORE ALL ROUTES
+// Now, we use the passport authentication strategy to get a user
+// object. This protects all the routes below - they will have a 'user' object
+// in 'req'. If it fails, it will return a 401.
 //-----------------------------------------------------------------------------
 
-app.use((req, res, next) => {
-    Promise.resolve().then(async () => {
-        const {session} = req;
-        let [user] = await validateXenForoUser(req.headers);
-        // See if there is an impersonate user ID in the session
-        const {impersonateUserId} = session;
-        // We start out not impersonating
-        let impersonating = false
-        if (user.canImpersonate && impersonateUserId) {
-            const impersonateUser = await lookupUser(impersonateUserId);
-            if (impersonateUser) {
-                req.originalUser = user
-                user = impersonateUser;
-                impersonating = true;
-            }
+app.use(passport.authenticate('XenForo'));
+
+//-----------------------------------------------------------------------------
+// This one implements impersonation
+//-----------------------------------------------------------------------------
+
+app.use(async (req, res, next) => {
+    const {session, user} = req;
+    // See if there is an impersonate user ID in the session
+    const {impersonateUserId} = session;
+    // We start out not impersonating
+    let impersonating = false
+    if (user.canImpersonate && impersonateUserId) {
+        const impersonateUser = await lookupUser(impersonateUserId);
+        if (impersonateUser) {
+            req.originalUser = user
+            req.user = impersonateUser;
+            impersonating = true;
         }
-        // Set the user on the request
-        req.user = user;
-        // If there was an ID in the session, but we are no longer
-        // impersonating, remove it from the session
-        if (impersonateUserId && !impersonating) {
-            delete session.impersonateUserId;
-            return session.save(() => next());
-        }
-        // Done
-        next();
-    })
-    .catch(next);
+    }
+    // If there was an ID in the session, but we are no longer
+    // impersonating, remove it from the session, save it and continue
+    if (impersonateUserId && !impersonating) {
+        delete session.impersonateUserId;
+        return session.save(() => next());
+    }
+    // Carry on
+    next();
 });
 
 //-----------------------------------------------------------------------------
@@ -137,17 +190,24 @@ app.use((req, res, next) => {
 
 if (!BC_PRODUCTION) {
     app.use((req, res, next) => {
-        console.log(`(${req.user.name}:${req.user.id}) :`, req.method, req.url);
+        const {originalUser, user} = req;
+        const prefix = originalUser ? `${originalUser.name}:${originalUser.id} as ` : '';
+        console.log(`(${prefix}${user.name}:${user.id}) :`, req.method, req.url);
         next();
     });
 }
 
 //-----------------------------------------------------------------------------
+// These deal with impersonation.
+//  get - returns the current state
+//  put - starts impersonating
+//  delete - stops impersonating
+//-----------------------------------------------------------------------------
 
-app.get('/impersonate', async (req, res) => {
+app.get('/impersonate', (req, res) => {
     const {user, originalUser} = req;
     const name = user.name;
-    const canImpersonate = originalUser ? originalUser.canImpersonate : user.canImpersonate;
+    const canImpersonate = originalUser ? false : user.canImpersonate;
     const impersonating = Boolean(originalUser);
     res.json({name, canImpersonate, impersonating});
 });
@@ -163,7 +223,7 @@ app.put('/impersonate/:userId', async (req, res) => {
             return session.save(() => res.json({}));
         }
     }
-    res.json({});
+    res.status(200).end();
 });
 
 app.delete('/impersonate', (req, res) => {
@@ -175,9 +235,11 @@ app.delete('/impersonate', (req, res) => {
         req.user = originalUser;
         return session.save(() => res.json());
     }
-    res.json({});
+    res.status(200).end();
 });
 
+//-----------------------------------------------------------------------------
+// Now, the routes
 //-----------------------------------------------------------------------------
 
 app.use('/dbtc', dbtcRouter);

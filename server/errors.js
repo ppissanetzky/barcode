@@ -39,13 +39,6 @@ function error(code, message, link, button) {
 
 
 module.exports = {
-    // When we fail to validate the user for some reason
-    AUTHENTICATION_FAILED:  error.bind(null, 'AUF'),
-
-    // When we validate the user but they are not allowed to use the system
-    // because they need an upgrade (supporting member in BAR case)
-    MEMBER_NEEDS_UPGRADE:   error.bind(null, 'MNU'),
-
     // Frag validation failed
     INVALID_FRAG:           error.bind(null, 'INF'),
 

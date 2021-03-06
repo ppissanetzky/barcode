@@ -57,14 +57,14 @@ module.exports = function(Session) {
                     return;
                 }
                 const session = JSON.parse(row.session);
-                debug('Session', id, ':', session);
+                debug('Found session', id);
                 return session;
             });
         }
 
         set(id, session, callback) {
             wrap(callback, () => {
-                debug('Setting', id, 'to', session);
+                debug('Setting', id);
                 const maxAge = session.cookie.maxAge;
                 const now = new Date().getTime();
                 const expires = maxAge ? now + maxAge : now + ms(SESSION_EXPIRES_AFTER);

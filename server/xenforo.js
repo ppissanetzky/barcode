@@ -1,16 +1,14 @@
 
 const https = require('https');
 const qs = require('querystring');
-const cookieParser = require('cookie');
 const _ = require('lodash');
 
 // https://github.com/JiLiZART/bbob/tree/master/packages/bbob-core
 const bbob = require('@bbob/core').default;
 
 const {BC_TEST_USER, BC_XF_API_KEY} = require('./barcode.config');
-const dbtcDatabase = require('./dbtc-database');
 
-const {AUTHENTICATION_FAILED, MEMBER_NEEDS_UPGRADE} = require('./errors');
+const dbtcDatabase = require('./dbtc-database');
 
 const {utcIsoStringFromDate, utcIsoStringFromUnixTime, age} = require('./dates');
 
@@ -39,39 +37,11 @@ const HOST = 'bareefers.org';
 const PATH = '/forum/api';
 
 //-----------------------------------------------------------------------------
-// These were the existing cookies before I changed the
-// prefix on 2/11/2021 to support subdomains
-//-----------------------------------------------------------------------------
-
-const OLD_SESSION_COOKIE = 'xfb_session';
-const OLD_USER_COOKIE    = 'xfb_user';
-
-//-----------------------------------------------------------------------------
-// These are the new ones
-//-----------------------------------------------------------------------------
-
-const NEW_SESSION_COOKIE = 'xfc_session';
-const NEW_USER_COOKIE    = 'xfc_user';
-
-//-----------------------------------------------------------------------------
-
-const LOGIN_LINK = 'https://bareefers.org/forum/login/';
-const SUPPORTING_MEMBER_LINK = 'https://www.bareefers.org/forum/threads/how-do-i-become-a-supporting-member.14130/';
-const NON_SUPPORTING_MEMBER_MESSAGE =
-    'To use this app, you need to become a supporting member. Click the button below to learn how.';
-
-//-----------------------------------------------------------------------------
 // This is the user we impersonate when we need to - when creating alerts
 // or conversations
 //-----------------------------------------------------------------------------
 
 const BARCODE_USER = 16211;
-
-//-----------------------------------------------------------------------------
-// A custom thread prefix for all threads started by BARcode
-//-----------------------------------------------------------------------------
-
-const BARCODE_PREFIX = 3;
 
 //-----------------------------------------------------------------------------
 // XenForo custom groups
@@ -208,84 +178,6 @@ function makeUser(xfUser) {
 }
 
 //-----------------------------------------------------------------------------
-// Validate the current user. Returns a user object if everything is OK
-//-----------------------------------------------------------------------------
-
-
-async function validateXenForoUser(headers) {
-
-    function authenticationFailed(reason) {
-        console.error('AUTHENTICATION FAILED :', reason, ':', headers);
-        const loginLink = `${LOGIN_LINK}?_xfRedirect=https://bareefers.org/redirect.php?to=${headers.referer}`;
-        return AUTHENTICATION_FAILED(
-            'You must be logged in. Please click the button below to go to the login page.',
-            loginLink,
-            'Log in'
-        );
-    }
-
-    // During development, use a test user
-    if (BC_TEST_USER) {
-        const user = await lookupUser(BC_TEST_USER);
-        if (user) {
-            return [user];
-        }
-    }
-
-    // No cookies, no milk
-    if (!headers.cookie) {
-        throw authenticationFailed('No cookies at all');
-    }
-
-    // Parse the cookie header
-    const cookies = cookieParser.parse(headers.cookie);
-
-    // Get the session ID
-    const sessionId = cookies[NEW_SESSION_COOKIE] || cookies[OLD_SESSION_COOKIE];
-    const rememberCookie = cookies[NEW_USER_COOKIE] || cookies[OLD_USER_COOKIE];
-
-    if (!sessionId && !rememberCookie) {
-        throw authenticationFailed('No XF cookies');
-    }
-
-    // We do have at least one, so call XF to authenticate with them
-    const response = await apiRequest('auth/from-session', 'POST', {
-        session_id: sessionId,
-        remember_cookie: rememberCookie,
-    });
-
-    // Now, validate the response
-    const {success, user} = response || {};
-    if (!success) {
-        throw authenticationFailed('Auth request failed');
-    }
-    if (!user) {
-        throw authenticationFailed('Auth response missing user');
-    }
-
-    // Get details about the user
-    const {username, user_state} = user;
-
-    // If the state is not 'valid', we don't like the user
-    if (user_state !== 'valid') {
-        throw authenticationFailed(`User ${username} has invalid state "${user_state}"`);
-    }
-
-    // See if the user is allowed to participate
-    if (!isXfUserAllowed(user)) {
-        throw MEMBER_NEEDS_UPGRADE(
-            NON_SUPPORTING_MEMBER_MESSAGE,
-            SUPPORTING_MEMBER_LINK,
-            'Learn more'
-        );
-    }
-
-    // Otherwise, the user is valid, so we return it along with cookies
-    // to set (if any).
-    return [cacheUser(makeUser(user)), null];
-}
-
-//-----------------------------------------------------------------------------
 // This is a cache of users we keep around.
 // TODO: clear items every so often - unbounded growth otherwise. We only
 // have ~200 supporting members, so it shouldn't get out of hand.
@@ -295,15 +187,9 @@ const USER_CACHE = new Map();
 
 // Add a user to the cache
 
-function cacheUser(user, skipDatabase) {
+function cacheUser(user) {
     USER_CACHE.set(user.id, user);
     return user;
-}
-
-// Drop a user from the cache
-
-function dropCachedUser(id) {
-    USER_CACHE.delete(parseInt(id, 10));
 }
 
 // Get a user object from the cache given a user ID. Returns a user object
@@ -678,7 +564,8 @@ async function getPost(postId) {
 
 module.exports = {
     BARCODE_USER,
-    validateXenForoUser,
+    apiRequest,
+    makeUser,
     lookupUser,
     lookupUserWithFallback,
     startConversation,

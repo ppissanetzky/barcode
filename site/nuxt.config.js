@@ -85,7 +85,9 @@ export default {
 
   // This is exposed to pages in $config
   publicRuntimeConfig: {
-    version
+    version,
+    redirect401: 'https://bareefers.org/forum/login/',
+    redirect403: 'https://www.bareefers.org/forum/threads/how-do-i-become-a-supporting-member.14130/',
   },
 
   // Vuetify module configuration (https://go.nuxtjs.dev/config-vuetify)
