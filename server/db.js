@@ -58,6 +58,10 @@ class DatabaseConnection {
         const executor = this.bs3.transaction(func);
         return executor();
     }
+
+    statement(query) {
+        return this.bs3.prepare(query);
+    }
 }
 
 //-----------------------------------------------------------------------------

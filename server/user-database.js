@@ -4,7 +4,7 @@ const {Database} = require('./db');
 
 //-----------------------------------------------------------------------------
 
-const USERS_DB_VERSION = 2;
+const USERS_DB_VERSION = 3;
 
 const db = new Database('user', USERS_DB_VERSION);
 

@@ -135,7 +135,26 @@ module.exports = {
     // else during development.
     //-------------------------------------------------------------------------
 
-    get BC_SESSION_COOKIE_SECURE () { return get('BC_SESSION_COOKIE_SECURE') }
+    get BC_SESSION_COOKIE_SECURE () { return get('BC_SESSION_COOKIE_SECURE') },
+
+    //-------------------------------------------------------------------------
+    // This contains credentials we use to log in to the server that has the
+    // XF database via SSH so we can access the database.
+    // It has 5 parts that are separated by a comma.
+    // The parts are <host>,<ssh port>,<username>,<password>,<database port>
+    // The values should be in barcode-env and never checked in to the repo.
+    //-------------------------------------------------------------------------
+
+    get BC_XF_DB_SSH_CREDENTIALS () { return get('BC_XF_DB_SSH_CREDENTIALS') },
+
+    //-------------------------------------------------------------------------
+    // This contains credentials to access the XenForo database. It has 3
+    // comma separated parts: <database name>,<user name>,<password>
+    // The values should be in barcode-env and never checked in to the repo.
+    //-------------------------------------------------------------------------
+
+    get BC_XF_DB_CREDENTIALS () { return get('BC_XF_DB_CREDENTIALS') },
+
 
 };
 

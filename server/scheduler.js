@@ -11,9 +11,11 @@ const {BC_DISABLE_SCHEDULER} = require('./barcode.config');
 
 const JOBS = [
 
-    ['make-thumbnails', 'at 10:00 am'], // 2 am
+    ['backup-database', 'at 10:00 am'], // 2 am
 
-    ['backup-database', 'at 11:00 am'], // 3 am
+    ['make-thumbnails', 'at 11:00 am'], // 3 am
+
+    ['get-supporting-members', 'at 11:30 am'], // 3:30 am
 
     ['dbtc-nag', 'every weekday at 5:00 pm'], // 9 am
 
