@@ -6,7 +6,7 @@ const _ = require('lodash');
 // https://github.com/JiLiZART/bbob/tree/master/packages/bbob-core
 const bbob = require('@bbob/core').default;
 
-const {BC_TEST_USER, BC_XF_API_KEY} = require('./barcode.config');
+const {BC_TEST_USER, BC_FORUM_MODE, BC_XF_API_KEY} = require('./barcode.config');
 
 const dbtcDatabase = require('./dbtc-database');
 
@@ -27,6 +27,12 @@ BC_TEST_USER && console.warn('Running as user', BC_TEST_USER);
 // 16188 - barcode2
 // 16189 - barcode3
 // 16190 - barcode4
+
+//-----------------------------------------------------------------------------
+
+const POSTING_ENABLED =
+    BC_FORUM_MODE === "production" ||
+    parseInt(BC_FORUM_MODE, 10) > 0;
 
 //-----------------------------------------------------------------------------
 // Constants
@@ -261,6 +267,12 @@ async function lookupUserWithFallback(userId) {
 //-----------------------------------------------------------------------------
 
 async function startConversation(users, title, body, closed) {
+    console.log('New PM with', users);
+    console.log(`"${title}"`);
+    console.log(`"${body}"`);
+    if (!POSTING_ENABLED) {
+        return;
+    }
     const response = await apiRequest('conversations/', 'POST', {
         'recipient_ids[]': users,
         title: title,
@@ -283,6 +295,13 @@ async function startConversation(users, title, body, closed) {
 //-----------------------------------------------------------------------------
 
 async function sendAlert(recipientId, body, linkText, linkUrl) {
+    console.log('New alert to', recipientId);
+    console.log(`"${body}"`);
+    console.log(`"${linkText}"`);
+    console.log(`"${linkUrl}"`);
+    if (!POSTING_ENABLED) {
+        return;
+    }
     const response = await apiRequest('alerts/', 'POST', {
         to_user_id: recipientId,
         alert: body,
@@ -506,6 +525,12 @@ async function getThreadPosts(userId, threadId) {
 //-----------------------------------------------------------------------------
 
 async function startForumThread(userId, forumId, title, message) {
+    console.log('New thread for', userId || BARCODE_USER, 'in forum', forumId);
+    console.log(`"${title}"`);
+    console.log(`"${message}"`);
+    if (!POSTING_ENABLED) {
+        return;
+    }
     const {thread: {thread_id}} = await apiRequest('threads/', 'POST', {
         node_id: forumId,
         title: title,
@@ -522,6 +547,11 @@ async function startForumThread(userId, forumId, title, message) {
 //-----------------------------------------------------------------------------
 
 async function postToForumThread(threadId, message) {
+    console.log('New post to thread', threadId);
+    console.log(`"${message}"`);
+    if (!POSTING_ENABLED) {
+        return;
+    }
     await apiRequest('posts/', 'POST', {
         thread_id: threadId,
         message: message,
