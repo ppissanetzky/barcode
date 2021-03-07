@@ -104,9 +104,9 @@ function age (isoStringDateOrDate, textForToday, suffix) {
 
 // ----------------------------------------------------------------------------
 
-function differenceBetween (isoStringDateThen, isoStringDateNow) {
-  return formatDistance(dateFromIsoString(isoStringDateNow),
-    dateFromIsoString(isoStringDateThen))
+function differenceBetween (isoStringOrDateThen, isoStringOrDateNow) {
+  return formatDistance(dateFromIsoStringOrDate(isoStringOrDateNow),
+    dateFromIsoStringOrDate(isoStringOrDateThen))
 }
 
 // ----------------------------------------------------------------------------
