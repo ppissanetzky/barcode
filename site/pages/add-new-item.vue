@@ -401,7 +401,7 @@
                     <v-divider />
                   </v-col>
                 </v-row>
-                <v-row v-if="!isUpdating">
+                <v-row v-if="!isUpdating && rules === 'dbtc'">
                   <v-col>
                     <p>
                       Note that BARcode will create a forum thread on your behalf
