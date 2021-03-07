@@ -5,7 +5,6 @@ const {lock} = require('../lock');
 const db = require('../equipment-database');
 const {dateFromIsoString, differenceInDays} = require('../dates');
 const {lookupUser, getUserEmailAddress, startConversation} = require('../xenforo');
-const {uberPost} = require('../forum');
 const {renderMessage} = require('../messages');
 const {sendSms} = require('../aws');
 
