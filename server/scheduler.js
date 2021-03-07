@@ -15,7 +15,7 @@ const JOBS = [
 
     ['make-thumbnails', 'at 11:00 am'], // 3 am
 
-    ['get-supporting-members', 'at 11:30 am'], // 3:30 am
+    ['get-supporting-members', 'every 12 hours'],
 
     ['dbtc-nag', 'every weekday at 5:00 pm'], // 9 am
 

@@ -2,6 +2,8 @@ const assert = require('assert');
 
 const {Database} = require('./db');
 
+const {addDays, utcIsoStringFromDate} = require('./dates');
+
 //-----------------------------------------------------------------------------
 
 const USERS_DB_VERSION = 3;
@@ -20,6 +22,14 @@ function getSettings(userId) {
     }, {});
 }
 
+function getSetting(userId, key) {
+    const result = db.connect().first(
+        'SELECT value FROM settings WHERE userId = $userId AND key = $key',
+        {userId, key}
+    );
+    return result ? result.value : null;
+}
+
 //-----------------------------------------------------------------------------
 
 const UPDATE_SETTING = `
@@ -35,8 +45,26 @@ function setSetting(userId, key, value) {
 
 //-----------------------------------------------------------------------------
 
+function getExpiringSupportingMembers() {
+    const oneWeekFromToday = utcIsoStringFromDate(addDays(new Date(), 7));
+    return db.all(
+        `
+        SELECT
+            userId, activeEndDate
+        FROM
+            supportingMembers
+        WHERE
+            activeEndDate <= $oneWeekFromToday
+        `,
+        {oneWeekFromToday});
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     database: db,
     getSettings,
-    setSetting
+    getSetting,
+    setSetting,
+    getExpiringSupportingMembers
 };

@@ -1,11 +1,37 @@
 
+//-----------------------------------------------------------------------------
+// This scheduler job does three things:
+//
+//  1.  First, it connects to the server that hosts the XenForo database via
+//      SSH and then to the forum database itself. It runs a query on the
+//      'upgrade' tables to get the list of currently supporting members and
+//      then inserts that data into the local user database's 'supportingMembers'
+//      table so that we have easy access to it. This includes information
+//      about their expired membership in the last year, if any.
+//
+//  2.  Then, it runs another query on the same forum tables to get a list of
+//      members whose membership has expired in the last 7 days and have not
+//      already renewed. It goes through that list and notifies each user via
+//      a PM.
+//
+//  3.  Finally, it looks through our newly obtained data and gets a list of
+//      members whose membership will expire in the next 7 days. It sends
+//      each one a PM.
+//
+//  It tracks whether it has already notified each user with the user
+//  settings table.
+//-----------------------------------------------------------------------------
+
 const mysql = require('mysql2/promise');
 const {Client} = require('ssh2');
 const {fromUnixTime} = require('date-fns');
 const debug = require('debug')('barcode:get-supporting-members');
 
 const {lock} = require('../lock');
-const {database: userDatabase} = require('../user-database');
+const {database: userDatabase, getSetting, setSetting, getExpiringSupportingMembers} = require('../user-database');
+const {startConversation} = require('../xenforo');
+const {renderMessage} = require('../messages');
+const {differenceBetween} = require('../dates');
 
 //-----------------------------------------------------------------------------
 
@@ -63,6 +89,104 @@ const SELECT_SUPPORTING_MEMBERS =
     WHERE
         active.user_upgrade_id = 1
     `;
+
+//-----------------------------------------------------------------------------
+// Selects records that have expired in the last 7 days and don't have
+// a corresponding active record
+//-----------------------------------------------------------------------------
+
+const SELECT_RECENTLY_EXPIRED =
+    `
+    SELECT
+        expired.user_id     AS userId,
+        expired.end_date    AS expiredEndDate
+    FROM
+        xf_user_upgrade_expired AS expired
+    WHERE
+        expired.end_date > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 7 DAY)) AND
+        expired.user_id NOT IN (SELECT user_id FROM xf_user_upgrade_active)
+    `;
+
+//-----------------------------------------------------------------------------
+// This is the name of a user setting we use to remember that we have notified
+// them. The value is the actual date it expired.
+//-----------------------------------------------------------------------------
+
+const NOTIFIED_EXPIRED = 'notifiedExpiredDate';
+
+//-----------------------------------------------------------------------------
+// This data comes from the mySQL XenForo database, so all dates are unit times
+//-----------------------------------------------------------------------------
+
+async function notifyExpired(rows) {
+    for (const row of rows) {
+        const {userId, expiredEndDate} = row;
+
+        // If we have already notified this user, continue
+        if (getSetting(userId, NOTIFIED_EXPIRED) === convert(expiredEndDate)) {
+            debug('Already notified', userId);
+            continue;
+        }
+
+        // Notify
+        try {
+            const days = differenceBetween(fromUnixTime(expiredEndDate), new Date());
+            const [title, message] = await renderMessage('supporting-expired-pm', {days});
+            await startConversation([userId], title, message, true);
+            debug('PM sent to', userId);
+        }
+        catch (error) {
+            console.error('Failed to send PM to', userId, error);
+        }
+
+        // And note it
+        setSetting(userId, NOTIFIED_EXPIRED, convert(expiredEndDate));
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Similar to the other one, but this one is for memberships that will be
+// expiring soon
+//-----------------------------------------------------------------------------
+
+const NOTIFIED_EXPIRING = 'notifiedExpiringDate';
+
+//-----------------------------------------------------------------------------
+// We get this data from our local database so all the dates are already
+// UTC ISO strings.
+//-----------------------------------------------------------------------------
+
+async function notifyExpiring() {
+    // Get the list of members
+    const members = getExpiringSupportingMembers();
+
+    debug('Found', members.length, 'that are expiring soon');
+
+    for (const member of members) {
+        const {userId, activeEndDate} = member;
+
+        // See if we have already notified this user
+        if (getSetting(userId, NOTIFIED_EXPIRING) === activeEndDate) {
+            debug('Already notified', userId);
+            continue;
+        }
+        // Otherwise, notify
+        debug('Notifying', userId);
+
+        try {
+            const days = differenceBetween(new Date(), activeEndDate);
+            const [title, message] = await renderMessage('supporting-expiring-pm', {days});
+            await startConversation([userId], title, message, true);
+            debug('PM sent to', userId);
+        }
+        catch (error) {
+            console.error('Failed to send PM to', userId, error);
+        }
+
+        // And note it
+        setSetting(userId, NOTIFIED_EXPIRING, activeEndDate);
+    }
+}
 
 //-----------------------------------------------------------------------------
 
@@ -178,7 +302,24 @@ async function getSupportingMembers() {
             debug('Inserted', inserted, 'rows');
         });
 
-        debug('Done');
+        debug('Done refreshing supporting members');
+
+        //---------------------------------------------------------------------
+        // Now, we're going to take this opportunity to look for
+        // recently expired members and notify them
+        //---------------------------------------------------------------------
+
+        debug('Querying for recently expired...');
+        const [expired] = await connection.query(SELECT_RECENTLY_EXPIRED);
+        debug('Found', expired.length, 'recently expired');
+        await notifyExpired(expired);
+
+        //---------------------------------------------------------------------
+        // And, we're also going to notify those that are expiring soon
+        //---------------------------------------------------------------------
+
+        await notifyExpiring();
+
     }
     finally {
         // End the SSH tunnel
