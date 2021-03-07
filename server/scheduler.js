@@ -26,18 +26,32 @@ const JOBS = [
 
 //-----------------------------------------------------------------------------
 
-function scheduler() {
+const bree = new Bree({
+    root: path.join(__dirname, 'jobs'),
+    jobs: JOBS.map(([name, interval]) => ({name, interval}))
+});
+
+function start() {
     if (BC_DISABLE_SCHEDULER) {
         console.warn('Scheduler is disabled');
         return;
     }
-    const bree = new Bree({
-        root: path.join(__dirname, 'jobs'),
-        jobs: JOBS.map(([name, interval]) => ({name, interval}))
-    });
     bree.start();
+}
+
+function getJobs() {
+    return JOBS.map(([name, schedule]) => ({name, schedule}));
+}
+
+function run(name) {
+    // Even if scheduler is disabled
+    bree.run(name);
 }
 
 //-----------------------------------------------------------------------------
 
-module.exports = scheduler;
+module.exports = {
+    start,
+    getJobs,
+    run
+};

@@ -14,6 +14,7 @@
           dense
           outlined
           hide-details
+          clearable
         />
       </v-col>
       <v-col>
@@ -31,6 +32,27 @@
           :disabled="!(selectedScript && param)"
           :color="readonly[selectedScript] ? '' : 'error'"
           @click="runScript"
+        >
+          Run
+        </v-btn>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
+        <v-select
+          v-model="selectedJob"
+          :items="jobs"
+          label="Scheduler job"
+          dense
+          outlined
+          hide-details
+          clearable
+        />
+      </v-col>
+      <v-col>
+        <v-btn
+          :disabled="!selectedJob"
+          @click="runJob"
         >
           Run
         </v-btn>
@@ -83,7 +105,7 @@
 <script>
 export default {
   async fetch () {
-    const { scripts } = await this.$axios.$get('/api/admin/scripts')
+    const { scripts, jobs } = await this.$axios.$get('/api/admin/scripts')
     this.scriptNames = scripts.map(({ name }) => name)
     this.paramNames = scripts.reduce((result, { name, param }) => {
       result[name] = param
@@ -93,18 +115,29 @@ export default {
       result[name] = readonly
       return result
     }, {})
+    this.jobs = jobs.map(({ name, schedule }) => ({
+      value: name,
+      text: `${name} (${schedule})`
+    }))
   },
   data () {
     return {
+      // From the server
       scriptNames: [],
       paramNames: {},
       readonly: {},
+      jobs: [],
+
+      // Scripts
       selectedScript: undefined,
       param: undefined,
       paramLabel: undefined,
       output: undefined,
       tables: [],
-      tab: undefined
+      tab: undefined,
+
+      // Jobs
+      selectedJob: undefined
     }
   },
   watch: {
@@ -135,7 +168,21 @@ export default {
         const rows = list.map(row => headers.map(header => row[header]))
         return { headers, rows }
       })
+    },
+
+    async runJob () {
+      const formData = new FormData()
+      formData.set('job', this.selectedJob)
+      const result = await this.$axios.$post('/api/admin/job', formData)
+      this.tab = 1
+      this.tables = []
+      if (result.error) {
+        this.output = result.error
+        return
+      }
+      this.output = JSON.stringify(result, null, 2)
     }
+
   }
 }
 </script>

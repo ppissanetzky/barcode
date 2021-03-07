@@ -9,6 +9,8 @@ const {db} = require('./dbtc-database');
 
 const {NOT_ADMIN} = require('./errors');
 
+const scheduler = require('./scheduler');
+
 //-----------------------------------------------------------------------------
 // To process multi-part posts
 //-----------------------------------------------------------------------------
@@ -128,13 +130,15 @@ router.use((req, res, next) => {
 
 router.get('/scripts', (req, res, next) => {
     const scripts = getScriptList();
-    res.json({scripts});
+    const jobs = scheduler.getJobs();
+    res.json({scripts, jobs});
 });
 
 //-----------------------------------------------------------------------------
 
 router.post('/run', upload.none(), (req, res, next) => {
     const {body: {script, param}} = req;
+    assert(script);
     try {
         const result = runScript(script, param);
         res.json(result);
@@ -143,6 +147,22 @@ router.post('/run', upload.none(), (req, res, next) => {
         res.json({
             error: error.toString()
         });
+    }
+});
+
+//-----------------------------------------------------------------------------
+
+router.post('/job', upload.none(), (req, res) => {
+    const {body: {job}} = req;
+    assert(job);
+    try {
+        scheduler.run(job);
+        res.json({success: true});
+    }
+    catch (error) {
+        res.json({
+            error: error.toString()
+        })
     }
 });
 

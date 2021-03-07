@@ -219,17 +219,13 @@ export default {
         formData.set('pictureSetId', this.pictureSetId)
         formData.set('location', this.location)
         const url = `/api/market/frag/${this.frag.fragId}`
-        const { error } = await this.$axios.$post(url, formData)
-        if (error) {
-          console.error(error)
-        }
+        await this.$axios.$post(url, formData)
       } finally {
         this.submitting = false
       }
     },
 
     pictureChanged (file) {
-      console.log('PIC CHANGED', file)
       if (file) {
         this.pictures = [
           ...this.pictures,

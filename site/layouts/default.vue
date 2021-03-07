@@ -14,7 +14,9 @@
         :color="impersonating ? 'red' : ''"
         @click.stop="showImpersonate = canImpersonate || impersonating"
       >
-        <v-icon left>mdi-account-circle-outline</v-icon>
+        <v-icon left>
+          mdi-account-circle-outline
+        </v-icon>
         {{ name }}
       </v-btn>
       <v-dialog

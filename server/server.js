@@ -282,7 +282,7 @@ const PORT = 3003;
 const server = app.listen(PORT, () => {
     console.log(`BARcode ready at http://localhost:${PORT}`);
     // Start the scheduler
-    scheduler();
+    scheduler.start();
 });
 
 //-----------------------------------------------------------------------------
