@@ -7,6 +7,7 @@ const {dateFromIsoString, differenceInDays} = require('../dates');
 const {lookupUser, getUserEmailAddress, startConversation} = require('../xenforo');
 const {renderMessage} = require('../messages');
 const {sendSms} = require('../aws');
+const {logToForum} = require('../forum-log');
 
 //-----------------------------------------------------------------------------
 
@@ -21,6 +22,8 @@ async function alert(item, entry, days) {
     // Log
     console.log('Will alert', user.name, dateReceived, days, 'days');
 
+    logToForum(`@${user.name} has had the ${item.shortName} for ${days} days`);
+
     //-------------------------------------------------------------------------
     // If they have a phone number, we will send a text
     //-------------------------------------------------------------------------
@@ -29,9 +32,11 @@ async function alert(item, entry, days) {
             const [, message] = await renderMessage('overdue-equipment-sms', {item, user, days});
             await sendSms(phoneNumber, message);
             console.log('Sent alert via SMS to', phoneNumber);
+            logToForum(`Notified @${user.name} via SMS`);
         }
         catch (error) {
             console.error('Failed to send SMS alert', user.name, phoneNumber, error);
+            logToForum(`Failed to notify @${user.name} via SMS`);
         }
     }
 
@@ -54,9 +59,11 @@ async function alert(item, entry, days) {
         const [title, message] = await renderMessage('overdue-equipment-pm', {item, user, days});
         await startConversation([userId], title, message, true);
         console.log('PM sent');
+        logToForum(`Notified @${user.name} via PM`);
     }
     catch (error) {
         console.error('Failed to send PM to', user.name, error);
+        logToForum(`Failed to notify @${user.name} via PM`);
     }
 }
 
@@ -102,6 +109,7 @@ lock('equipment-nag', async () => {
         if (endDate.getTime() < now.getTime()) {
             console.log('Deleting ban', ban);
             db.deleteBan(userId);
+            logToForum(`@${userId} is no longer banned from borrowing equipment`);
         }
     }
 });

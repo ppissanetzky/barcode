@@ -28,7 +28,8 @@ const db = require('./equipment-database');
 const {validatePhoneNumber, sendSms} = require('./aws');
 
 const {uberPost} = require('./forum');
-const { renderMessage } = require('./messages');
+const {renderMessage} = require('./messages');
+const {logToForum} = require('./forum-log');
 
 //-----------------------------------------------------------------------------
 // The router
@@ -405,6 +406,8 @@ router.put('/queue/:itemId/:verb/:otherUserId', async (req, res, next) => {
             {item: sourceItem, user: fromUser, until});
         // Send the source user a PM to let them know they have been banned
         startConversation([source], title, message, true);
+        // Log activity
+        logToForum(`@${fromUser.name} has been banned from borrowing equipment until ${until}`);
     }
     // And return the new queue and ban
     const queue = await getQueue(sourceItem);

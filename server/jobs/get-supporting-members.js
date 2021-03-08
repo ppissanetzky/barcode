@@ -32,6 +32,7 @@ const {database: userDatabase, getSetting, setSetting, getExpiringSupportingMemb
 const {startConversation} = require('../xenforo');
 const {renderMessage} = require('../messages');
 const {differenceBetween} = require('../dates');
+const {logToForum} = require('../forum-log');
 
 //-----------------------------------------------------------------------------
 
@@ -136,6 +137,8 @@ async function notifyExpired(rows) {
             debug('PM sent to', userId);
             // And note it
             setSetting(userId, NOTIFIED_EXPIRED, convert(expiredEndDate));
+            // And log the activity
+            logToForum(`Notified @${userId} - supporting membership expired ${days} ago`);
         }
         catch (error) {
             console.error('Failed to send PM to', userId, error);
@@ -179,6 +182,8 @@ async function notifyExpiring() {
             debug('PM sent to', userId);
             // And note it
             setSetting(userId, NOTIFIED_EXPIRING, activeEndDate);
+            // Log activity
+            logToForum(`Notified @${userId} - supporting membership will expire in ${days}`);
         }
         catch (error) {
             console.error('Failed to send PM to', userId, error);
@@ -300,6 +305,8 @@ async function getSupportingMembers() {
             debug('Inserted', inserted, 'rows');
         });
 
+        logToForum(`We have ${rows.length} supporting members`);
+
         debug('Done refreshing supporting members');
 
         //---------------------------------------------------------------------
@@ -317,7 +324,9 @@ async function getSupportingMembers() {
         //---------------------------------------------------------------------
 
         await notifyExpiring();
-
+    }
+    catch (error) {
+        logToForum(`There was a problem importing supporting members: ${error.name} : ${error.message}`);
     }
     finally {
         // End the SSH tunnel
