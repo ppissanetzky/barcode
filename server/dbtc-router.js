@@ -276,11 +276,12 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
     const {user, body, file} = req;
     const picture = file ? file.filename : null;
     // Inputs from the form
+    const cost = body.cost ? parseFloat(body.cost) : 0;
     const params = {
         ...body,
         ownerId: user.id,
         fragsAvailable: parseInt(body.fragsAvailable, 10),
-        cost: parseFloat(body.cost),
+        cost: isNaN(cost) ? 0 : cost,
         picture,
         threadId: parseInt(body.threadId, 10)
     };

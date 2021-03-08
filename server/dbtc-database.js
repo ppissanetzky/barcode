@@ -297,7 +297,7 @@ const INSERT_ITEM_NULLABLE_VALUES = {
     sourceType: null,
     source: null,
     size: null,
-    cost: null,
+    cost: 0,
     picture: null,
     notes: null,
     threadId: null,
