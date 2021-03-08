@@ -134,13 +134,12 @@ async function notifyExpired(rows) {
             const [title, message] = await renderMessage('supporting-expired-pm', {days});
             await startConversation([userId], title, message, true);
             debug('PM sent to', userId);
+            // And note it
+            setSetting(userId, NOTIFIED_EXPIRED, convert(expiredEndDate));
         }
         catch (error) {
             console.error('Failed to send PM to', userId, error);
         }
-
-        // And note it
-        setSetting(userId, NOTIFIED_EXPIRED, convert(expiredEndDate));
     }
 }
 
@@ -178,13 +177,12 @@ async function notifyExpiring() {
             const [title, message] = await renderMessage('supporting-expiring-pm', {days});
             await startConversation([userId], title, message, true);
             debug('PM sent to', userId);
+            // And note it
+            setSetting(userId, NOTIFIED_EXPIRING, activeEndDate);
         }
         catch (error) {
             console.error('Failed to send PM to', userId, error);
         }
-
-        // And note it
-        setSetting(userId, NOTIFIED_EXPIRING, activeEndDate);
     }
 }
 
