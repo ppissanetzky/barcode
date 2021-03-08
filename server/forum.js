@@ -22,12 +22,6 @@ const typeMap = new Map(db.getTypes().map(({type, forumId}) => [type, forumId]))
 
 //-----------------------------------------------------------------------------
 
-const POSTING_ENABLED =
-    BC_FORUM_MODE === "production" ||
-    parseInt(BC_FORUM_MODE, 10) > 0;
-
-//-----------------------------------------------------------------------------
-
 function getForumForType(type) {
     let result;
     if (BC_FORUM_MODE === 'production') {
@@ -53,16 +47,12 @@ function itemAdded(fragId) {
         assert(user, `Failed to look up user ${frag.ownerId}`);
         const [title, message] = await renderMessage('new-item-thread', {user, frag});
         const forumId = getForumForType(frag.type);
-        console.log(`New thread in forum ${forumId}`);
-        console.log(`"${title}"`);
-        console.log(`"${message}"`);
-        if (!POSTING_ENABLED) {
-            return;
-        }
         const newThreadId = await startForumThread(user.id, forumId, title, message);
-        console.log(`Created thread ${newThreadId}`);
-        // Update the database with the new thread ID
-        db.setMotherThreadId(frag.motherId, newThreadId);
+        if (newThreadId) {
+            console.log(`Created thread ${newThreadId}`);
+            // Update the database with the new thread ID
+            db.setMotherThreadId(frag.motherId, newThreadId);
+        }
     });
 }
 
@@ -75,11 +65,6 @@ function uberPost(threadId, messageName, context) {
             return;
         }
         const [, message] = await renderMessage(messageName, context);
-        console.log(`New post in thread ${threadId}`);
-        console.log(`"${message}"`);
-        if (!POSTING_ENABLED) {
-            return;
-        }
         await postToForumThread(threadId, message);
         console.log(`Posted to thread ${threadId}`)
     });

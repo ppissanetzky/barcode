@@ -529,7 +529,7 @@ async function startForumThread(userId, forumId, title, message) {
     console.log(`"${title}"`);
     console.log(`"${message}"`);
     if (!POSTING_ENABLED) {
-        return;
+        return 0;
     }
     const {thread: {thread_id}} = await apiRequest('threads/', 'POST', {
         node_id: forumId,
