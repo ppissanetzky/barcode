@@ -21,14 +21,19 @@ lock('backup-database', () => {
     //-------------------------------------------------------------------------
 
     const dateString = justTheLocalDate(new Date());
+    const backupDirectory = path.join(BC_DATABASE_DIR, 'backups');
 
     function sourceName(name) {
         return path.join(BC_DATABASE_DIR, name);
     }
 
     function backupName(name) {
-        return path.join(BC_DATABASE_DIR, `${name}.${dateString}`);
+        return path.join(backupDirectory, `${name}.${dateString}`);
     }
+
+    //-------------------------------------------------------------------------
+
+    fs.mkdirSync(backupDirectory, {recursive: true});
 
     //-------------------------------------------------------------------------
     // Look for all files that end with .sqlite3 in the databases directory and
