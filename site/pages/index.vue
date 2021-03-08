@@ -70,7 +70,7 @@
         </v-btn>
       </v-col>
       <v-col cols="auto">
-        <v-btn color="primary" to="add-new-item">
+        <v-btn color="primary" to="before-adding">
           Add a new item
         </v-btn>
       </v-col>

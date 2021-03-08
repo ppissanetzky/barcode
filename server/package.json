@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "server": "DEBUG=barcode:* nodemon server.js",
+    "server": "nodemon server.js",
     "web-server": "dotenv -e ~/barcode-env -- docker-compose -f local-web-server/docker-compose.yml up"
   },
   "dependencies": {

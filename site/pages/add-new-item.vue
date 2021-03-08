@@ -197,7 +197,7 @@
                         outlined
                         persistent-hint
                         :hint="isUpdating && rules !== frag.rules ? 'Collection changes are permanent' : ''"
-                        :disabled="isUpdating ? frag.rules !== 'private' : false"
+                        :disabled="isUpdating ? frag.rules !== 'private' : rulesFrozen"
                       />
                     </validation-provider>
                   </v-col>
@@ -453,8 +453,15 @@ export default {
       this.types = types
       this.allRules = rules
 
-      // If a frag ID is passed in, we are editing an existing item
-      const { fragId } = this.$route.query
+      const { fragId, collection } = this.$route.query
+
+      // If we got rules from a query parameter
+      if (collection) {
+        this.rules = collection
+        this.rulesFrozen = true
+      }
+
+      // If a frag ID is passed in, we are editing an existing item.
       if (fragId) {
         const { frag } = await this.$axios.$get(`/api/dbtc/frag/${fragId}`)
         this.frag = frag
@@ -513,7 +520,10 @@ export default {
 
       // For the drop-down sections
       showAdditionalDetails: false,
-      showSourceDetails: false
+      showSourceDetails: false,
+
+      // If rules came in via query parameter, we freeze them
+      rulesFrozen: false
     }
   },
   computed: {

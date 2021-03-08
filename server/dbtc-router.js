@@ -54,7 +54,8 @@ const {
     INVALID_RECIPIENT,
     INVALID_RULES,
     NOT_YOURS,
-    INVALID_IMPORT
+    INVALID_IMPORT,
+    INVALID_THREAD
 } = require('./errors');
 
 //-----------------------------------------------------------------------------
@@ -728,6 +729,62 @@ router.get('/threads-for-type', async (req, res) => {
     res.json({
         threads
     });
+});
+
+//-----------------------------------------------------------------------------
+// Get a list of DBTC threads started by another user as well as a list of
+// thread IDs the user has imported and a list of threads that have not been
+// imported.
+//-----------------------------------------------------------------------------
+
+router.get('/threads/:userId', async (req, res) => {
+    const {params: {userId}} = req;
+    const id = parseInt(userId, 10)
+    const threads = await getDBTCThreadsForUser(id);
+    const importedThreadIds = db.getUserThreadIds(id);
+    const threadsNotImported = threads.filter(({threadId}) =>
+        !importedThreadIds.includes(threadId));
+    res.json({threads, threadsNotImported, importedThreadIds});
+});
+
+//-----------------------------------------------------------------------------
+// Returns a list of alive, DBTC frags owned by this user
+//-----------------------------------------------------------------------------
+
+router.get('/frags/:userId', (req, res) => {
+    const {params: {userId}} = req;
+    const id = parseInt(userId, 10)
+    const frags = db.getAllDBTCFragsForUser(id);
+    res.json({frags});
+});
+
+//-----------------------------------------------------------------------------
+// The caller is telling us that they got a frag of the given item from
+// the given user. The frag must be a DBTC frag. If it has a thread, we will
+// post to that thread prompting the given user to give the digital frag
+//-----------------------------------------------------------------------------
+
+router.put('/received/:fragId/from/:userId', async (req, res, next) => {
+    const {user, params: {fragId, userId}} = req;
+    const frag = db.validateFrag(userId, fragId, true, -1);
+    if (!frag) {
+        return next(INVALID_FRAG());
+    }
+    if (frag.rules !== 'dbtc') {
+        return next(INVALID_FRAG());
+    }
+    if (isPrivate(frag)) {
+        return next(NOT_YOURS());
+    }
+    if (!frag.threadId) {
+        return next(INVALID_THREAD());
+    }
+    const giver = await lookupUser(userId, true);
+    if (!giver) {
+        return next(INVALID_RECIPIENT());
+    }
+    uberPost(frag.threadId, 'update-frag-received', {user, frag, giver});
+    res.status(200).end();
 });
 
 //-----------------------------------------------------------------------------

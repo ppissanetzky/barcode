@@ -78,7 +78,7 @@
           <v-list-item-subtitle>{{ $config.version }}</v-list-item-subtitle>
         </v-list-item>
         <v-divider />
-        <v-list-item to="/add-new-item">
+        <v-list-item to="/before-adding">
           <v-list-item-icon><v-icon>mdi-plus-circle-outline</v-icon></v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>Add a new item</v-list-item-title>

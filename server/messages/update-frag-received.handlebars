@@ -1,0 +1,10 @@
+{{!
+This one is used to create a new post when a user says that they received a
+frag but it is not in the system yet.
+    user - the user object representing the one who says they got a frag
+    giver - the user object for the one who gave the frag
+    frag - all the data from 'mothers' and 'frags' for this item
+}}
+no title - this is a post
+
+Hey @{{giver.name}}, @{{user.name}} says that they got a frag from you. Can you please [URL={{fragUrl frag.fragId "give"}}]update it in BARcode[/URL]?

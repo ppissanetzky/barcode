@@ -88,6 +88,33 @@ function selectAllFragsForUser(user) {
     return db.all(SELECT_FRAGS_FOR_USER, {userId: user.id});
 }
 
+function getAllDBTCFragsForUser(userId) {
+    return db.all(
+        `
+        SELECT
+            mothers.*,
+            frags.*,
+            motherFans.fanCount
+        FROM
+            mothers,
+            frags
+        LEFT OUTER JOIN
+            motherFans
+        ON
+            mothers.motherId = motherFans.motherId
+        WHERE
+            mothers.rules = 'dbtc' AND
+            frags.motherId = mothers.motherId AND
+            frags.ownerId = $userId AND
+            frags.isAlive = 1 AND
+            frags.status IS NULL
+        ORDER BY
+            mothers.name ASC
+        `,
+        {userId}
+    );
+}
+
 //-----------------------------------------------------------------------------
 
 const SELECT_A_FRAG = `
@@ -1168,11 +1195,10 @@ const SELECT_USER_THREADS = `
     SELECT
         threadId
     FROM
-        mothers,
-        frags
+        motherFrags
     WHERE
-        mothers.motherId = frags.motherId AND
-        frags.ownerId = $userId AND
+        motherFrags.ownerId = $userId AND
+        threadId IS NOT NULL AND
         threadId > 0
 `;
 
@@ -1228,5 +1254,6 @@ module.exports = {
     getMotherForThread,
     getJournalsForMother,
     getUserStats,
-    getMotherFrag
+    getMotherFrag,
+    getAllDBTCFragsForUser
 }

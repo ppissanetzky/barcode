@@ -162,7 +162,7 @@ function makeUser(xfUser) {
     const allowed = isXfUserAllowed(xfUser);
     return ({
         id: parseInt(user_id, 10),
-        name: allowed ? username : username + ' (NSM)',
+        name: allowed ? username : username,
         allowed,
         canImpersonate: canXfUserImpersonate(xfUser),
         canHoldEquipment: canXfUserHoldEquipment(xfUser),
