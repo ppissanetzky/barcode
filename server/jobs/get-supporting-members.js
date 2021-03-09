@@ -245,10 +245,14 @@ async function getSupportingMembers() {
 
         const db = userDatabase.connect();
 
+        // Count how many we delete and insert
+        let deleted = 0;
+        let inserted = 0;
+
         db.transaction(() => {
 
             // Delete all existing rows
-            const deleted = db.change('DELETE FROM supportingMembers');
+            deleted = db.change('DELETE FROM supportingMembers');
             debug('Deleted', deleted, 'rows');
 
             // Now, create an insert statement
@@ -276,7 +280,6 @@ async function getSupportingMembers() {
 
             // Run the insert statement for each row we got from XenForo
             debug('Inserting rows...');
-            let inserted = 0;
 
             for (const row of rows) {
                 const {
@@ -305,7 +308,10 @@ async function getSupportingMembers() {
             debug('Inserted', inserted, 'rows');
         });
 
-        logToForum(`We have ${rows.length} supporting members`);
+        // Only log if there was a change
+        if (inserted !== deleted) {
+            logToForum(`We have ${inserted} supporting members`);
+        }
 
         debug('Done refreshing supporting members');
 
