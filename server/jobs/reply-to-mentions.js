@@ -4,8 +4,9 @@ const {BARCODE_USER, getAlerts, getPost} = require('../xenforo');
 const {getSettings, setSetting} = require('../user-database');
 const {getMotherForThread} = require('../dbtc-database');
 const {getItemForThread} = require('../equipment-database');
-const {dateFromIsoString} = require('../dates');
+const {dateFromIsoString, toUnixTime} = require('../dates');
 const {uberPost} = require('../forum');
+const debug = require('debug')('barcode:reply-to-mentions');
 
 lock('reply-to-mentions', async () => {
 
@@ -19,14 +20,14 @@ lock('reply-to-mentions', async () => {
 
     // If we didn't have one to begin with, bail
     if (!lastAlertDate) {
-        console.log('No last alert date');
+        debug('No last alert date');
         return;
     }
 
-    console.log('Last alert date is', lastAlertDate);
+    debug('Last alert date is', lastAlertDate);
 
     // Convert to Unix epoch
-    const lastAlertTime = Math.floor(dateFromIsoString(lastAlertDate).getTime() / 1000);
+    const lastAlertTime = toUnixTime(lastAlertDate);
 
     // Get all the alerts that are after our last alert time,
     // are mentions and are in a post
@@ -35,21 +36,26 @@ lock('reply-to-mentions', async () => {
         action === 'mention' &&
         content_type === 'post');
 
-    console.log('New mentions', alerts.length);
+    if (!alerts.length) {
+        debug ('No new mentions');
+        return;
+    }
+
+    debug('New mentions', alerts.length);
 
     for (const alert of alerts) {
         const {content_id, alert_text} = alert;
-        console.log(alert_text, 'in post', content_id);
+        debug(alert_text, 'in post', content_id);
         // Get information about the post
         const post = await getPost(content_id);
         const {thread_id, user_id} = post;
-        console.log('Thread', thread_id, 'user', user_id);
+        debug('Thread', thread_id, 'user', user_id);
         // See if there is a mother associated with this thread
         const mother = getMotherForThread(thread_id);
-        console.log('Mother', mother);
+        debug('Mother', mother);
         // See if there is a piece of equipment associated with the thread
         const item = getItemForThread(thread_id);
-        console.log('Item', item);
+        debug('Item', item);
         // Now post with all the context without waiting
         uberPost(thread_id, 'reply-to-mention', {
             userId: user_id,

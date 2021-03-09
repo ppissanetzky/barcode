@@ -3,7 +3,15 @@
 // This is used by both the server and the web app
 // ----------------------------------------------------------------------------
 
-const { parseISO, differenceInDays, formatDistance, addDays, addYears } = require('date-fns')
+const {
+  parseISO,
+  differenceInDays,
+  formatDistance,
+  addDays,
+  addYears,
+  fromUnixTime,
+  getUnixTime
+} = require('date-fns')
 
 // ----------------------------------------------------------------------------
 
@@ -60,7 +68,7 @@ function utcIsoStringFromDate (date) {
 }
 
 function utcIsoStringFromUnixTime (t) {
-  return utcIsoStringFromDate(new Date(t * 1000));
+  return utcIsoStringFromDate(fromUnixTime(t));
 }
 
 // ----------------------------------------------------------------------------
@@ -111,6 +119,12 @@ function differenceBetween (isoStringOrDateThen, isoStringOrDateNow) {
 
 // ----------------------------------------------------------------------------
 
+function toUnixTime(isoStringOrDate) {
+  return getUnixTime(dateFromIsoStringOrDate(isoStringOrDate));
+}
+
+// ----------------------------------------------------------------------------
+
 module.exports = {
   age,
   ageSince,
@@ -126,5 +140,7 @@ module.exports = {
   justTheLocalDate,
   addDays,
   addYears,
-  validIsoString
+  validIsoString,
+  fromUnixTime,
+  toUnixTime
 }
