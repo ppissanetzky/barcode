@@ -2,6 +2,10 @@ version: "3.7"
 services:
   local-web-server:
     image: nginx
+    logging:
+      driver: local
+      options:
+        mode: non-blocking
     ports:
       - "8080:8080"
     network_mode: host

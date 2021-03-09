@@ -24,6 +24,10 @@ services:
       BC_SITE_BASE_URL: http://barcode.bareefers.org/bc
       BC_DATABASE_DIR: /volumes/databases
       BC_UPLOADS_DIR: /volumes/uploads
+    logging:
+      driver: local
+      options:
+        mode: non-blocking
 
   web-server:
     restart: unless-stopped
@@ -47,6 +51,10 @@ services:
       barcode-net:
     depends_on:
       - api-server
+    logging:
+      driver: local
+      options:
+        mode: non-blocking
 
 #------------------------------------------------------------------------------
 # DEMO
@@ -79,6 +87,10 @@ services:
       BC_SITE_BASE_URL: http://barcode.bareefers.org:444/bc
       BC_DATABASE_DIR: /volumes/databases
       BC_UPLOADS_DIR: /volumes/uploads
+    logging:
+      driver: local
+      options:
+        mode: non-blocking
 
   demo-web-server:
     restart: unless-stopped
@@ -101,6 +113,10 @@ services:
       demo-barcode-net:
     depends_on:
       - demo-api-server
+    logging:
+      driver: local
+      options:
+        mode: non-blocking
 
 networks:
   barcode-net:
