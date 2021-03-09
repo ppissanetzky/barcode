@@ -252,6 +252,41 @@
         </v-card>
       </v-dialog>
 
+      <!-- A dialog to start a conversation with the next people in line -->
+      <v-dialog
+        v-if="selectedItem"
+        v-model="showStartConversationDialog"
+        max-width="375px"
+      >
+        <v-card>
+          <v-toolbar dense>
+            <v-toolbar-title>{{ selectedItem.name }}</v-toolbar-title>
+            <v-spacer />
+            <v-btn icon small @click="showStartConversationDialog=false">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </v-toolbar>
+          <v-progress-linear v-if="loadingQueue" indeterminate />
+          <div v-else>
+            <v-card-text v-if="!selectedItem.queue.waiters.length">
+              There's no one in line.
+            </v-card-text>
+            <v-card-text v-else>
+              <p>
+                Automatically start a conversation with the next few people in line to let them know you're done with the {{ selectedItem.shortName }}.
+              </p>
+              <v-btn
+                text
+                :loading="startingConversation"
+                @click="startConversation"
+              >
+                Start conversation
+              </v-btn>
+            </v-card-text>
+          </div>
+        </v-card>
+      </v-dialog>
+
       <!-- A dialog for the queue -->
       <v-dialog
         v-if="selectedItem && selectedItem.queue"
@@ -372,6 +407,17 @@
                       </v-btn>
                     </v-list-item>
 
+                    <v-list-item v-if="item.hasIt">
+                      <v-btn
+                        small
+                        text
+                        :loading="loadingQueue"
+                        @click.stop="showStartConversationDialogFor(item)"
+                      >
+                        Notify next in line
+                      </v-btn>
+                    </v-list-item>
+
                     <v-list-item v-if="!item.hasIt && item.inList">
                       <v-btn
                         small
@@ -479,6 +525,8 @@ export default {
       showDropOutDialog: false,
       // Toggles visibility of the transfer dialog
       showTransferDialog: false,
+      // Toggles visibility of the start conversation dialog
+      showStartConversationDialog: false,
       // The current step in the get in line dialog
       step: 1,
       // The phone number entered
@@ -512,7 +560,9 @@ export default {
       // Targets for the transfer auto complete
       targets: [],
       // Set to true when the queue is visible
-      showQueue: false
+      showQueue: false,
+      // Set to true while we're starting a conversation
+      startingConversation: false
     }
   },
   computed: {
@@ -533,6 +583,16 @@ export default {
     }
   },
   methods: {
+    async loadQueueFor (item) {
+      // If we don't have the queue already, go get it
+      if (!item.queue) {
+        this.loadingQueue = true
+        const url = `/api/equipment/queue/${item.itemId}`
+        const { queue } = await this.$axios.$get(url)
+        item.queue = queue
+        this.loadingQueue = false
+      }
+    },
     async showGetInLineDialogFor (item) {
       // If this user can hold equipment, we skip the whole dialog and just
       // put them in line
@@ -560,6 +620,11 @@ export default {
         this.showGetInLineDialog = true
       }
     },
+    showStartConversationDialogFor (item) {
+      this.selectedItem = item
+      this.showStartConversationDialog = true
+      this.loadQueueFor(item)
+    },
     showDropOutDialogFor (item) {
       this.droppingOut = false
       this.selectedItem = item
@@ -569,14 +634,7 @@ export default {
       this.selectedItem = item
       this.otherUserId = undefined
       this.transferring = false
-      // If we don't have the queue already, go get it
-      if (!item.queue) {
-        this.loadingQueue = true
-        const url = `/api/equipment/queue/${item.itemId}`
-        const { queue } = await this.$axios.$get(url)
-        item.queue = queue
-        this.loadingQueue = false
-      }
+      await this.loadQueueFor(item)
       // Now, populate the targets of the transfer
       const target = item.hasIt ? item.queue.waiters : item.queue.haves
       this.targets = target.map(({ user: { id, name } }) => ({
@@ -592,11 +650,7 @@ export default {
       if (item.queue) {
         return
       }
-      this.loadingQueue = true
-      const url = `/api/equipment/queue/${item.itemId}`
-      const { queue } = await this.$axios.$get(url)
-      item.queue = queue
-      this.loadingQueue = false
+      await this.loadQueueFor(item)
     },
     validatePhoneNumber (value) {
       if (!value) {
@@ -715,6 +769,14 @@ export default {
       this.transferring = false
       // Close the dialog
       this.showTransferDialog = false
+    },
+    async startConversation () {
+      const item = this.selectedItem
+      this.startingConversation = true
+      const url = `/api/equipment/conversation/${item.itemId}`
+      await this.$axios.$put(url)
+      this.startingConversation = false
+      this.showStartConversationDialog = false
     }
   }
 }

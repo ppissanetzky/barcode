@@ -1,0 +1,11 @@
+{{!
+This one is used to start a conversation between the person holding an item and
+the next few people in line
+    item - the item
+    user - the user
+}}
+{{user.name}} is done with the {{item.shortName}}
+
+Please make arrangements with @{{user.name}} to exchange the {{item.shortName}}. {{#if user.location}}{{user.name}} is in {{user.location}}.{{/if}}
+
+[I]This message was automatically sent by BARcode[/I]

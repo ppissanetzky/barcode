@@ -438,6 +438,37 @@ router.get('/queue/:itemId', async (req, res, next) => {
 });
 
 //-----------------------------------------------------------------------------
+// This one lets the user that has the item start a conversation with the
+// next few people in line
+//-----------------------------------------------------------------------------
+
+router.put('/conversation/:itemId', async (req, res, next) => {
+    const {user, params: {itemId}} = req;
+    // Make sure the item is valid
+    const item = db.getItemForUser(itemId, user.id);
+    if (!item) {
+        return next(INVALID_EQUIPMENT());
+    }
+    // Make sure this user has the item
+    if (!item.hasIt) {
+        return next(NOT_YOURS());
+    }
+    // Get the waiters
+    const {waiters} = await getQueue(item);
+    if (waiters.length) {
+        // Pick up the first 5 (or less) user IDs
+        const next = waiters.slice(0, 5).map(({user: {id}}) => id);
+        // Collect all the recipients
+        const recipients = [user.id, ...next];
+        // Render the message
+        const [title, body] = await renderMessage('equipment-ready-pm', {user, item});
+        // Now start the conversation
+        await startConversation(recipients, title, body);
+    }
+    res.status(200).end();
+});
+
+//-----------------------------------------------------------------------------
 
 module.exports = router;
 
