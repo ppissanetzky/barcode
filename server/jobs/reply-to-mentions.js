@@ -4,11 +4,10 @@ const {BARCODE_USER, getAlerts, getPost} = require('../xenforo');
 const {getSettings, setSetting} = require('../user-database');
 const {getMotherForThread} = require('../dbtc-database');
 const {getItemForThread} = require('../equipment-database');
-const {dateFromIsoString, toUnixTime} = require('../dates');
 const {uberPost} = require('../forum');
-const debug = require('debug')('barcode:reply-to-mentions');
+const {toUnixTime} = require('../dates');
 
-lock('reply-to-mentions', async () => {
+lock('reply-to-mentions', async (debug) => {
 
     const now = new Date();
 

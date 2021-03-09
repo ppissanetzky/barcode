@@ -133,7 +133,6 @@ class Database {
             // If it is already at the desired version mark it as migrated
             // and return it
             if (user_version === version) {
-                console.log(name, 'database is version', user_version);
                 this.migrated = true;
                 return db;
             }
