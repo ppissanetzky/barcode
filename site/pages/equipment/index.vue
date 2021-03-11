@@ -266,7 +266,7 @@
               <v-icon>mdi-close</v-icon>
             </v-btn>
           </v-toolbar>
-          <v-progress-linear v-if="loadingQueue" indeterminate />
+          <v-progress-linear v-if="loadingQueue || !selectedItem.queue" indeterminate />
           <div v-else>
             <v-card-text v-if="!selectedItem.queue.waiters.length">
               There's no one in line.
