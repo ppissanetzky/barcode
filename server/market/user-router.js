@@ -18,12 +18,12 @@ const router = express.Router();
 
 //-----------------------------------------------------------------------------
 // THIS MUST BE FIRST
-// Make sure all the user routes have muid in the session and add it to req
+// Make sure all the user routes have muid
 //-----------------------------------------------------------------------------
 
 router.use((req, res, next) => {
     const {muid} = req;
-    return muid ? next() : res.status(401).end();
+    return muid ? next() : res.sendStatus(401);
 });
 
 /*

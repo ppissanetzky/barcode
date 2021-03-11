@@ -101,7 +101,7 @@ export default {
     return {
       // User is the name of the current user if they are signed in. Undefined
       // otherwise.
-      user: false,
+      user: undefined,
       // True if this user is a seller
       seller: false,
 
