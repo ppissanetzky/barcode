@@ -38,6 +38,13 @@ class XenForoPassportStrategy extends Strategy {
     }
 
     async authenticate(req, options) {
+        // Does not reuse an existing user
+        const reauth = options && options.reauth;
+        // Allows non-supporting members in
+        const allowAll = options && options.allowAll;
+        // Include e-mail
+        const withEmail = options && options.withEmail;
+
         try {
             const {user} = req;
 
@@ -47,9 +54,12 @@ class XenForoPassportStrategy extends Strategy {
             if (BC_TEST_USER) {
                 const id = parseInt(BC_TEST_USER, 10);
                 if (id && _.isSafeInteger(id)) {
-                    const testUser = await XenForo.lookupUser(id);
+                    const testUser = await XenForo.lookupUser(id, true, withEmail);
                     if (!testUser) {
                         throw new Error('Failed to lookup test user');
+                    }
+                    if (!testUser.allowed && !allowAll) {
+                        throw new Forbidden(`Test user ${id} is not allowed`);
                     }
                     debug(`Test user ${testUser.name}:${testUser.id}`);
                     return this.success(testUser);
@@ -57,13 +67,22 @@ class XenForoPassportStrategy extends Strategy {
             }
 
             // Otherwise, if there is already a user, pass
-            if (user) {
-                debug(`Already have ${user.name}:${user.id}`);
-                return this.pass();
+            // Unless reauth is true
+            if (user && !reauth) {
+                // If the existing user is not allowed and we're not
+                // set to allow all users, then ignore it
+                if (!user.allowed && !allowAll) {
+                    debug('Existing user is not allowed');
+                }
+                // Otherwise, we use it
+                else {
+                    debug(`Already have ${user.name}:${user.id}`);
+                    return this.pass();
+                }
             }
 
             // Get the XenForo cookies
-            const cookies = req.cookies;
+            const {cookies} = req;
             const sessionId = cookies[NEW_SESSION_COOKIE] ||
                 cookies[OLD_SESSION_COOKIE];
             const rememberCookie = cookies[NEW_USER_COOKIE] ||
@@ -90,7 +109,7 @@ class XenForoPassportStrategy extends Strategy {
             }
 
             // Get details about the user
-            const {username, user_state} = xfUser;
+            const {username, user_state, email} = xfUser;
 
             // If the state is not 'valid', we don't like the user
             if (user_state !== 'valid') {
@@ -101,8 +120,13 @@ class XenForoPassportStrategy extends Strategy {
             const authenticatedUser = XenForo.makeUser(xfUser);
 
             // If the user is not allowed, we fail
-            if (!authenticatedUser.allowed) {
+            if (!allowAll && !authenticatedUser.allowed) {
                 throw new Forbidden('Not a supporting member');
+            }
+
+            // If we want the user's e-mail address, add it now
+            if (withEmail) {
+                authenticatedUser.email = email;
             }
 
             // OK, all is well

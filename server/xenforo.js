@@ -204,7 +204,7 @@ function cacheUser(user) {
 // 'forDisplayOnly' is set to true, in which case, the user is returned
 // regardless
 
-async function lookupUser(userId, forDisplayOnly) {
+async function lookupUser(userId, forDisplayOnly, includeEmail) {
     if (!userId) {
         console.error('Missing userId in lookup');
         return;
@@ -215,9 +215,12 @@ async function lookupUser(userId, forDisplayOnly) {
         console.error(`Invalid userId "${userId}"`);
         return;
     }
-    const result = USER_CACHE.get(id);
-    if (result) {
-        return result;
+    // If the email is not requested, we can use a cached user
+    if (!includeEmail) {
+        const result = USER_CACHE.get(id);
+        if (result) {
+            return result;
+        }
     }
     // Otherwise, look the user up in XenForo
     try {
@@ -236,7 +239,17 @@ async function lookupUser(userId, forDisplayOnly) {
                 user.secondary_group_ids);
         }
         if (user && (forDisplayOnly || isAllowed)) {
-            return cacheUser(makeUser(user));
+            // Create the user and cache it
+            const result = cacheUser(makeUser(user));
+            // If the email is not needed, we can just return that
+            if (!includeEmail) {
+                return result;
+            }
+            // Otherwise, we return a new object that has the email
+            return ({
+                ...result,
+                email: user.email
+            });
         }
     }
     catch(error) {

@@ -155,6 +155,13 @@ module.exports = {
 
     get BC_XF_DB_CREDENTIALS () { return get('BC_XF_DB_CREDENTIALS') },
 
+    //-------------------------------------------------------------------------
+    // Facebook app ID and secret for Facebook login in the market
+    //-------------------------------------------------------------------------
+
+    get BCM_FACEBOOK_APP_ID () { return get('BCM_FACEBOOK_APP_ID') },
+
+    get BCM_FACEBOOK_APP_SECRET () { return get('BCM_FACEBOOK_APP_SECRET') }
 
 };
 

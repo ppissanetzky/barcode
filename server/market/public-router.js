@@ -1,20 +1,35 @@
+'use strict';
+
 const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
 
 const _ = require('lodash');
 const express = require('express');
+const passport = require('passport');
 const multer = require('multer');
 
-const {resizeImage} = require('./image-resizer');
+const debug = require('debug')('barcode:market-public');
 
-const {validIsoString} = require('./dates');
+const {resizeImage} = require('../image-resizer');
+
+const {validIsoString} = require('../dates');
+
+const XenForo = require('../xenforo');
+
+const {Strategy: FacebookStrategy} = require('passport-facebook');
 
 //-----------------------------------------------------------------------------
 // Config
 //-----------------------------------------------------------------------------
 
-const {BC_UPLOADS_DIR, BC_MARKET_ENABLED, BC_SITE_BASE_URL} = require('./barcode.config');
+const {
+    BC_UPLOADS_DIR,
+    BC_MARKET_ENABLED,
+    BC_SITE_BASE_URL,
+    BCM_FACEBOOK_APP_ID,
+    BCM_FACEBOOK_APP_SECRET
+} = require('../barcode.config');
 
 //-----------------------------------------------------------------------------
 // A function that returns a new connection to the database, so we can
@@ -35,7 +50,14 @@ const {
     MISSING_PICTURE,
     INVALID_PICTURE_INDEX
 
-} = require('./errors');
+} = require('../errors');
+
+//-----------------------------------------------------------------------------
+// The two sub-routers
+//-----------------------------------------------------------------------------
+
+const userRouter = require('./user-router');
+const sellerRouter = require('./seller-router');
 
 //-----------------------------------------------------------------------------
 // The destinaton for uploaded files (pictures)
@@ -69,30 +91,156 @@ const router = express.Router();
 //-----------------------------------------------------------------------------
 // Must be first, guards the API when the market is not enabled
 // If it is, creates a database connection and saves it in req.db
-// Also gets the seller
 //-----------------------------------------------------------------------------
 
 router.use((req, res, next) => {
     if (!BC_MARKET_ENABLED) {
-        return res.status(404).end();
+        return res.sendStatus(404);
     }
+    // If the request has 'user', delete it so we don't use it anywhere
+    // It should only be used in the non-market area of DBTC
+    delete req.user;
     // Create a database connection for this request
     req.db = connect();
-    // Get the seller (can be undefined)
-    req.seller = req.db.getSellerForUser(req.user);
+    // Pull up muid from the session
+    req.muid = req.session.muid;
     // Continue
     next();
 });
 
 //-----------------------------------------------------------------------------
-// Returns the seller for this user, which could be undefined
+// To get the user/seller status
 //-----------------------------------------------------------------------------
 
-router.get('/seller', (req, res) => {
-    const {user, seller} = req;
-    res.json({user, seller});
+router.get('/status', (req, res) => {
+    const {db, muid, msid} = req;
+    res.json({
+        user: db.getUserName(muid),
+        seller: db.isSeller(muid)
+    });
 });
 
+//-----------------------------------------------------------------------------
+// The user and seller routers. They guard themselves
+//-----------------------------------------------------------------------------
+
+router.use('/user', userRouter);
+router.use('/seller', sellerRouter);
+
+//-----------------------------------------------------------------------------
+// Log in with BAR/XenForo
+//-----------------------------------------------------------------------------
+
+const XF_AUTHENTICATE = passport.authenticate('XenForo', {
+    // Causes 'authenticate' to get a new user even if there is
+    // one there already
+    reauth: true,
+    // Allows non-supporting members to sign in
+    allowAll: true,
+    // Include the user's e-mail address in the lookup
+    withEmail: true
+});
+
+router.post('/login/bar', XF_AUTHENTICATE, (req, res, next) => {
+    const {db, session, user} = req;
+    // Debug
+    debug('User', user);
+    // Delete the user from the request
+    delete req.user;
+    // Delete the passport since we have what we need
+    delete session.passport;
+    // Create the muid
+    const muid = `bar:${user.id}`;
+    // Start a transaction
+    db.transaction(async () => {
+        // See if a user already exists. If not, add a new one
+        if (!db.getUser(muid)) {
+            db.addUser(muid, 'bar', user.name, user.email);
+        }
+        // Save the external user ID as muid - market user id
+        session.muid = muid;
+        // Save the session and send back a 200
+        session.save(() => {
+            debug('Saved login session', session);
+            res.sendStatus(200);
+        });
+    });
+});
+
+//-----------------------------------------------------------------------------
+// Log in with facebook
+//-----------------------------------------------------------------------------
+
+passport.use(new FacebookStrategy({
+    clientID: BCM_FACEBOOK_APP_ID,
+    clientSecret: BCM_FACEBOOK_APP_SECRET,
+    callbackURL: `${BC_SITE_BASE_URL}/api/market/login/facebook/callback`,
+    profileFields: ['id', 'displayName', 'email']
+},
+(accessToken, refreshToken, profile, callback) => {
+    debug('Facebook profile :', profile);
+    try {
+        const db = connect();
+        db.transaction(() => {
+            const muid = `facebook:${profile.id}`;
+            if (!db.getUser(muid)) {
+                db.addUser(muid, 'facebook', profile.displayName, profile._json.email || '');
+            }
+            // We return a user object that just has muid
+            callback(null, {muid});
+        });
+    }
+    catch (error) {
+        console.error('Facebook refresh failed for', profile, error);
+        callback(error);
+    }
+}));
+
+//-----------------------------------------------------------------------------
+// This one is called directly by the UI and redirects the UI to facebook
+//-----------------------------------------------------------------------------
+
+router.get('/login/facebook', passport.authenticate('facebook', {
+    scope: ['email']
+}));
+
+//-----------------------------------------------------------------------------
+// When facebook is done, it calls us here. In the case of success, it passes
+// on to the second function with req.user populated from the FB strategy
+// code above.
+//-----------------------------------------------------------------------------
+
+router.get('/login/facebook/callback',
+    passport.authenticate('facebook', {
+        failureRedirect: `${BC_SITE_BASE_URL}/market`
+    }),
+    (req, res) => {
+        debug('Facebook callback with success', req.user);
+        const {db, session, user: {muid}} = req;
+        // We no longer need this user
+        delete req.user;
+        // We no longer need the passport
+        delete session.passport;
+        // Get the muid that's in the user object
+        session.muid = muid;
+        // Save the session and redirect the UI
+        session.save(() => {
+            res.redirect(`${BC_SITE_BASE_URL}/market`);
+        });
+    }
+);
+
+//-----------------------------------------------------------------------------
+
+router.post('/logout', (req, res) => {
+    const {session} = req;
+    delete session.muid;
+    session.save(() => {
+        res.sendStatus(200);
+    });
+});
+
+//=============================================================================
 //-----------------------------------------------------------------------------
 // Updates or creates a seller
 //-----------------------------------------------------------------------------

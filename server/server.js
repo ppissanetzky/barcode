@@ -1,3 +1,4 @@
+'use strict';
 
 require('console-stamp')(console, {pattern: 'isoDateTime', metadata: process.pid});
 
@@ -47,7 +48,7 @@ const dbtcRouter = require('./dbtc-router');
 const equipmentRouter = require('./equipment-router');
 const userRouter = require('./user-router');
 const adminRouter = require('./admin-router');
-const marketRouter = require('./market-router');
+const marketRouter = require('./market/public-router');
 
 //-----------------------------------------------------------------------------
 // The XenForo stuff
@@ -143,10 +144,24 @@ passport.deserializeUser((user, done) => done(null, user));
 passport.use(new XenForoPassportStrategy());
 
 //-----------------------------------------------------------------------------
+// A way to send a 404 if there are no matches in the route. I saw a case where
+// I called /market/user which didn't exist, and express then tried /user.
+// That's not desirable, so I'm using this 404 to 'terminate' the sub-routes.
+//-----------------------------------------------------------------------------
+
+const or404 = (req, res) => res.sendStatus(404);
+
+//-----------------------------------------------------------------------------
 // CAREFUL - THESE ROUTES DO NOT GET USER VALIDATION. THEY ARE PUBLIC
 //-----------------------------------------------------------------------------
 
-app.use('/public', publicRouter);
+app.use('/public', publicRouter, or404);
+
+//-----------------------------------------------------------------------------
+// The market does its own thing with regards to authentication
+//-----------------------------------------------------------------------------
+
+app.use('/market', marketRouter, or404);
 
 //-----------------------------------------------------------------------------
 // Now, we use the passport authentication strategy to get a user
@@ -242,12 +257,13 @@ app.delete('/impersonate', (req, res) => {
 // Now, the routes
 //-----------------------------------------------------------------------------
 
-app.use('/dbtc', dbtcRouter);
-app.use('/equipment', equipmentRouter);
-app.use('/user', userRouter);
-app.use('/admin', adminRouter);
-app.use('/market', marketRouter);
+app.use('/dbtc', dbtcRouter, or404);
+app.use('/equipment', equipmentRouter, or404);
+app.use('/user', userRouter, or404);
+app.use('/admin', adminRouter, or404);
 
+//-----------------------------------------------------------------------------
+// Error handler
 //-----------------------------------------------------------------------------
 
 app.use((error, req, res, next) => {

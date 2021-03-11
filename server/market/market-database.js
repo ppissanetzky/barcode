@@ -1,14 +1,15 @@
+'use strict';
+
 const assert = require('assert');
 
 const _ = require('lodash');
 
-const {Database, DatabaseConnection} = require('./db');
-const {nowAsIsoString, utcIsoStringFromString} = require('./dates');
-const {db: dbtcDatabase} = require('./dbtc-database');
+const {Database, DatabaseConnection} = require('../db');
+const {db: dbtcDatabase} = require('../dbtc-database');
 
 //-----------------------------------------------------------------------------
 
-const MARKET_DB_VERSION = 1;
+const MARKET_DB_VERSION = 2;
 
 const database = new Database('market', MARKET_DB_VERSION);
 
@@ -22,27 +23,54 @@ class MarketDatabaseConnection extends DatabaseConnection {
         this.attach(dbtcDatabase);
     }
 
+    getUser(muid) {
+        return this.first(
+            `SELECT * FROM users WHERE muid = $muid`,
+            {muid}
+        );
+    }
+
+    getUserName(muid) {
+        const user = this.getUser(muid);
+        return user ? user.name : undefined;
+    }
+
+    addUser(muid, source, name, email) {
+        this.run(
+            `INSERT INTO users VALUES ($muid, $source, $name, $email)`,
+            {muid, source, name, email}
+        );
+        return this.getUser(muid);
+    }
+
     //-------------------------------------------------------------------------
 
-    getSellerForUser(user) {
+    getSellerForUser(muid) {
         // Can be undefined
         return this.first(
-            `
-            SELECT * FROM sellers WHERE externalUserId = $externalUserId
-            `,
-            {externalUserId: user.externalUserId}
+            `SELECT * FROM sellers WHERE muid = $muid`,
+            {muid}
         );
     }
 
-    getSeller(sellerId) {
+    getSellerIdForUser(muid) {
+        const {msid} = this.getSellerForUser(muid) || {};
+        return msid;
+    }
+
+    isSeller(muid) {
+        return this.getSellerIdForUser(muid) ? true : false;
+    }
+
+    getSeller(msid) {
         // Can be undefined
         return this.first(
-            `
-            SELECT * FROM sellers WHERE sellerId = $sellerId
-            `,
-            {sellerId}
+            `SELECT * FROM sellers WHERE msid = $msid`,
+            {msid}
         );
     }
+
+    /// OLD BELOW *****************
 
     //-------------------------------------------------------------------------
     // Creates a new seller and returns it
