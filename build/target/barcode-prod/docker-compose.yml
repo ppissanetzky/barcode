@@ -1,0 +1,60 @@
+version: "3.7"
+services:
+  api-server:
+    restart: unless-stopped
+    image: ppissanetzky/barcode-api-server:${VERSION}
+    volumes:
+      - /home/barcode/barcode-data/uploads:/volumes/uploads
+      - /home/barcode/barcode-data/databases:/volumes/databases
+    networks:
+      barcode-net:
+    extra_hosts:
+      # This allows the API server to talk to our forum using
+      # its private IP address instead of the public one. It
+      # should be faster. The only caveat is that they must
+      # both be in the same data center - which they are.
+      - "bareefers.org:192.168.167.79"
+    env_file:
+      - /home/barcode/barcode-env
+    environment:
+      BC_VERSION: ${VERSION}
+      BC_FORUM_MODE: production
+      BC_SMS_MODE: production
+      BC_SESSION_COOKIE_NAME: bc-a
+      BC_SESSION_COOKIE_SECURE: production
+      BC_SITE_BASE_URL: http://barcode.bareefers.org/bc
+      BC_XF_API_URL: https://bareefers.org/forum/api
+      BC_DATABASE_DIR: /volumes/databases
+      BC_UPLOADS_DIR: /volumes/uploads
+    logging:
+      driver: local
+      options:
+        mode: non-blocking
+
+  web-server:
+    restart: unless-stopped
+    image: ppissanetzky/barcode-web-server:${VERSION}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - type: bind
+        source: /home/barcode/barcode-data/uploads
+        target: /volumes/uploads
+        read_only: true
+      - type: bind
+        source: /etc/letsencrypt
+        target: /etc/letsencrypt
+        read_only: true
+    networks:
+      barcode-net:
+    depends_on:
+      - api-server
+    logging:
+      driver: local
+      options:
+        mode: non-blocking
+
+networks:
+  barcode-net:
+

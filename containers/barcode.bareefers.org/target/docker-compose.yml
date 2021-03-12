@@ -22,6 +22,7 @@ services:
       BC_SESSION_COOKIE_NAME: bc-a
       BC_SESSION_COOKIE_SECURE: production
       BC_SITE_BASE_URL: http://barcode.bareefers.org/bc
+      BC_XF_API_URL: https://bareefers.org/forum/api
       BC_DATABASE_DIR: /volumes/databases
       BC_UPLOADS_DIR: /volumes/uploads
     logging:
@@ -85,6 +86,7 @@ services:
       BC_SESSION_COOKIE_NAME: bc-demo
       BC_SESSION_COOKIE_SECURE: production
       BC_SITE_BASE_URL: http://barcode.bareefers.org:444/bc
+      BC_XF_API_URL: https://bareefers.org/forum/api
       BC_DATABASE_DIR: /volumes/databases
       BC_UPLOADS_DIR: /volumes/uploads
     logging:
