@@ -1,11 +1,11 @@
 
 const {lock} = require('../lock');
-const {BARCODE_USER, getAlerts, getPost} = require('../xenforo');
+const {BARCODE_USER, getAlerts, getPost, lookupUser} = require('../xenforo');
 const {getSettings, setSetting} = require('../user-database');
 const {getMotherForThread} = require('../dbtc-database');
 const {getItemForThread} = require('../equipment-database');
 const {uberPost} = require('../forum');
-const {toUnixTime} = require('../dates');
+const {toUnixTime, differenceToNow} = require('../dates');
 
 lock('reply-to-mentions', async (debug) => {
 
@@ -51,6 +51,10 @@ lock('reply-to-mentions', async (debug) => {
         debug('Thread', thread_id, 'user', user_id);
         // See if there is a mother associated with this thread
         const mother = getMotherForThread(thread_id);
+        if (mother) {
+            mother.age = differenceToNow(mother.dateAcquired);
+            mother.owner = await lookupUser(mother.ownerId, true);
+        }
         debug('Mother', mother);
         // See if there is a piece of equipment associated with the thread
         const item = getItemForThread(thread_id);

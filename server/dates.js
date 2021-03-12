@@ -117,6 +117,10 @@ function differenceBetween (isoStringOrDateThen, isoStringOrDateNow) {
     dateFromIsoStringOrDate(isoStringOrDateThen))
 }
 
+function differenceToNow (isoStringOrDateThen) {
+  return formatDistance(new Date(), dateFromIsoStringOrDate(isoStringOrDateThen))
+}
+
 // ----------------------------------------------------------------------------
 
 function toUnixTime(isoStringOrDate) {
@@ -135,6 +139,7 @@ module.exports = {
   nowAsIsoString,
   differenceBetween,
   differenceInDays,
+  differenceToNow,
   formatDistance,
   justTheUtcDate,
   justTheLocalDate,

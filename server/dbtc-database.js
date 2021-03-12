@@ -1208,7 +1208,7 @@ function getUserThreadIds(userId) {
 
 //-----------------------------------------------------------------------------
 
-const SELECT_MOTHER_FOR_THREAD = `SELECT * FROM mothers WHERE threadId = $threadId`;
+const SELECT_MOTHER_FOR_THREAD = `SELECT * FROM motherFrags WHERE threadId = $threadId`;
 
 function getMotherForThread(threadId) {
     const [row] = db.all(SELECT_MOTHER_FOR_THREAD, {threadId});

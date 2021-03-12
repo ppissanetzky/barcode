@@ -1,7 +1,9 @@
 {{!
 This one is used to create a new post when a user mentions @BARcode
     userId - the ID of the user that mentioned
-    mother - The mother linked to this thread or undefined
+    mother - The mother frag linked to this thread or undefined. It is augmented with:
+        age - human age since it was contributed
+        owner - the user object for the contributor
     item - The equipment item linked to this thread or undefined
 }}
 no title - this is a post
@@ -9,7 +11,8 @@ no title - this is a post
 BARcode can be found [URL=https://barcode.bareefers.org]here[/URL]. You can learn more about it from [URL=https://www.bareefers.org/forum/threads/what-is-barcode.28209/]this thread[/URL].
 
 {{#if mother}}
-This thread is linked to [URL={{motherUrl mother.motherId}}]{{mother.name}}[/URL].
+This thread is linked to [URL={{fragUrl mother.fragId}}]{{mother.name}}[/URL] which was contributed {{mother.age}} ago by @{{mother.owner.name}}. [URL={{fragUrl mother.fragId "like"}}]Click here[/URL] to get in line for a frag or to see more details about it.
+
 {{/if}}
 {{#if item}}
 This thread is about the [URL={{equipmentUrl item.itemId}}]{{item.name}}[/URL].
