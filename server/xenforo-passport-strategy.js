@@ -8,6 +8,7 @@ const debug = require('debug')('barcode:xenforo-passport');
 
 const {BC_TEST_USER} = require('./barcode.config');
 const XenForo = require('./xenforo');
+const XenForoApi = require('./xenforo-api');
 
 //-----------------------------------------------------------------------------
 // These were the existing cookies before I changed the
@@ -94,7 +95,7 @@ class XenForoPassportStrategy extends Strategy {
             }
 
             // We do have at least one, so call XF to authenticate with them
-            const response = await XenForo.apiRequest('auth/from-session', 'POST', {
+            const response = await XenForoApi.post('auth/from-session', {
                 session_id: sessionId,
                 remember_cookie: rememberCookie,
             });

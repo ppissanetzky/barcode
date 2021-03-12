@@ -30,6 +30,12 @@ module.exports = {
     get BC_PRODUCTION() { return PRODUCTION },
 
     //-------------------------------------------------------------------------
+    // The URL to the XenForo API
+    //-------------------------------------------------------------------------
+
+    get BC_XF_API_URL() { return get('BC_XF_API_URL') },
+
+    //-------------------------------------------------------------------------
     // This is the API key we need to access the XenForo rest API. It should
     // never be in git.
     //-------------------------------------------------------------------------

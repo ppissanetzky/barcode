@@ -5,7 +5,6 @@ const assert = require('assert');
 const _ = require('lodash');
 
 const {Database, DatabaseConnection} = require('../db');
-const {db: dbtcDatabase} = require('../dbtc-database');
 
 //-----------------------------------------------------------------------------
 
@@ -19,8 +18,6 @@ class MarketDatabaseConnection extends DatabaseConnection {
 
     constructor() {
         super(database);
-        // Will attach the DBTC database as 'dbtc'
-        this.attach(dbtcDatabase);
     }
 
     getUser(muid) {

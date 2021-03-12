@@ -1,12 +1,12 @@
+'use strict';
 
-const https = require('https');
-const qs = require('querystring');
+const assert = require('assert');
 const _ = require('lodash');
 
 // https://github.com/JiLiZART/bbob/tree/master/packages/bbob-core
 const bbob = require('@bbob/core').default;
 
-const {BC_TEST_USER, BC_FORUM_MODE, BC_XF_API_KEY} = require('./barcode.config');
+const {BC_FORUM_MODE} = require('./barcode.config');
 
 const dbtcDatabase = require('./dbtc-database');
 
@@ -14,11 +14,7 @@ const {utcIsoStringFromDate, utcIsoStringFromUnixTime, age} = require('./dates')
 
 const {isGoodId} = require('./utility');
 
-//-----------------------------------------------------------------------------
-// A user for testing
-//-----------------------------------------------------------------------------
-
-BC_TEST_USER && console.warn('Running as user', BC_TEST_USER);
+const XenForoApi = require('./xenforo-api');
 
 //-----------------------------------------------------------------------------
 // TEST USERS
@@ -33,14 +29,6 @@ BC_TEST_USER && console.warn('Running as user', BC_TEST_USER);
 const POSTING_ENABLED =
     BC_FORUM_MODE === "production" ||
     parseInt(BC_FORUM_MODE, 10) > 0;
-
-//-----------------------------------------------------------------------------
-// Constants
-//-----------------------------------------------------------------------------
-
-const API_KEY = BC_XF_API_KEY;
-const HOST = 'bareefers.org';
-const PATH = '/forum/api';
 
 //-----------------------------------------------------------------------------
 // This is the user we impersonate when we need to - when creating alerts
@@ -68,59 +56,6 @@ const EQUIPMENT_GROUPS = new Set([3]);
 // Tank journals forum ID
 
 const TANK_JOURNALS_FORUM_ID = 22;
-
-//-----------------------------------------------------------------------------
-// Utility function to make HTTPS requests
-//-----------------------------------------------------------------------------
-
-async function httpsRequest(options, body) {
-    return new Promise((resolve, reject) => {
-        const request = https.request(options, (response) => {
-            let body = '';
-            response.on('data', (chunk) => body += chunk);
-            response.on('end', () => resolve([response, body]));
-        });
-        if (body) {
-            request.write(body);
-        }
-        request.on('error', reject);
-        request.end();
-    });
-}
-
-//-----------------------------------------------------------------------------
-// Utility function to make XenForo API requests
-//-----------------------------------------------------------------------------
-
-async function apiRequest(endpoint, method, params, headers) {
-    let path = `${PATH}/${endpoint}`;
-    if (method !== 'POST') {
-        path += `?${qs.stringify(params)}`;
-    }
-    const options = {
-        headers: {
-            ...headers,
-            'XF-Api-Key': API_KEY
-        },
-        hostname: HOST,
-        path: path,
-        method: method
-    };
-    let requestBody;
-    if (method === 'POST') {
-        requestBody = qs.stringify(params);
-        options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-        options.headers['Content-Length'] = Buffer.byteLength(requestBody);
-    }
-    const [, body] = await httpsRequest(options, requestBody);
-    //TESTING && console.log('API', endpoint, ':', options, requestBody, body);
-    const result = JSON.parse(body);
-    // If it has an error, throw
-    if (result && (result.error || result.errors)) {
-        throw new Error(`XF API response from "${endpoint}" has errors :\n${body}`);
-    }
-    return result;
-}
 
 //-----------------------------------------------------------------------------
 
@@ -224,7 +159,7 @@ async function lookupUser(userId, forDisplayOnly, includeEmail) {
     }
     // Otherwise, look the user up in XenForo
     try {
-        const {user} = await apiRequest(`users/${id}/`, 'GET', {
+        const {user} = await XenForoApi.get(`users/${id}/`, {
             // Without this, we don't get information about the secondary
             // groups and we cannot determine whether the user is allowed
             api_bypass_permissions: 1
@@ -258,7 +193,7 @@ async function lookupUser(userId, forDisplayOnly, includeEmail) {
 }
 
 async function getUserEmailAddress(userId) {
-    const {user} = await apiRequest(`users/${userId}/`, 'GET', {
+    const {user} = await XenForoApi.get(`users/${userId}/`, {
         // Without this, we don't get information about the secondary
         // groups and we cannot determine whether the user is allowed
         api_bypass_permissions: 1
@@ -286,7 +221,7 @@ async function startConversation(users, title, body, closed) {
     if (!POSTING_ENABLED) {
         return;
     }
-    const response = await apiRequest('conversations/', 'POST', {
+    const response = await XenForoApi.post('conversations/', {
         'recipient_ids[]': users,
         title: title,
         message: body,
@@ -315,7 +250,7 @@ async function sendAlert(recipientId, body, linkText, linkUrl) {
     if (!POSTING_ENABLED) {
         return;
     }
-    const response = await apiRequest('alerts/', 'POST', {
+    const response = await XenForoApi.post('alerts/', {
         to_user_id: recipientId,
         alert: body,
         link_url: linkUrl,
@@ -337,7 +272,7 @@ async function sendAlert(recipientId, body, linkText, linkUrl) {
 //-----------------------------------------------------------------------------
 
 async function findUsersWithPrefix(prefix, all) {
-    const response = await apiRequest('users/find-name', 'GET', {
+    const response = await XenForoApi.get('users/find-name', {
         username: prefix,
         // Without this, we don't get information about the secondary
         // groups and we cannot determine whether the user is allowed
@@ -385,7 +320,7 @@ async function getThreadsForItemType(userId, type) {
     if (!forumId) {
         return [];
     }
-    const {pagination, threads = []} = await apiRequest(`forums/${forumId}`, 'GET', {
+    const {pagination, threads = []} = await XenForoApi.get(`forums/${forumId}`, {
         with_threads: true,
         page: 1,
         starter_id: userId
@@ -411,7 +346,7 @@ async function getDBTCThreadsForUser(userId) {
     const types = dbtcDatabase.getTypes();
     const result = [];
     await Promise.all(types.map(async ({type, forumId}) => {
-        const {threads} = await apiRequest(`forums/${forumId}`, 'GET', {
+        const {threads} = await XenForoApi.get(`forums/${forumId}`, {
             with_threads: true,
             page: 1,
             starter_id: userId
@@ -427,7 +362,7 @@ async function getDBTCThreadsForUser(userId) {
 }
 
 async function getTankJournalsForUser(userId) {
-    const {threads} = await apiRequest(`forums/${TANK_JOURNALS_FORUM_ID}`, 'GET', {
+    const {threads} = await XenForoApi.get(`forums/${TANK_JOURNALS_FORUM_ID}`, {
         with_threads: 1,
         page: 1,
         starter_id: userId
@@ -441,7 +376,7 @@ async function getTankJournalsForUser(userId) {
 
 async function validateUserThread(userId, threadId) {
     if (isGoodId(threadId)) {
-        const {thread} = await apiRequest(`threads/${threadId}/`, 'GET');
+        const {thread} = await XenForoApi.get(`threads/${threadId}/`);
         if (thread && thread.user_id === userId) {
             return convertThread(thread);
         }
@@ -502,7 +437,7 @@ async function getThreadPosts(userId, threadId) {
         return;
     }
     for (let page = 1; ;page++) {
-        const {thread, posts, pagination: {last_page}} = await apiRequest(`threads/${threadId}/`, 'GET', {
+        const {thread, posts, pagination: {last_page}} = await XenForoApi.get(`threads/${threadId}/`, {
             with_posts: true,
             page
         });
@@ -544,7 +479,7 @@ async function startForumThread(userId, forumId, title, message) {
     if (!POSTING_ENABLED) {
         return 0;
     }
-    const {thread: {thread_id}} = await apiRequest('threads/', 'POST', {
+    const {thread: {thread_id}} = await XenForoApi.post('threads/', {
         node_id: forumId,
         title: title,
         message: message,
@@ -565,7 +500,7 @@ async function postToForumThread(threadId, message) {
     if (!POSTING_ENABLED) {
         return;
     }
-    await apiRequest('posts/', 'POST', {
+    await XenForoApi.post('posts/', {
         thread_id: threadId,
         message: message,
         api_bypass_permissions: 1
@@ -578,7 +513,7 @@ async function postToForumThread(threadId, message) {
 //-----------------------------------------------------------------------------
 
 async function getAlerts() {
-    const {alerts} = await apiRequest('alerts/', 'GET', {
+    const {alerts} = await XenForoApi.get('alerts/', {
         page: 1,
         unviewed: 1,
         unread: 1
@@ -589,7 +524,8 @@ async function getAlerts() {
 }
 
 async function markAllAlertsRead() {
-    await apiRequest('alerts/mark-all', 'POST', {
+    assert(false, 'This XF API has a permissions bug');
+    await XenForoApi.post('alerts/mark-all', {
         read: 1
     }, {
         'XF-Api-User': BARCODE_USER
@@ -597,7 +533,7 @@ async function markAllAlertsRead() {
 }
 
 async function getPost(postId) {
-    const {post} = await apiRequest(`posts/${postId}/`, 'GET', {}, {
+    const {post} = await XenForoApi.get(`posts/${postId}/`, {}, {
         'XF-Api-User': BARCODE_USER
     });
     return post;
@@ -607,7 +543,6 @@ async function getPost(postId) {
 
 module.exports = {
     BARCODE_USER,
-    apiRequest,
     makeUser,
     lookupUser,
     lookupUserWithFallback,

@@ -8,9 +8,7 @@ const BetterSqlite3 = require('better-sqlite3');
 // Function to get runtime configuration from the environment
 //-----------------------------------------------------------------------------
 
-const BarcodeConfig = require('./barcode.config');
-
-const BC_DATABASE_DIR = BarcodeConfig.BC_DATABASE_DIR;
+const {BC_DATABASE_DIR} = require('./barcode.config');
 
 //-----------------------------------------------------------------------------
 // A persistent connection

@@ -601,8 +601,7 @@ router.get('/collection/:rules/p/:page', async (req, res, next) => {
 router.get('/kids/:motherId', async (req, res, next) => {
     const {user, params: {motherId}} = req;
     const frags = db.selectFragsForMother(motherId);
-    const private = frags.some(isPrivate);
-    if (private) {
+    if (frags.some(isPrivate)) {
         return next(NOT_YOURS());
     }
     // Now, get full user information about all of the
