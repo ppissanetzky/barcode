@@ -44,8 +44,7 @@ const POST_CONTENT_TYPE = {
 };
 
 async function post(path, params, headers) {
-    const {data} = await client.post(path, {
-        data: qs.stringify(params),
+    const {data} = await client.post(path, qs.stringify(params), {
         headers: {...headers, ...POST_CONTENT_TYPE}
     });
     return data;
