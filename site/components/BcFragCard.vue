@@ -49,7 +49,7 @@
     <v-app-bar flat color="rgba(0, 0, 0, 0)" dense class="ma-0">
       <h3>{{ frag.name }}</h3>
       <v-spacer />
-      <v-menu v-if="ownsIt">
+      <v-menu>
         <template v-slot:activator="{on, attrs}">
           <v-btn
             icon
@@ -63,29 +63,42 @@
         <v-list>
           <v-list-item v-if="showEdit">
             <v-btn
-              icon
+              text
               color="primary"
               :to="`/add-new-item?fragId=${frag.fragId}`"
             >
-              <v-icon>mdi-pencil</v-icon>
-            </v-btn>
-          </v-list-item>
-          <v-list-item v-if="shouldShowMarket">
-            <v-btn
-              icon
-              color="primary"
-              :to="`/market/add/${frag.fragId}`"
-            >
-              <v-icon>mdi-account-cash-outline</v-icon>
+              <v-icon left>mdi-pencil</v-icon>
+              Edit
             </v-btn>
           </v-list-item>
           <v-list-item>
             <v-btn
-              icon
+              text
+              color="primary"
+              :to="`/frag/${frag.fragId}`"
+            >
+              <v-icon left>mdi-link</v-icon>
+              Link
+            </v-btn>
+          </v-list-item>
+          <v-list-item v-if="frag.fragOf">
+            <v-btn
+              text
+              color="primary"
+              @click="redirectToMother"
+            >
+              <v-icon left>mdi-mother-nurse</v-icon>
+              Mother
+            </v-btn>
+          </v-list-item>
+          <v-list-item v-if="ownsIt">
+            <v-btn
+              text
               color="primary"
               @click="getShareLink"
             >
-              <v-icon>mdi-export-variant</v-icon>
+              <v-icon left>mdi-export-variant</v-icon>
+              Share
             </v-btn>
           </v-list-item>
         </v-list>
@@ -561,7 +574,7 @@ export default {
         this.ownsIt &&
         this.isPrivate &&
         this.isAlive &&
-        !this.frag.isStatic
+        !this.isStatic
     },
     isAlive () {
       return this.frag.isAlive
@@ -582,8 +595,11 @@ export default {
     age () {
       return this.isAlive ? age(this.frag.dateAcquired, '', 'old') : null
     },
+    isStatic () {
+      return this.frag.isStatic
+    },
     showEdit () {
-      return this.ownsIt && this.isAlive
+      return this.ownsIt && this.isAlive && !this.isStatic
     },
     isAFan () {
       return this.frag.isFan
@@ -723,6 +739,11 @@ export default {
         return caps ? 'You' : 'you'
       }
       return owner.name
+    },
+    async redirectToMother () {
+      const url = `/api/dbtc/mother/${this.frag.motherId}`
+      const { frag } = await this.$axios.$get(url)
+      this.$router.push(`/frag/${frag.fragId}`)
     }
   }
 }

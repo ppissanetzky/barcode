@@ -153,6 +153,30 @@ router.get('/frag/:fragId', async (req, res, next) => {
 });
 
 //-----------------------------------------------------------------------------
+// Returns the mother frag of a given fragId
+//-----------------------------------------------------------------------------
+
+router.get('/mother/:motherId', async (req, res, next) => {
+    const {user, params: {motherId}} = req;
+    const frag = db.getMotherFrag(motherId);
+    if (!frag) {
+        return next(INVALID_FRAG());
+    }
+    // If the frag is private and the caller is not the owner,
+    // we don't expose it
+    if (!isUserAllowedToSeeFrag(user, frag)) {
+        return next(NOT_YOURS());
+    }
+    frag.owner = await lookupUser(frag.ownerId, true);
+    frag.ownsIt = frag.ownerId === user.id;
+    frag.isFan = db.isFan(user.id, frag.motherId);
+    res.json({
+        user,
+        frag
+    });
+});
+
+//-----------------------------------------------------------------------------
 // A list of frags. Expects fragIds in a JSON payload
 //-----------------------------------------------------------------------------
 
