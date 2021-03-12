@@ -23,14 +23,14 @@
           <!-- If the user is signed in -->
           <div v-if="user">
             <v-card-text>
-              Signed in as {{ user }}
+              Logged in as {{ user }}
             </v-card-text>
             <v-card-text>
               <v-btn
                 :loading="signingOut"
                 @click="signOut"
               >
-                Sign out
+                Log out
               </v-btn>
             </v-card-text>
           </div>
@@ -38,7 +38,7 @@
           <!-- The user is not signed in -->
           <div v-else>
             <v-card-text>
-              You are not signed in
+              You are not logged in
             </v-card-text>
             <v-card-text>
               <v-btn
@@ -46,15 +46,16 @@
                 :loading="signingIn"
                 @click="signInWithBAR"
               >
-                Sign in with BAR
+                Login with BAR
               </v-btn>
             </v-card-text>
             <v-card-text>
               <v-btn
-                color="secondary"
+                color="#1877F2"
+                class="white--text"
                 @click="signInWithFacebook"
               >
-                Sign in with Facebook
+                Login with Facebook
               </v-btn>
             </v-card-text>
           </div>
