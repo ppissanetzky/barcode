@@ -20,6 +20,4 @@ build:
 push:
 	ssh ${TARGET} "mkdir -p ~/${VERSION}"
 	scp -r ${TARGET_DIR}/* ${TARGET}:~/${VERSION}/
-	# Pull the images first, since that will be the slowest part
-	ssh ${TARGET} "docker pull ppissanetzky/barcode-web-server:${VERSION} && docker pull ppissanetzky/barcode-api-server:${VERSION}"
-	#ssh ${TARGET} "cd ~/${VERSION} && ./start.sh"
+	ssh ${TARGET} "cd ~/${VERSION} && ./start-all.sh"

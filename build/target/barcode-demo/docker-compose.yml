@@ -7,7 +7,7 @@ services:
       - /home/barcode/demo-barcode/uploads:/volumes/uploads
       - /home/barcode/demo-barcode/databases:/volumes/databases
     networks:
-      demo-barcode-net:
+      barcode-net:
     extra_hosts:
       # This allows the API server to talk to our forum using
       # its private IP address instead of the public one. It
