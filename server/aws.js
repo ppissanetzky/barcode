@@ -31,9 +31,9 @@ async function sendSms(phoneNumber, message) {
     }
 
     const client = new SNSClient({region: 'us-west-1'});
-    return await client.send(new PublishCommand({
+    return client.send(new PublishCommand({
         Message: message,
-        PhoneNumber: `+1${phoneNumber}`,
+        PhoneNumber: `+1${phoneNumber}`
     }));
 }
 

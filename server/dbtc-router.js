@@ -68,7 +68,7 @@ const upload = multer({dest: BC_UPLOADS_DIR});
 // The router
 //-----------------------------------------------------------------------------
 
-const router = express.Router();
+const router = new express.Router();
 
 //-----------------------------------------------------------------------------
 // Maps a journal entryType to its icons. It's a UI concern and it could
@@ -76,14 +76,14 @@ const router = express.Router();
 //-----------------------------------------------------------------------------
 
 const JOURNAL_ICONS = new Map([
-    ['good',        'mdi-thumb-up-outline'],
-    ['bad',         'mdi-thumb-down-outline'],
-    ['gave',        'mdi-hand-heart-outline'],
-    ['acquired',    'mdi-emoticon-happy-outline'],
-    ['fragged',     'mdi-hand-saw'],
-    ['rip',         'mdi-emoticon-dead-outline'],
-    ['changed',     'mdi-pencil-outline'],
-    ['imported',    'mdi-import']
+    ['good', 'mdi-thumb-up-outline'],
+    ['bad', 'mdi-thumb-down-outline'],
+    ['gave', 'mdi-hand-heart-outline'],
+    ['acquired', 'mdi-emoticon-happy-outline'],
+    ['fragged', 'mdi-hand-saw'],
+    ['rip', 'mdi-emoticon-dead-outline'],
+    ['changed', 'mdi-pencil-outline'],
+    ['imported', 'mdi-import']
 ]);
 
 const DEFAULT_JOURNAL_ICON = 'mdi-progress-check';
@@ -337,8 +337,8 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
 // Function to de-camelize, taken from
 // https://ourcodeworld.com/articles/read/608/how-to-camelize-and-decamelize-strings-in-javascript
 
-function decamelize(str){
-	return str
+function decamelize(str) {
+    return str
         .replace(/([a-z\d])([A-Z])/g, '$1 $2')
         .replace(/([A-Z]+)([A-Z][a-z\d]+)/g, '$1 $2')
         .toLowerCase();
@@ -377,7 +377,7 @@ router.post('/update/:fragId', upload.none(), (req, res, next) => {
     // Build a string of the names of fields that changed, excluding
     // the timestamp
     const changed = Object.keys(frag)
-        .filter((key) => frag[key] !== updatedFrag[key] && key != 'timestamp')
+        .filter((key) => frag[key] !== updatedFrag[key] && key !== 'timestamp')
         .map((key) => decamelize(key))
         .join(', ');
     // If something changed, add a journal
@@ -625,7 +625,7 @@ router.get('/collection/:rules/p/:page', async (req, res, next) => {
 router.get('/kids/:motherId', async (req, res, next) => {
     const {user, params: {motherId}} = req;
     const frags = db.selectFragsForMother(motherId);
-    if (frags.some(isPrivate)) {
+    if (frags.some((frag) => isPrivate(frag))) {
         return next(NOT_YOURS());
     }
     // Now, get full user information about all of the
@@ -707,7 +707,7 @@ router.put('/fan/:motherId', async (req, res, next) => {
     res.json(result);
 });
 
-router.delete('/fan/:motherId', async (req, res) => {
+router.delete('/fan/:motherId', async (req, res, next) => {
     const {user, params: {motherId}} = req;
     const frag = db.getMotherFrag(motherId);
     if (!frag) {
@@ -721,7 +721,7 @@ router.delete('/fan/:motherId', async (req, res) => {
     res.json(result);
 });
 
-router.get('/fan/:motherId', async (req, res) => {
+router.get('/fan/:motherId', async (req, res, next) => {
     const {user, params: {motherId}} = req;
     const frag = db.getMotherFrag(motherId);
     if (!frag) {
@@ -763,7 +763,7 @@ router.get('/threads-for-type', async (req, res) => {
 
 router.get('/threads/:userId', async (req, res) => {
     const {params: {userId}} = req;
-    const id = parseInt(userId, 10)
+    const id = parseInt(userId, 10);
     const threads = await getDBTCThreadsForUser(id);
     const importedThreadIds = db.getUserThreadIds(id);
     const threadsNotImported = threads.filter(({threadId}) =>
@@ -777,7 +777,7 @@ router.get('/threads/:userId', async (req, res) => {
 
 router.get('/frags/:userId', (req, res) => {
     const {params: {userId}} = req;
-    const id = parseInt(userId, 10)
+    const id = parseInt(userId, 10);
     const frags = db.getAllDBTCFragsForUser(id);
     res.json({frags});
 });
@@ -863,7 +863,7 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
             switch (type) {
                 case 'gave':
                 case 'trans':
-                    assert(to && isGoodId(toId),'Missing to information');
+                    assert(to && isGoodId(toId), 'Missing to information');
                     break;
                 case 'rip':
                     break;
@@ -877,6 +877,7 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
                 threadId, date, from, fromId, type, to, toId
             });
             console.error(JSON.stringify(body, null, 2));
+            return false;
         }
     });
     if (!good) {
@@ -920,7 +921,7 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
     db.addJournal({
         fragId,
         entryType: 'imported',
-        notes: `Imported from the forum`
+        notes: 'Imported from the forum'
     });
     // This is a map from user ID to frag ID so that we know who
     // has what as we process each transaction. It starts out with
@@ -934,91 +935,95 @@ router.post('/import', upload.single('picture'), async (req, res, next) => {
         }
         switch (type) {
             case 'gave': {
-                    // Get the source frag ID and bail if it cannot be found
-                    const fromFragId = fragMap.get(fromId);
-                    if (!fromFragId) {
-                        return problem('Could not find the source frag');
-                    }
-                    const [, toFragId] = db.giveAFrag(fromId, {
-                        motherId,
-                        ownerId: toId,
-                        dateAcquired: date,
-                        fragOf: fromFragId,
-                        fragsAvailable: 0
-                    });
-                    // Add thew new frag to our map
-                    fragMap.set(toId, toFragId);
-                    // Add a journal for the recipient
-                    db.addJournal({
-                        fragId: toFragId,
-                        timestamp: date,
-                        entryType: 'acquired',
-                        notes: `Got it from ${from} (imported)`
-                    });
-                    // Now, add a journal for the giver
-                    db.addJournal({
-                        fragId: fromFragId,
-                        timestamp: date,
-                        entryType: 'gave',
-                        notes: `Gave a frag to ${to} (imported)`
-                    });
+                // Get the source frag ID and bail if it cannot be found
+                const fromFragId = fragMap.get(fromId);
+                if (!fromFragId) {
+                    return problem('Could not find the source frag');
                 }
+                const [, toFragId] = db.giveAFrag(fromId, {
+                    motherId,
+                    ownerId: toId,
+                    dateAcquired: date,
+                    fragOf: fromFragId,
+                    fragsAvailable: 0
+                });
+                // Add thew new frag to our map
+                fragMap.set(toId, toFragId);
+                // Add a journal for the recipient
+                db.addJournal({
+                    fragId: toFragId,
+                    timestamp: date,
+                    entryType: 'acquired',
+                    notes: `Got it from ${from} (imported)`
+                });
+                // Now, add a journal for the giver
+                db.addJournal({
+                    fragId: fromFragId,
+                    timestamp: date,
+                    entryType: 'gave',
+                    notes: `Gave a frag to ${to} (imported)`
+                });
+            }
                 break;
+
             case 'trans': {
-                    // Get the source frag ID and bail if it cannot be found
-                    const fromFragId = fragMap.get(fromId);
-                    if (!fromFragId) {
-                        return problem('Could not find the source frag');
-                    }
-                    const [, toFragId] = db.giveAFrag(fromId, {
-                        motherId,
-                        ownerId: toId,
-                        dateAcquired: date,
-                        fragOf: fromFragId,
-                        fragsAvailable: 0
-                    });
-                    // Add thew new frag to our map
-                    fragMap.set(toId, toFragId);
-                    // Remove the original frag from the map, since this is
-                    // a transfer
-                    fragMap.delete(fromId);
-                    // Add a journal for the recipient
-                    db.addJournal({
-                        fragId: toFragId,
-                        timestamp: date,
-                        entryType: 'acquired',
-                        notes: `Transferred from ${from} (imported)`
-                    });
-                    // Now, add a journal for the giver
-                    db.addJournal({
-                        fragId: fromFragId,
-                        timestamp: date,
-                        entryType: 'gave',
-                        notes: `Transferred to ${to} (imported)`
-                    });
-                    // Mark the original frag as dead with a transferred status
-                    db.markAsDead(fromId, fromFragId, 'transferred');
+                // Get the source frag ID and bail if it cannot be found
+                const fromFragId = fragMap.get(fromId);
+                if (!fromFragId) {
+                    return problem('Could not find the source frag');
                 }
+                const [, toFragId] = db.giveAFrag(fromId, {
+                    motherId,
+                    ownerId: toId,
+                    dateAcquired: date,
+                    fragOf: fromFragId,
+                    fragsAvailable: 0
+                });
+                // Add thew new frag to our map
+                fragMap.set(toId, toFragId);
+                // Remove the original frag from the map, since this is
+                // a transfer
+                fragMap.delete(fromId);
+                // Add a journal for the recipient
+                db.addJournal({
+                    fragId: toFragId,
+                    timestamp: date,
+                    entryType: 'acquired',
+                    notes: `Transferred from ${from} (imported)`
+                });
+                // Now, add a journal for the giver
+                db.addJournal({
+                    fragId: fromFragId,
+                    timestamp: date,
+                    entryType: 'gave',
+                    notes: `Transferred to ${to} (imported)`
+                });
+                // Mark the original frag as dead with a transferred status
+                db.markAsDead(fromId, fromFragId, 'transferred');
+            }
                 break;
             case 'rip': {
-                    // Get the source frag ID and bail if it cannot be found
-                    const fromFragId = fragMap.get(fromId);
-                    if (!fromFragId) {
-                        return problem('Could not find the source frag');
-                    }
-                    // Remove it from the map
-                    fragMap.delete(fromId);
-                    // Mark it as dead
-                    db.markAsDead(fromId, fromFragId);
-                    // Add a journal
-                    db.addJournal({
-                        fragId: fromFragId,
-                        timestamp: date,
-                        entryType: 'rip',
-                        notes: 'RIP (imported)'
-                    });
+                // Get the source frag ID and bail if it cannot be found
+                const fromFragId = fragMap.get(fromId);
+                if (!fromFragId) {
+                    return problem('Could not find the source frag');
                 }
+                // Remove it from the map
+                fragMap.delete(fromId);
+                // Mark it as dead
+                db.markAsDead(fromId, fromFragId);
+                // Add a journal
+                db.addJournal({
+                    fragId: fromFragId,
+                    timestamp: date,
+                    entryType: 'rip',
+                    notes: 'RIP (imported)'
+                });
+            }
                 break;
+
+            default:
+                return problem(`Invalid transaction type "${type}"`);
         }
     });
     // Add a post to the thread out of band
@@ -1053,7 +1058,7 @@ router.get('/top10', async (req, res) => {
 router.get('/member/:userId', async (req, res) => {
     const {user, params: {userId}} = req;
     const member = await lookupUser(userId, true);
-    const isMe = member.id === user.id
+    const isMe = member.id === user.id;
     member.name = member.name.replace(' (NSM)', '');
     const registerAge = age(member.registerDate, null, 'ago');
     const tankJournals = await getTankJournalsForUser(member.id);
@@ -1065,7 +1070,7 @@ router.get('/member/:userId', async (req, res) => {
             collection: rules.toUpperCase(),
             count: fragsAvailable
         }))
-        .sort((a, b) => b.count - a.count)
+        .sort((a, b) => b.count - a.count);
     const stats = db.getUserStats(member.id);
     res.json({
         ...member,

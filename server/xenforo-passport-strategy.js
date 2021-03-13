@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 
 const _ = require('lodash');
 
@@ -16,19 +17,19 @@ const XenForoApi = require('./xenforo-api');
 //-----------------------------------------------------------------------------
 
 const OLD_SESSION_COOKIE = 'xfb_session';
-const OLD_USER_COOKIE    = 'xfb_user';
+const OLD_USER_COOKIE = 'xfb_user';
 
 //-----------------------------------------------------------------------------
 // These are the new ones
 //-----------------------------------------------------------------------------
 
 const NEW_SESSION_COOKIE = 'xfc_session';
-const NEW_USER_COOKIE    = 'xfc_user';
+const NEW_USER_COOKIE = 'xfc_user';
 
 //-----------------------------------------------------------------------------
 
-class Unauthenticated extends Error {};
-class Forbidden extends Error {};
+class Unauthenticated extends Error {}
+class Forbidden extends Error {}
 
 //-----------------------------------------------------------------------------
 
@@ -97,7 +98,7 @@ class XenForoPassportStrategy extends Strategy {
             // We do have at least one, so call XF to authenticate with them
             const response = await XenForoApi.post('auth/from-session', {
                 session_id: sessionId,
-                remember_cookie: rememberCookie,
+                remember_cookie: rememberCookie
             });
 
             // Validate the response

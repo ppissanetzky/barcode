@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test": "jest",
+    "test": "xo && jest",
     "server": "nodemon server.js",
     "web-server": "dotenv -e ~/barcode-env -- docker-compose -f local-web-server/docker-compose.yml up"
   },
@@ -37,12 +37,40 @@
     "eslint": "^7.10.0",
     "jest": "^26.6.3",
     "nodemon": "^2.0.7",
-    "supertest": "^6.1.3"
+    "supertest": "^6.1.3",
+    "xo": "^0.38.2"
   },
   "jest": {
     "testEnvironment": "node",
+    "silent": true,
     "coveragePathIgnorePatterns": [
       "/node_modules/"
     ]
+  },
+  "xo": {
+    "ignores": [
+      "tests"
+    ],
+    "space": 4,
+    "rules": {
+      "unicorn/prevent-abbreviations": 0,
+      "unicorn/no-array-for-each": 0,
+      "unicorn/no-lonely-if": 0,
+      "unicorn/prefer-number-properties": 0,
+      "unicorn/prefer-array-find": 0,
+      "unicorn/no-process-exit": 0,
+      "unicorn/no-array-reduce": 0,
+      "unicorn/prefer-string-slice": 0,
+
+      "capitalized-comments": 0,
+      "key-spacing": 0,
+      "no-await-in-loop": 0,
+      "padding-line-between-statements": 0,
+      "padded-blocks": 0,
+      "brace-style": ["error", "stroustrup"],
+      "arrow-parens": ["error", "always"],
+
+      "new-cap": 0
+    }
   }
 }

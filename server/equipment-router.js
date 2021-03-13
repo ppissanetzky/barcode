@@ -2,7 +2,6 @@ const assert = require('assert');
 
 const express = require('express');
 const multer = require('multer');
-const _ = require('lodash');
 const {differenceInSeconds, differenceInMinutes, differenceInDays, formatDistance} = require('date-fns');
 
 const {
@@ -79,7 +78,7 @@ const OTP_MIN_SEND_SECONDS = 25;
 // How long to keep an OTP in the database for
 //-----------------------------------------------------------------------------
 
-const OTP_MAX_AGE_MINUTES  = 15;
+const OTP_MAX_AGE_MINUTES = 15;
 
 //-----------------------------------------------------------------------------
 // https://www.geeksforgeeks.org/javascript-program-to-generate-one-time-password-otp/
@@ -211,7 +210,7 @@ async function getQueue(item) {
         delete entry.phoneNumber;
         // Use our location for the user if we have one
         if (entry.location) {
-            entry.user.location = entry.location
+            entry.user.location = entry.location;
         }
         // If that user has the item
         const {dateReceived} = entry;
@@ -223,7 +222,8 @@ async function getQueue(item) {
             // it as overdue. That's where equipment is held when no one is in line
             entry.overdue = !entry.user.canHoldEquipment && entry.days > item.maxDays;
             haves.push(entry);
-        } else {
+        }
+        else {
             waiters.push(entry);
         }
     });
@@ -236,12 +236,12 @@ async function getQueue(item) {
     // get the first item from the waits array - that's how long it will
     // take. Then, we push that wait plus maxDays into the back of the array
     // because that's how long that waiting user will have it for.
-    if (waits.length) {
+    if (waits.length > 0) {
         waiters.forEach((entry) => {
             const wait = waits.shift();
             const date = new Date();
             date.setDate(date.getDate() + wait);
-            entry.eta = wait < 1 ? 'soon' : `in ${formatDistance(date, now)}`
+            entry.eta = wait < 1 ? 'soon' : `in ${formatDistance(date, now)}`;
             // Now, push that wait plus max days
             waits.push(wait + item.maxDays);
         });
@@ -272,7 +272,7 @@ router.post('/queue/:itemId', upload.none(), async (req, res, next) => {
     }
     // If this user can hold equipment, we're not going to bother
     // with the OTP
-    let phoneNumber = null
+    let phoneNumber = null;
     if (!user.canHoldEquipment) {
         // Get the OTP from the database
         const existing = db.getOtp(user.id);
@@ -455,7 +455,7 @@ router.put('/conversation/:itemId', async (req, res, next) => {
     }
     // Get the waiters
     const {waiters} = await getQueue(item);
-    if (waiters.length) {
+    if (waiters.length > 0) {
         // Pick up the first 5 (or less) user IDs
         const next = waiters.slice(0, 5).map(({user: {id}}) => id);
         // Collect all the recipients

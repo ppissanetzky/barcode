@@ -39,7 +39,7 @@ handlebars.registerHelper('age', (date) => {
     return age(date, 'today', 'ago');
 });
 
-handlebars.registerHelper('equipmentUrl', (itemId) => {
+handlebars.registerHelper('equipmentUrl', (/* itemId */) => {
     return `${BC_SITE_BASE_URL}/equipment`;
 });
 

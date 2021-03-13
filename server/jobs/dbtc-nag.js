@@ -40,12 +40,11 @@ async function getNag(type) {
                 continue;
             }
             switch (type) {
-                case NAG_PICTURE: {
+                case NAG_PICTURE:
                     if (!frag.picture) {
                         return [user, frag];
                     }
-                }
-                break;
+                    break;
 
                 case NAG_JOURNAL: {
                     const {fragId} = frag;
@@ -67,7 +66,10 @@ async function getNag(type) {
                         return [user, frag];
                     }
                 }
-                break;
+                    break;
+
+                default:
+                    break;
             }
         }
     }

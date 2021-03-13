@@ -1,8 +1,6 @@
 const crypto = require('crypto');
 const assert = require('assert');
 
-const _ = require('lodash');
-
 const {Database} = require('./db');
 
 const {nowAsIsoString, utcIsoStringFromString} = require('./dates');
@@ -186,7 +184,7 @@ const SELECT_MOTHER_JOURNALS = `
 
 //-----------------------------------------------------------------------------
 
-const SELECT_MOTHER = `SELECT * FROM motherFrags WHERE motherId = $motherId`;
+const SELECT_MOTHER = 'SELECT * FROM motherFrags WHERE motherId = $motherId';
 
 function getMotherFrag(motherId) {
     const [frag] = db.all(SELECT_MOTHER, {motherId});
@@ -341,7 +339,7 @@ const SELECT_FRAGS_AVAILABLE = `
         ownerId = $ownerId
 `;
 
-// give a frag to someone else. userId is the one that is
+// Give a frag to someone else. userId is the one that is
 // giving the frag
 //
 // values.ownerId is the recipient
@@ -468,7 +466,7 @@ const INSERT_JOURNAL = `
     )
 `;
 
-const SELECT_JOURNAL = `SELECT * FROM journals WHERE journalId = $journalId`;
+const SELECT_JOURNAL = 'SELECT * FROM journals WHERE journalId = $journalId';
 
 const JOURNAL_NULLABLE_VALUES = {
     picture: null,
@@ -518,7 +516,7 @@ const UPDATE_PICTURE = `
 `;
 
 function updateFragPicture(ownerId, fragId, picture) {
-    db.run(UPDATE_PICTURE, {ownerId, fragId, picture})
+    db.run(UPDATE_PICTURE, {ownerId, fragId, picture});
 }
 
 const CLEAR_PICTURE = `
@@ -596,7 +594,8 @@ const SELECT_COLLECTION_PAGED = `
         mf.timestamp DESC
     LIMIT
         $itemsPerPage
-    `
+`;
+
 const ITEMS_PER_PAGE = 12;
 
 const NULL_FILTERS = {
@@ -750,7 +749,7 @@ const TOP_10 = {
         GROUP BY 1
         ORDER BY 2 DESC
         LIMIT 10`
-}
+};
 
 function getDbtcTop10s() {
     return Object.keys(TOP_10).reduce((result, key) => {
@@ -929,12 +928,12 @@ function getUserStats(userId) {
                 },
                 {
                     title: 'Frags put back',
-                    data: data(STATS_GIVE_BACK_FRAG_COUNT, dbtcParams),
+                    data: data(STATS_GIVE_BACK_FRAG_COUNT, dbtcParams)
                 },
                 {
                     title: 'Completed links',
                     data: data(STATS_COMPLETED_LINKS, dbtcParams)
-                        .filter(({count}) => count > 0),
+                        .filter(({count}) => count > 0)
                 },
                 {
                     title: 'Frags received',
@@ -1041,7 +1040,7 @@ function updateFrag(values) {
 
 const UPDATE_THREAD_ID = `
     UPDATE mothers SET threadId = $threadId WHERE motherId = $motherId
-`
+`;
 
 function setMotherThreadId(motherId, threadId) {
     db.run(UPDATE_THREAD_ID, {motherId, threadId});
@@ -1072,7 +1071,7 @@ const SELECT_FAN = `
 
 function isFan(userId, motherId) {
     const [row] = db.all(SELECT_FAN, {userId, motherId});
-    return row ? true : false;
+    return Boolean(row);
 }
 
 const SELECT_FANS = `
@@ -1097,7 +1096,7 @@ const SELECT_LIKES = `
 function getLikes(userId, motherId) {
     const users = db.all(SELECT_LIKES, {motherId}).map(({userId}) => userId);
     return ({
-        isFan: users.some((id) => id === userId),
+        isFan: users.includes(userId),
         likes: users.length,
         users
     });
@@ -1132,7 +1131,7 @@ const INSERT_SHARE = `
 `;
 
 function shareFrag(frag, journals) {
-    assert(frag, `Invalid frag`);
+    assert(frag, 'Invalid frag');
     const json = JSON.stringify({frag, journals});
     // Hash the actual JSON to see if it has already been shared
     const hash = crypto.createHash('sha256').update(json).digest('hex');
@@ -1164,7 +1163,7 @@ function getShare(shareId) {
 // Just an array of user IDs for DBTC nagging purposes
 //-----------------------------------------------------------------------------
 
-const SELECT_UNIQUE_USERS = `SELECT DISTINCT ownerId FROM frags`;
+const SELECT_UNIQUE_USERS = 'SELECT DISTINCT ownerId FROM frags';
 
 function getUserIds() {
     return db.all(SELECT_UNIQUE_USERS, {}).map(({ownerId}) => ownerId);
@@ -1208,7 +1207,7 @@ function getUserThreadIds(userId) {
 
 //-----------------------------------------------------------------------------
 
-const SELECT_MOTHER_FOR_THREAD = `SELECT * FROM motherFrags WHERE threadId = $threadId`;
+const SELECT_MOTHER_FOR_THREAD = 'SELECT * FROM motherFrags WHERE threadId = $threadId';
 
 function getMotherForThread(threadId) {
     const [row] = db.all(SELECT_MOTHER_FOR_THREAD, {threadId});
@@ -1256,4 +1255,4 @@ module.exports = {
     getUserStats,
     getMotherFrag,
     getAllDBTCFragsForUser
-}
+};

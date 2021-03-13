@@ -1,4 +1,4 @@
-const { ca } = require('date-fns/locale');
+
 const ms = require('ms');
 const debug = require('debug')('barcode:session-store');
 
@@ -15,14 +15,19 @@ const SESSION_CLEANUP_INTERVAL = '1 day';
 function wrap(callback, f) {
     try {
         const result = f();
-        callback && callback(null, result);
-    } catch (error) {
+        if (callback) {
+            callback(null, result);
+        }
+    }
+    catch (error) {
         debug(error);
-        callback && callback(error);
+        if (callback) {
+            callback(error);
+        }
     }
 }
 
-module.exports = function(Session) {
+module.exports = function (Session) {
 
     const {Store} = Session;
 
@@ -40,7 +45,7 @@ module.exports = function(Session) {
             debug('Deleting expired sessions');
             const count = this.db.change(
                 'DELETE FROM sessions WHERE $now > expires',
-                {now: new Date().getTime()}
+                {now: Date.now()}
             );
             debug('Deleted', count);
         }
@@ -50,7 +55,7 @@ module.exports = function(Session) {
                 debug('Getting', id);
                 const row = this.db.first(
                     'SELECT session FROM sessions WHERE id = $id AND $now <= expires',
-                    {id, now: new Date().getTime()}
+                    {id, now: Date.now()}
                 );
                 if (!row) {
                     debug('Session', id, 'not found');
@@ -66,7 +71,7 @@ module.exports = function(Session) {
             wrap(callback, () => {
                 debug('Setting', id);
                 const maxAge = session.cookie.maxAge;
-                const now = new Date().getTime();
+                const now = Date.now();
                 const expires = maxAge ? now + maxAge : now + ms(SESSION_EXPIRES_AFTER);
                 const changed = this.db.change(
                     `
@@ -116,4 +121,4 @@ module.exports = function(Session) {
     }
 
     return SessionStore;
-}
+};

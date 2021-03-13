@@ -37,7 +37,6 @@ function error(code, message, link, button) {
 // from.
 //-----------------------------------------------------------------------------
 
-
 module.exports = {
     // Frag validation failed
     INVALID_FRAG:           error.bind(null, 'INF'),

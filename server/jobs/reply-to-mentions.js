@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 
 const {lock} = require('../lock');
 const {BARCODE_USER, getAlerts, getPost, lookupUser} = require('../xenforo');
@@ -35,8 +36,8 @@ lock('reply-to-mentions', async (debug) => {
         action === 'mention' &&
         content_type === 'post');
 
-    if (!alerts.length) {
-        debug ('No new mentions');
+    if (alerts.length === 0) {
+        debug('No new mentions');
         return;
     }
 

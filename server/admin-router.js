@@ -52,7 +52,7 @@ const SCRIPTS = [
             `SELECT COUNT(DISTINCT journalId) AS journalCount FROM journals WHERE fragId IN
                 (SELECT fragId FROM frags WHERE motherId = $param)`,
             'SELECT userId AS fanId FROM fans WHERE motherId = $param',
-            'SELECT * FROM frags WHERE motherId = $param',
+            'SELECT * FROM frags WHERE motherId = $param'
         ]
     },
     {
@@ -60,7 +60,7 @@ const SCRIPTS = [
         param: 'Frag ID',
         statements: [
             'DELETE FROM journals WHERE fragId = $param',
-            'DELETE FROM frags WHERE fragId = $param',
+            'DELETE FROM frags WHERE fragId = $param'
         ]
     },
     {
@@ -124,11 +124,11 @@ router.use((req, res, next) => {
         return next(NOT_ADMIN());
     }
     next();
-})
+});
 
 //-----------------------------------------------------------------------------
 
-router.get('/scripts', (req, res, next) => {
+router.get('/scripts', (req, res) => {
     const scripts = getScriptList();
     const jobs = scheduler.getJobs();
     res.json({scripts, jobs});
@@ -136,7 +136,7 @@ router.get('/scripts', (req, res, next) => {
 
 //-----------------------------------------------------------------------------
 
-router.post('/run', upload.none(), (req, res, next) => {
+router.post('/run', upload.none(), (req, res) => {
     const {body: {script, param}} = req;
     assert(script);
     try {
@@ -162,7 +162,7 @@ router.post('/job', upload.none(), (req, res) => {
     catch (error) {
         res.json({
             error: error.toString()
-        })
+        });
     }
 });
 

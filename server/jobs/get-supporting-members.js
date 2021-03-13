@@ -44,7 +44,9 @@ const {BC_XF_DB_SSH_CREDENTIALS, BC_XF_DB_CREDENTIALS} = require('../barcode.con
 //-----------------------------------------------------------------------------
 
 async function createSSHStream(client, options) {
-    await new Promise((resolve) => client.on('ready', resolve).connect(options));
+    await new Promise((resolve) => {
+        client.on('ready', resolve).connect(options);
+    });
     const stream = await new Promise((resolve, reject) => {
         client.forwardOut('127.0.0.1', 12345, '127.0.0.1', options.destinationPort,
             (error, stream) => error ? reject(error) : resolve(stream));
@@ -226,7 +228,7 @@ async function getSupportingMembers() {
             database : databaseName,
             user     : dbUser,
             password : dbPassword,
-            stream   : stream
+            stream
         });
 
         debug('Connecting to database...');

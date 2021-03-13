@@ -1,8 +1,6 @@
 const assert = require('assert');
 
 const express = require('express');
-const multer = require('multer');
-const _ = require('lodash');
 
 const db = require('./user-database');
 

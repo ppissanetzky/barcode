@@ -1,4 +1,4 @@
-'use strict';
+/* eslint-disable camelcase */
 
 const assert = require('assert');
 const _ = require('lodash');
@@ -27,7 +27,7 @@ const XenForoApi = require('./xenforo-api');
 //-----------------------------------------------------------------------------
 
 const POSTING_ENABLED =
-    BC_FORUM_MODE === "production" ||
+    BC_FORUM_MODE === 'production' ||
     parseInt(BC_FORUM_MODE, 10) > 0;
 
 //-----------------------------------------------------------------------------
@@ -103,8 +103,8 @@ function makeUser(xfUser) {
         canHoldEquipment: canXfUserHoldEquipment(xfUser),
         isAdmin: canXfUserImpersonate(xfUser),
         title: user_title,
-        location: location,
-        age: age,
+        location,
+        age,
         isStaff: is_staff,
         registerDate: utcIsoStringFromUnixTime(register_date),
         // Users can decide whether their activity is seen. When they
@@ -187,7 +187,7 @@ async function lookupUser(userId, forDisplayOnly, includeEmail) {
             });
         }
     }
-    catch(error) {
+    catch (error) {
         console.error(`Failed to lookup user ${id} :`, error);
     }
 }
@@ -204,7 +204,7 @@ async function getUserEmailAddress(userId) {
 async function lookupUserWithFallback(userId) {
     const user = await lookupUser(userId);
     if (!user) {
-        console.warn('Failed to look up user', )
+        console.warn('Failed to look up user', userId);
     }
     return user || ({id: 0, name: '<unknown>'});
 }
@@ -223,7 +223,7 @@ async function startConversation(users, title, body, closed) {
     }
     const response = await XenForoApi.post('conversations/', {
         'recipient_ids[]': users,
-        title: title,
+        title,
         message: body,
         conversation_open: closed ? 0 : 1,
         open_invite: closed ? 0 : 1
@@ -310,7 +310,7 @@ function convertThread(thread) {
         title:          thread.title,
         name:           nameFromThreadTitle(thread.title),
         viewUrl:        thread.view_url
-    })
+    });
 }
 
 //-----------------------------------------------------------------------------
@@ -320,7 +320,7 @@ async function getThreadsForItemType(userId, type) {
     if (!forumId) {
         return [];
     }
-    const {pagination, threads = []} = await XenForoApi.get(`forums/${forumId}`, {
+    const {threads = []} = await XenForoApi.get(`forums/${forumId}`, {
         with_threads: true,
         page: 1,
         starter_id: userId
@@ -391,7 +391,7 @@ async function validateUserThread(userId, threadId) {
 
 function redactBBCode(userId, message) {
     let mentions = [];
-    let images = [];
+    const images = [];
     const text = [];
     bbob().process(message).tree.walk((thing) => {
         if (typeof thing === 'object') {
@@ -462,7 +462,7 @@ async function getThreadPosts(userId, threadId) {
                     name: post.username
                 }
             });
-        })
+        });
         if (page === last_page) {
             break;
         }
@@ -481,8 +481,8 @@ async function startForumThread(userId, forumId, title, message) {
     }
     const {thread: {thread_id}} = await XenForoApi.post('threads/', {
         node_id: forumId,
-        title: title,
-        message: message,
+        title,
+        message,
         api_bypass_permissions: 1
     },
     {
@@ -502,7 +502,7 @@ async function postToForumThread(threadId, message) {
     }
     await XenForoApi.post('posts/', {
         thread_id: threadId,
-        message: message,
+        message,
         api_bypass_permissions: 1
     },
     {

@@ -5,8 +5,7 @@ const {Database} = require('./db');
 const {
     dateFromIsoString,
     differenceInDays,
-    addDays,
-    addYears
+    addDays
 } = require('./dates');
 
 //-----------------------------------------------------------------------------
@@ -33,7 +32,7 @@ const SELECT_ITEMS = `
         items.itemId
 `;
 
-const SELECT_BAN = `SELECT * FROM bans WHERE userId = $userId`;
+const SELECT_BAN = 'SELECT * FROM bans WHERE userId = $userId';
 
 function getAllItems(userId) {
     const items = db.all(SELECT_ITEMS, {userId});
@@ -47,13 +46,13 @@ function getBan(userId) {
     return ban;
 }
 
-const SELECT_ALL_BANS = `SELECT * FROM bans`;
+const SELECT_ALL_BANS = 'SELECT * FROM bans';
 
 function getAllBans() {
     return db.all(SELECT_ALL_BANS, {});
 }
 
-const DELETE_BAN = `DELETE FROM bans WHERE userId = $userId`;
+const DELETE_BAN = 'DELETE FROM bans WHERE userId = $userId';
 
 function deleteBan(userId) {
     db.run(DELETE_BAN, {userId});
@@ -101,7 +100,7 @@ function getQueue(itemId) {
 
 // Used by this one and also transfers below
 
-const SELECT_QUEUE_ENTRY = `SELECT * FROM queue WHERE itemId = $itemId AND userId = $userId`;
+const SELECT_QUEUE_ENTRY = 'SELECT * FROM queue WHERE itemId = $itemId AND userId = $userId';
 
 function getQueueForUser(itemId, userId) {
     const [row] = db.all(SELECT_QUEUE_ENTRY, {itemId, userId});
@@ -111,7 +110,7 @@ function getQueueForUser(itemId, userId) {
 
 //-----------------------------------------------------------------------------
 
-const SELECT_OTP = `SELECT * FROM otp WHERE userId = $userId`;
+const SELECT_OTP = 'SELECT * FROM otp WHERE userId = $userId';
 
 function getOtp(userId) {
     const [row] = db.all(SELECT_OTP, {userId});
@@ -119,7 +118,7 @@ function getOtp(userId) {
     return row;
 }
 
-const DELETE_OTP = `DELETE FROM otp WHERE userId = $userId`;
+const DELETE_OTP = 'DELETE FROM otp WHERE userId = $userId';
 
 function deleteOtp(userId) {
     db.run(DELETE_OTP, {userId});
@@ -282,7 +281,7 @@ function transferItem(itemId, fromUserId, toUserId, exemptFromBans) {
         const isoStartDate = fromEntry.dateReceived;
         assert(isoStartDate);
         // Get the number of days they had it
-        const days = Math.max(differenceInDays(now, dateFromIsoString(isoStartDate)), 0)
+        const days = Math.max(differenceInDays(now, dateFromIsoString(isoStartDate)), 0);
         // Insert a history row
         run(INSERT_HISTORY, {
             itemId,
@@ -325,7 +324,7 @@ function transferItem(itemId, fromUserId, toUserId, exemptFromBans) {
 
 //-----------------------------------------------------------------------------
 
-const SELECT_ITEM_FOR_THREAD = `SELECT * FROM items WHERE threadId = $threadId`;
+const SELECT_ITEM_FOR_THREAD = 'SELECT * FROM items WHERE threadId = $threadId';
 
 function getItemForThread(threadId) {
     const [row] = db.all(SELECT_ITEM_FOR_THREAD, {threadId});

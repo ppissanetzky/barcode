@@ -22,7 +22,7 @@ async function postThem() {
         await postToForumThread(THREAD_ID, message);
     }
     catch (error) {
-        console.error(`Failed to post to the forum log :`, message, error);
+        console.error('Failed to post to the forum log :', message, error);
     }
 }
 
@@ -32,7 +32,7 @@ async function logToForum(message) {
     try {
         // Replace all @xxx with the actual user name, so the caller doesn't
         // have to look up users
-        const matches = message.matchAll(/@([0-9]+)/g);
+        const matches = message.matchAll(/@(\d+)/g);
         for (const match of matches) {
             const id = match[1];
             const user = await lookupUser(id, true);

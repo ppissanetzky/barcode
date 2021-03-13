@@ -66,7 +66,7 @@ function uberPost(threadId, messageName, context) {
         }
         const [, message] = await renderMessage(messageName, context);
         await postToForumThread(threadId, message);
-        console.log(`Posted to thread ${threadId}`)
+        console.log(`Posted to thread ${threadId}`);
     });
 }
 
@@ -89,7 +89,7 @@ function madeFragsAvailable(user, frag) {
             frag,
             fans
         });
-    })
+    });
 }
 
 //-----------------------------------------------------------------------------

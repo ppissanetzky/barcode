@@ -126,27 +126,27 @@ class Database {
             }
 
             // Check the version with this pragma
-            let [{user_version}] = db.pragma('user_version');
+            let [{user_version: userVersion}] = db.pragma('user_version');
 
             // If it is already at the desired version mark it as migrated
             // and return it
-            if (user_version === version) {
+            if (userVersion === version) {
                 this.migrated = true;
                 return db;
             }
 
-            console.log(name, 'database is version', user_version, 'requesting version', version);
+            console.log(name, 'database is version', userVersion, 'requesting version', version);
 
             // If it is at a higher version than the desired one, there is
             // a problem and we should not continue.
-            if (user_version > version) {
-                throw new Error(`It has later version ${user_version}`);
+            if (userVersion > version) {
+                throw new Error(`It has later version ${userVersion}`);
             }
 
             // Now, try to get to the desired version
-            while (user_version < version) {
+            while (userVersion < version) {
                 // Look for a script to get us to the next version
-                const nextVersion = user_version + 1;
+                const nextVersion = userVersion + 1;
                 const migrationScript = path.join(__dirname, 'database', name, `v${nextVersion}.sql`);
                 console.log('Migrating to version', nextVersion, 'with', migrationScript);
 
@@ -156,12 +156,12 @@ class Database {
                 db.exec(script);
 
                 // Now, read the new version, which the script should have set
-                [{user_version}] = db.pragma('user_version');
+                [{user_version: userVersion}] = db.pragma('user_version');
 
                 // This is because the script didn't set it, so it is a
                 // programmatic error
-                if (user_version != nextVersion) {
-                    throw new Error(`After running ${migrationScript}, the version is ${user_version} and we were expecting ${nextVersion}`);
+                if (userVersion !== nextVersion) {
+                    throw new Error(`After running ${migrationScript}, the version is ${userVersion} and we were expecting ${nextVersion}`);
                 }
             }
 
@@ -170,7 +170,7 @@ class Database {
             this.migrated = true;
             return db;
         }
-        catch(error) {
+        catch (error) {
             // If we opened it, close it just for grins
             if (db) {
                 db.close();

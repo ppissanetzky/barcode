@@ -30,7 +30,7 @@ async function resizeImage(fileName, options) {
         // fall through and do nothing
         await fs.access(destination);
     }
-    catch (error) {
+    catch {
         // The file doesn't exist, so we do the resize. This could
         // throw an error too
         await sharp(source).rotate().resize(options || OPTIONS).jpeg().toFile(destination);

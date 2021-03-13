@@ -1,10 +1,4 @@
 
-const cluster = require('cluster');
-
-require('console-stamp')(console, {
-    pattern: 'isoDateTime',
-    metadata: (cluster.worker && cluster.worker.id) || process.pid});
-
 const path = require('path');
 const assert = require('assert');
 
@@ -29,7 +23,9 @@ function lock(name, f) {
     const lockfilePath = path.join(BC_DATABASE_DIR, `${name}.lock`);
     return lockfile.lock(BC_DATABASE_DIR, {lockfilePath})
         .then(
-            (release) => new Promise(resolve => resolve(f(debug)))
+            (release) => new Promise((resolve) => {
+                resolve(f(debug));
+            })
                 // Hold the lock so that quick tasks still exclude each other
                 .finally(() => {
                     debug('Holding lock for', HOLD_LOCK);
@@ -37,7 +33,7 @@ function lock(name, f) {
                 })
             ,
             () => debug('Failed to get lock')
-        )
+        );
 }
 
 //-----------------------------------------------------------------------------

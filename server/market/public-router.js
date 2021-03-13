@@ -1,21 +1,9 @@
 'use strict';
 
-const assert = require('assert');
-const path = require('path');
-const fs = require('fs');
-
-const _ = require('lodash');
 const express = require('express');
 const passport = require('passport');
-const multer = require('multer');
 
 const debug = require('debug')('barcode:market-public');
-
-const {resizeImage} = require('../image-resizer');
-
-const {validIsoString} = require('../dates');
-
-const XenForo = require('../xenforo');
 
 const {Strategy: FacebookStrategy} = require('passport-facebook');
 
@@ -24,7 +12,6 @@ const {Strategy: FacebookStrategy} = require('passport-facebook');
 //-----------------------------------------------------------------------------
 
 const {
-    BC_UPLOADS_DIR,
     BC_MARKET_ENABLED,
     BC_SITE_BASE_URL,
     BCM_FACEBOOK_APP_ID,
@@ -39,26 +26,13 @@ const {
 const connect = require('./market-database');
 
 //-----------------------------------------------------------------------------
-// Errors
-//-----------------------------------------------------------------------------
-
-const {
-    INVALID_FRAG,
-    NOT_YOURS,
-    NOT_SELLER,
-    INVALID_PICTURE_SET,
-    MISSING_PICTURE,
-    INVALID_PICTURE_INDEX
-
-} = require('../errors');
-
-//-----------------------------------------------------------------------------
 // The two sub-routers
 //-----------------------------------------------------------------------------
 
 const userRouter = require('./user-router');
 const sellerRouter = require('./seller-router');
 
+/*
 //-----------------------------------------------------------------------------
 // The destinaton for uploaded files (pictures)
 //-----------------------------------------------------------------------------
@@ -77,10 +51,11 @@ function deleteUpload(filename) {
     const original = path.join(UPLOADS_PATH, filename);
     const small = `${original}.small`;
     console.log('Deleting', original);
-    fs.rm(original, options, () =>{});
+    fs.rm(original, options, () => {});
     console.log('Deleting', small);
     fs.rm(small, options, () => {});
 }
+*/
 
 //-----------------------------------------------------------------------------
 // The router
@@ -113,7 +88,7 @@ router.use((req, res, next) => {
 //-----------------------------------------------------------------------------
 
 router.get('/status', (req, res) => {
-    const {db, muid, msid} = req;
+    const {db, muid} = req;
     res.json({
         user: db.getUserName(muid),
         seller: db.isSeller(muid)
@@ -141,7 +116,7 @@ const XF_AUTHENTICATE = passport.authenticate('XenForo', {
     withEmail: true
 });
 
-router.post('/login/bar', XF_AUTHENTICATE, (req, res, next) => {
+router.post('/login/bar', XF_AUTHENTICATE, (req, res) => {
     const {db, session, user} = req;
     // Debug
     debug('User', user);
@@ -216,7 +191,7 @@ router.get('/login/facebook/callback',
     }),
     (req, res) => {
         debug('Facebook callback with success', req.user);
-        const {db, session, user: {muid}} = req;
+        const {session, user: {muid}} = req;
         // We no longer need this user
         delete req.user;
         // We no longer need the passport
@@ -240,11 +215,12 @@ router.post('/logout', (req, res) => {
     });
 });
 
-//=============================================================================
+// ============================================================================
+
 //-----------------------------------------------------------------------------
 // Updates or creates a seller
 //-----------------------------------------------------------------------------
-
+/*
 router.post('/seller', upload.none(), (req, res, next) => {
     const {db, user, seller, body} = req;
     // Form inputs. The sellerId will be undefined if it is a new seller
@@ -482,7 +458,7 @@ router.delete('/picture/:pictureSetId/:idx',
         res.json({pictures});
     });
 });
-
+*/
 //-----------------------------------------------------------------------------
 
 module.exports = router;

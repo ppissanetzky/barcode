@@ -1,9 +1,5 @@
 'use strict';
 
-const assert = require('assert');
-
-const _ = require('lodash');
-
 const {Database, DatabaseConnection} = require('../db');
 
 //-----------------------------------------------------------------------------
@@ -22,7 +18,7 @@ class MarketDatabaseConnection extends DatabaseConnection {
 
     getUser(muid) {
         return this.first(
-            `SELECT * FROM users WHERE muid = $muid`,
+            'SELECT * FROM users WHERE muid = $muid',
             {muid}
         );
     }
@@ -34,7 +30,7 @@ class MarketDatabaseConnection extends DatabaseConnection {
 
     addUser(muid, source, name, email) {
         this.run(
-            `INSERT INTO users VALUES ($muid, $source, $name, $email)`,
+            'INSERT INTO users VALUES ($muid, $source, $name, $email)',
             {muid, source, name, email}
         );
         return this.getUser(muid);
@@ -45,7 +41,7 @@ class MarketDatabaseConnection extends DatabaseConnection {
     getSellerForUser(muid) {
         // Can be undefined
         return this.first(
-            `SELECT * FROM sellers WHERE muid = $muid`,
+            'SELECT * FROM sellers WHERE muid = $muid',
             {muid}
         );
     }
@@ -56,13 +52,13 @@ class MarketDatabaseConnection extends DatabaseConnection {
     }
 
     isSeller(muid) {
-        return this.getSellerIdForUser(muid) ? true : false;
+        return Boolean(this.getSellerIdForUser(muid));
     }
 
     getSeller(msid) {
         // Can be undefined
         return this.first(
-            `SELECT * FROM sellers WHERE msid = $msid`,
+            'SELECT * FROM sellers WHERE msid = $msid',
             {msid}
         );
     }

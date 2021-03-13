@@ -1,13 +1,6 @@
 'use strict';
 
-const assert = require('assert');
-const path = require('path');
-const fs = require('fs');
-
-const _ = require('lodash');
 const express = require('express');
-
-const debug = require('debug')('barcode:market-seller');
 
 //-----------------------------------------------------------------------------
 // The router

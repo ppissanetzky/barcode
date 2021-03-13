@@ -1,7 +1,5 @@
 'use strict';
 
-require('console-stamp')(console, {pattern: 'isoDateTime', metadata: process.pid});
-
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
@@ -176,11 +174,11 @@ app.use(async (req, res, next) => {
     // See if there is an impersonate user ID in the session
     const {impersonateUserId} = session;
     // We start out not impersonating
-    let impersonating = false
+    let impersonating = false;
     if (user.canImpersonate && impersonateUserId) {
         const impersonateUser = await lookupUser(impersonateUserId);
         if (impersonateUser) {
-            req.originalUser = user
+            req.originalUser = user;
             req.user = impersonateUser;
             impersonating = true;
         }
@@ -264,7 +262,7 @@ app.use('/admin', adminRouter, or404);
 
 app.use((error, req, res, next) => {
     if (res.headersSent) {
-      return next(error)
+        return next(error);
     }
     // Always a 500
     res.status(500);

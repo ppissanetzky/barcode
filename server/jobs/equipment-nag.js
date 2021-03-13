@@ -1,6 +1,4 @@
 
-const _ = require('lodash');
-
 const {lock} = require('../lock');
 const db = require('../equipment-database');
 const {dateFromIsoString, differenceInDays} = require('../dates');
@@ -49,7 +47,7 @@ async function alert(item, entry, days) {
         // TODO: figure out AWS SES
     }
     catch (error) {
-        console.error('Failed to send e-mail alert', user.name, email, error);
+        console.error('Failed to send e-mail alert', user.name, error);
     }
 
     //-------------------------------------------------------------------------
@@ -86,7 +84,7 @@ lock('equipment-nag', async () => {
         // Iterate over the queue
         for (const entry of queue) {
             // Get the date received
-            const {userId, dateReceived} = entry;
+            const {dateReceived} = entry;
             // If it is not there, this user is waiting
             if (!dateReceived) {
                 continue;

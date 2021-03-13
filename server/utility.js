@@ -19,23 +19,23 @@ async function saveImageFromUrl(upload, url) {
             return error ? reject(error) : resolve(directory);
         });
     })
-    .then((directory) => new Promise((resolve, reject) => {
-        upload.storage.getFilename(null, null, (error, filename) => {
-            if (error) {
-                return reject(error);
-            }
-            resolve([directory, filename]);
-        });
-    }))
-    .then(([directory, filename]) => new Promise((resolve, reject) => {
-        const destination = path.join(directory, filename);
-        const stream = fs.createWriteStream(destination);
-        const request = https.get(url, (response) => {
-            response.pipe(stream);
-            response.on('end', () => resolve(filename));
-        });
-        request.on('error', reject);
-    }))
+        .then((directory) => new Promise((resolve, reject) => {
+            upload.storage.getFilename(null, null, (error, filename) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve([directory, filename]);
+            });
+        }))
+        .then(([directory, filename]) => new Promise((resolve, reject) => {
+            const destination = path.join(directory, filename);
+            const stream = fs.createWriteStream(destination);
+            const request = https.get(url, (response) => {
+                response.pipe(stream);
+                response.on('end', () => resolve(filename));
+            });
+            request.on('error', reject);
+        }));
 }
 
 //-----------------------------------------------------------------------------
