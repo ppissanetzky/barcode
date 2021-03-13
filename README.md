@@ -1,3 +1,5 @@
+[![Run tests](https://github.com/ppissanetzky/barcode/actions/workflows/test.yml/badge.svg)](https://github.com/ppissanetzky/barcode/actions/workflows/test.yml)
+
 # BARcode
 
 The application consists of two main parts:
