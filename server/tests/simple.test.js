@@ -1,6 +1,3 @@
-const os = require('os');
-const fs = require('fs');
-const path = require('path');
 
 const express = require('express');
 const request = require('supertest');
@@ -61,50 +58,7 @@ beforeAll(async () => {
         return body;
     });
 
-    //-------------------------------------------------------------------------
-
-    const BC_UPLOADS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'uploads-'));
-    const BC_DATABASE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'databases-'));
-
-    //-------------------------------------------------------------------------
-
-    [
-        ['BC_XF_API_URL', '/'],
-        ['BC_XF_API_KEY', '111'],
-
-        ['BC_UPLOADS_DIR', BC_UPLOADS_DIR],
-        ['BC_DATABASE_DIR', BC_DATABASE_DIR],
-
-        ['BC_SESSION_COOKIE_SECRETS', '111'],
-        ['BC_SESSION_COOKIE_NAME', 'session-cookie'],
-        ['BC_SESSION_COOKIE_SECURE', 'no'],
-        ['BC_MARKET_ENABLED', 'yes'],
-        ['BC_TEST_USER', '0'],
-        ['BC_FORUM_MODE', '0'],
-        ['BC_SMS_MODE', '0'],
-        ['BC_DISABLE_SCHEDULER', '1'],
-        ['BC_SITE_BASE_URL', '/'],
-
-        ['AWS_ACCESS_KEY_ID', '111'],
-        ['AWS_SECRET_ACCESS_KEY', '111'],
-
-        ['BCM_FACEBOOK_APP_ID', '111'],
-        ['BCM_FACEBOOK_APP_SECRET', '111'],
-
-        ['BC_XF_DB_SSH_CREDENTIALS', '111'],
-        ['BC_XF_DB_CREDENTIALS', '111']
-    ]
-        .forEach(([key, value]) => {
-            process.env[key] = value;
-        });
-
     app = require('../app');
-});
-
-afterAll((done) => {
-    fs.rmdirSync(process.env.BC_UPLOADS_DIR, {recursive: true});
-    fs.rmdirSync(process.env.BC_DATABASE_DIR, {recursive: true});
-    done();
 });
 
 describe('Mock XenForo API', () => {
