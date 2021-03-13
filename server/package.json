@@ -48,9 +48,6 @@
     ]
   },
   "xo": {
-    "ignores": [
-      "tests"
-    ],
     "space": 4,
     "rules": {
       "unicorn/prevent-abbreviations": 0,
@@ -75,6 +72,17 @@
         "always"
       ],
       "new-cap": 0
-    }
+    },
+    "overrides": [{
+      "files": "tests/*",
+      "globals": [
+        "jest",
+        "describe",
+        "it",
+        "beforeAll",
+        "afterAll",
+        "expect"
+      ]
+    }]
   }
 }
