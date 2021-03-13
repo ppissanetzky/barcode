@@ -16,4 +16,4 @@ jobs:
       - run: npm ci
       - run: npm test
         env:
-         BC_XF_API_KEY: ${{ _BC_XF_API_KEY }}    
+         BC_XF_API_KEY: ${{ secrets._BC_XF_API_KEY }}    
