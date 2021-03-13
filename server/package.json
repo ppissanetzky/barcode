@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test": "xo && jest",
+    "test": "jest",
     "server": "nodemon server.js",
     "web-server": "dotenv -e ~/barcode-env -- docker-compose -f local-web-server/docker-compose.yml up"
   },
@@ -61,15 +61,19 @@
       "unicorn/no-process-exit": 0,
       "unicorn/no-array-reduce": 0,
       "unicorn/prefer-string-slice": 0,
-
       "capitalized-comments": 0,
       "key-spacing": 0,
       "no-await-in-loop": 0,
       "padding-line-between-statements": 0,
       "padded-blocks": 0,
-      "brace-style": ["error", "stroustrup"],
-      "arrow-parens": ["error", "always"],
-
+      "brace-style": [
+        "error",
+        "stroustrup"
+      ],
+      "arrow-parens": [
+        "error",
+        "always"
+      ],
       "new-cap": 0
     }
   }

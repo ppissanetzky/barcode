@@ -3,7 +3,7 @@
   "version": "1.32.0",
   "private": true,
   "scripts": {
-    "test": "(cd server && npm test)",
+    "test": "xo && (cd server && npm test)",
     "install": "(cd site && npm i) && (cd server && npm i)",
     "dev": "(cd site && npm run dev)",
     "generate": "(cd site && npm run generate)",
@@ -12,5 +12,8 @@
     "preversion": "git checkout main && git pull origin main",
     "postversion": "git push origin main --tags",
     "push": "(cd build && make build push)"
+  },
+  "devDependencies": {
+    "xo": "^0.38.2"
   }
 }
