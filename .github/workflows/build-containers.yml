@@ -24,9 +24,11 @@ jobs:
           node-version: 14.15.3
       -
         working-directory: ./site
+        env:
+         BC_VERSION: ${{ steps.get_version.outputs.version }}    
         run: |
           npm ci
-          npm run generate
+          npx nuxt generate --fail-on-error --dotenv false
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v1
