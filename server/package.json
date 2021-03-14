@@ -75,16 +75,18 @@
       ],
       "new-cap": 0
     },
-    "overrides": [{
-      "files": "tests/*",
-      "globals": [
-        "jest",
-        "describe",
-        "it",
-        "beforeAll",
-        "afterAll",
-        "expect"
-      ]
-    }]
+    "overrides": [
+      {
+        "files": "tests/*",
+        "globals": [
+          "jest",
+          "describe",
+          "it",
+          "beforeAll",
+          "afterAll",
+          "expect"
+        ]
+      }
+    ]
   }
 }

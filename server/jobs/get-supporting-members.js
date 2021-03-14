@@ -184,8 +184,6 @@ async function notifyExpiring() {
             debug('PM sent to', userId);
             // And note it
             setSetting(userId, NOTIFIED_EXPIRING, activeEndDate);
-            // Log activity
-            logToForum(`Notified @${userId} - supporting membership will expire in ${days}`);
         }
         catch (error) {
             console.error('Failed to send PM to', userId, error);
@@ -251,6 +249,11 @@ async function getSupportingMembers() {
         let deleted = 0;
         let inserted = 0;
 
+        // This is a set of all userIds that we have in the database right now,
+        // before we make changes.
+        const existing = new Set(db.all('SELECT userId FROM supportingMembers')
+            .map(({userId}) => userId));
+
         db.transaction(() => {
 
             // Delete all existing rows
@@ -305,6 +308,12 @@ async function getSupportingMembers() {
                 });
 
                 inserted += changes;
+
+                // If this userId was not there before, it is a new member
+                if (!existing.has(userId)) {
+                    debug('New member', userId);
+                    logToForum(`@${userId} is a new member`);
+                }
             }
 
             debug('Inserted', inserted, 'rows');
