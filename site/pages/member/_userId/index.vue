@@ -32,10 +32,23 @@
           <div v-if="member.availableFrags.length">
             <v-divider />
             <v-card-text>
-              <h3>Available frags</h3>
+              <h3>Has available frags</h3>
               <div v-for="(af, index) in member.availableFrags" :key="index">
+                <span><strong>{{ af.count }}</strong></span>
                 <router-link :to="`/frag/${af.fragId}`" target="_blank" v-text="af.name" />
-                <span>({{ af.count }})</span>
+                <span> ({{ af.type }})</span>
+              </div>
+            </v-card-text>
+          </div>
+
+          <!-- Waiting for frags -->
+          <div v-if="member.waitingFor.length">
+            <v-divider />
+            <v-card-text>
+              <h3>Would like frags of</h3>
+              <div v-for="(wf, index) in member.waitingFor" :key="index">
+                <router-link :to="`/frag/${wf.fragId}`" target="_blank" v-text="wf.name" />
+                <span> ({{ wf.type }})</span>
               </div>
             </v-card-text>
           </div>

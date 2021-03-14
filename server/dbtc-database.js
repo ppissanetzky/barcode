@@ -1217,6 +1217,24 @@ function getMotherForThread(threadId) {
 
 //-----------------------------------------------------------------------------
 
+function getWaitingFragsForUser(userId) {
+    return db.all(
+        `
+        SELECT fragId, name, type
+        FROM motherFrags
+        WHERE motherId IN (
+            SELECT motherId
+            FROM fans
+            WHERE userId = $userId
+        )
+        ORDER BY
+            type, name
+        `,
+        {userId});
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     db,
     selectAllFragsForUser,
@@ -1254,5 +1272,6 @@ module.exports = {
     getJournalsForMother,
     getUserStats,
     getMotherFrag,
-    getAllDBTCFragsForUser
+    getAllDBTCFragsForUser,
+    getWaitingFragsForUser
 };

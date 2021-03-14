@@ -1064,21 +1064,24 @@ router.get('/member/:userId', async (req, res) => {
     const tankJournals = await getTankJournalsForUser(member.id);
     const availableFrags = db.selectAllFragsForUser(member)
         .filter(({fragsAvailable}) => fragsAvailable)
-        .map(({fragId, name, fragsAvailable, rules}) => ({
+        .map(({fragId, name, fragsAvailable, type, rules}) => ({
             fragId,
             name,
+            type,
             collection: rules.toUpperCase(),
             count: fragsAvailable
         }))
         .sort((a, b) => b.count - a.count);
     const stats = db.getUserStats(member.id);
+    const waitingFor = db.getWaitingFragsForUser(member.id);
     res.json({
         ...member,
         isMe,
         registerAge,
         tankJournals,
         availableFrags,
-        stats
+        stats,
+        waitingFor
     });
 });
 
