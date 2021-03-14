@@ -98,4 +98,3 @@ describe('DBTC router', () => {
         expect(frags.length).toBe(0);
     });
 });
-
