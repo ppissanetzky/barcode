@@ -66,3 +66,13 @@ jobs:
         with:
           name: target-${{ steps.get_version.outputs.version }}
           path: ./build/target/
+      -
+        name: Deploy to server
+        uses: easingthemes/ssh-deploy@v2.1.5
+        env:
+            SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_PRIVATE_KEY }}
+            ARGS: "-av"
+            SOURCE: build/target/
+            REMOTE_HOST: ${{ secrets.DEPLOY_HOST }}
+            REMOTE_USER: ${{ secrets.DEPLOY_USER }}
+            TARGET: "~/deployments/${{ steps.get_version.outputs.version }}"
