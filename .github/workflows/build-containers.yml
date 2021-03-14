@@ -4,8 +4,6 @@ name: Build containers
 
 on:
   push:
-    branches:
-      - main
     tags:
       - "v*"
 jobs:
