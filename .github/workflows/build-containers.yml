@@ -3,9 +3,14 @@
 name: Build containers
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - "Run Tests"
     tags:
       - "v*"
+    types:
+      - completed
+      - requested
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,7 +28,7 @@ jobs:
       -
         working-directory: ./site
         env:
-         BC_VERSION: ${{ steps.get_version.outputs.version }}    
+         BC_VERSION: ${{ steps.get_version.outputs.version }}
         run: |
           npm ci
           npx nuxt generate --fail-on-error --dotenv false
