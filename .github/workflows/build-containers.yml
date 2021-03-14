@@ -3,14 +3,9 @@
 name: Build containers
 
 on:
-  workflow_run:
-    workflows:
-      - "Run Tests"
+  push:
     tags:
       - "v*"
-    types:
-      - completed
-      - requested
 jobs:
   build:
     runs-on: ubuntu-latest
