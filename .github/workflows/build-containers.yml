@@ -57,7 +57,7 @@ jobs:
           tags: ppissanetzky/barcode-api-server:${{ steps.get_version.outputs.version }}
       -
         name: Create target .env
-        runs: |
+        run: |
           echo "VERSION=${{ steps.get_version.outputs.version }}" > ./build/target/barcode-prod/.env
           echo "VERSION=${{ steps.get_version.outputs.version }}" > ./build/target/barcode-demo/.env
       -
