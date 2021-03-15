@@ -9,7 +9,7 @@ const {BC_MARKET_ENABLED} = require('./barcode.config');
 
 //-----------------------------------------------------------------------------
 
-const DBTC_DB_VERSION = 5;
+const DBTC_DB_VERSION = 6;
 
 const db = new Database('dbtc', DBTC_DB_VERSION);
 
@@ -540,17 +540,16 @@ const SELECT_COLLECTION_PAGED = `
         -- 1 if this user owns the mother frag
         CASE WHEN mf.ownerId = $userId THEN 1 ELSE 0 END as ownsIt,
         -- Adds up all the available children frags
-        SUM(IFNULL(frags.fragsAvailable, 0)) AS otherFragsAvailable,
+        children.fragsAvailable AS otherFragsAvailable,
         -- Ends up being 1 if the user owns one of the children frags
         MAX(CASE WHEN frags.ownerId = $userId THEN 1 ELSE 0 END) AS hasOne,
-        -- Counts the number of children frags
-        COUNT(DISTINCT frags.fragId) AS childCount,
         -- Ends up being 1 if the user is a fan
         MAX(CASE WHEN fans.userId = $userId THEN 1 ELSE 0 END) AS isFan,
         -- Counts the number of fans
         COUNT(DISTINCT fans.userId) as fanCount
     FROM
-        motherFrags AS mf
+        motherFrags AS mf,
+        children
     LEFT OUTER JOIN
         frags
     ON
@@ -566,6 +565,7 @@ const SELECT_COLLECTION_PAGED = `
         fans.motherId = mf.motherId
     WHERE
         mf.rules = $rules
+        AND children.motherId = mf.motherId
         -- The subquery skips ahead the given number of items
         -- This is called 'keyset pagination'
         -- It must have the same WHERE as above and the same
@@ -573,16 +573,20 @@ const SELECT_COLLECTION_PAGED = `
         AND ($type IS NULL OR mf.type = $type)
         AND ($ownerId IS NULL OR mf.ownerId = $ownerId)
         AND ($name IS NULL OR mf.name LIKE $name)
+        AND ($available IS NULL OR (mf.fragsAvailable > 0 OR children.fragsAvailable > 0))
         AND mf.motherId NOT IN (
             SELECT
                 mf.motherId
             FROM
-                motherFrags AS mf
+                motherFrags AS mf,
+                children
             WHERE
                 mf.rules = $rules
+                AND children.motherId = mf.motherId
                 AND ($type IS NULL OR mf.type = $type)
                 AND ($ownerId IS NULL OR mf.ownerId = $ownerId)
                 AND ($name IS NULL OR mf.name LIKE $name)
+                AND ($available IS NULL OR (mf.fragsAvailable > 0 OR children.fragsAvailable > 0))
             ORDER BY
                 mf.timestamp DESC
             -- Skips previous pages - $page is 1 based
@@ -601,7 +605,8 @@ const ITEMS_PER_PAGE = 12;
 const NULL_FILTERS = {
     type: null,
     ownerId: null,
-    name: null
+    name: null,
+    available: null
 };
 
 function selectCollectionPaged(userId, rules, page, filters) {

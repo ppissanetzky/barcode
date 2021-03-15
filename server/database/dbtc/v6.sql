@@ -4,24 +4,26 @@ PRAGMA user_version = 6;
 
 -------------------------------------------------------------------------------
 
-CREATE TABLE fragsForSale (
-    ffsId           INTEGER PRIMARY KEY,
-    timestamp       TEXT NOT NULL,
-    fragOf          INTEGER NOT NULL,
-    title           TEXT NOT NULL,
-    descritpion     TEXT NOT NULL,
-    price           INTEGER NOT NULL,
-    currency        TEXT NOT NULL DEFAULT 'USD',
-    status          TEXT NOT NULL DEFAULT 'unpublished',
-    dateCut         TEXT NOT NULL,
-    deliveryMethod  TEXT NOT NULL DEFAULT 'Local pickup',
-    location        TEXT NOT NULL,
-    -- Comma separated list of uploads
-    pictures        TEXT NOT NULL,
-
-    FOREIGN KEY (fragOf) REFERENCES frags (fragId),
-    CHECK (status IN ('unpublished', 'published', 'sold'))
-);
+CREATE VIEW children (
+    motherId,
+    fragsAvailable,
+    childCount
+)
+AS
+    SELECT
+        mf.motherId AS motherId,
+        SUM(IFNULL(frags.fragsAvailable, 0)) AS fragsAvailable,
+        COUNT(DISTINCT frags.fragId) AS childCount
+    FROM
+        motherFrags AS mf
+    LEFT OUTER JOIN
+        frags
+    ON
+        frags.motherId = mf.motherId
+        AND frags.fragOf IS NOT NULL
+        AND frags.isAlive = 1
+    GROUP BY
+        mf.motherId;
 
 -------------------------------------------------------------------------------
 

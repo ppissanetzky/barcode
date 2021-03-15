@@ -37,6 +37,16 @@
             </v-card-actions>
             <v-card-actions>
               <v-autocomplete
+                v-model="availableFilter"
+                label="Available"
+                :items="['Has frags available']"
+                clearable
+                outlined
+                hide-details
+              />
+            </v-card-actions>
+            <v-card-actions>
+              <v-autocomplete
                 v-model="typeFilter"
                 label="Type"
                 :items="types"
@@ -67,6 +77,9 @@
       <v-col v-if="filters" align-self="center" cols="auto">
         <v-chip v-if="filters.name" label close class="my-1 mr-1" @click:close="removeNameFilter">
           {{ nameFilter }}
+        </v-chip>
+        <v-chip v-if="filters.available" label close class="my-1 mr-1" @click:close="removeAvailableFilter">
+          {{ availableFilter }}
         </v-chip>
         <v-chip v-if="filters.type" label close class="my-1 mr-1" @click:close="removeTypeFilter">
           {{ typeFilter }}
@@ -131,7 +144,8 @@ export default {
       filters: null,
       typeFilter: null,
       memberFilter: null,
-      nameFilter: null
+      nameFilter: null,
+      availableFilter: null
     }
   },
   methods: {
@@ -148,7 +162,8 @@ export default {
           params: {
             type: this.filters.type,
             name: this.filters.name ? `%${this.filters.name}%` : null,
-            ownerId: this.filters.member ? this.filters.member.id : null
+            ownerId: this.filters.member ? this.filters.member.id : null,
+            available: this.filters.available ? 1 : null
           }
         }
         const { user, mothers } = await this.$axios.$get(url, options)
@@ -186,16 +201,21 @@ export default {
       this.memberFilter = null
       this.applyFilter()
     },
+    removeAvailableFilter () {
+      this.availableFilter = null
+      this.applyFilter()
+    },
     applyFilter () {
       this.allPagesLoaded = false
       this.lastPage = 0
       this.showFilter = false
       this.mothers = []
-      if (this.nameFilter || this.typeFilter || this.memberFilter) {
+      if (this.nameFilter || this.typeFilter || this.memberFilter || this.availableFilter) {
         this.filters = {
           name: this.nameFilter,
           type: this.typeFilter,
-          member: this.memberFilter
+          member: this.memberFilter,
+          available: this.availableFilter
         }
       } else {
         this.filters = null
@@ -210,6 +230,7 @@ export default {
       this.typeFilter = null
       this.memberFilter = null
       this.nameFilter = null
+      this.availableFilter = null
       this.filters = null
       this.allPagesLoaded = false
       this.lastPage = 0
