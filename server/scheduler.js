@@ -1,34 +1,36 @@
 
 const path = require('path');
 
+const _ = require('lodash');
 const Bree = require('bree');
 
 const {BC_DISABLE_SCHEDULER} = require('./barcode.config');
 
 //-----------------------------------------------------------------------------
-// since the server is running in UTC, account for that.
+// These all depend on the server's timezone, so watch out
+// Our container is build to run in PDT
 //-----------------------------------------------------------------------------
 
-const JOBS = [
+const JOBS = {
 
-    ['backup-database', 'at 10:00 am'], // 2 am
+    'at 2:00 am': 'backup-database',
 
-    ['make-thumbnails', 'at 11:00 am'], // 3 am
+    'at 3:00 am': 'make-thumbnails',
 
-    ['get-supporting-members', 'every 12 hours'],
+    'at 8:30 am': 'get-supporting-members',
 
-    ['dbtc-nag', 'every weekday at 5:00 pm'], // 9 am
+    'every weekday at 9:00 am': 'dbtc-nag',
 
-    ['equipment-nag', 'at 6:00 pm'], // 10 am
+    'at 9:30 am': 'equipment-nag',
 
-    ['reply-to-mentions', 'every 10 minutes']
-];
+    'every 10 minutes': 'reply-to-mentions'
+};
 
 //-----------------------------------------------------------------------------
 
 const bree = new Bree({
     root: path.join(__dirname, 'jobs'),
-    jobs: JOBS.map(([name, interval]) => ({name, interval}))
+    jobs: _.map(JOBS, (name, interval) => ({name, interval}))
 });
 
 function start() {
@@ -40,7 +42,7 @@ function start() {
 }
 
 function getJobs() {
-    return JOBS.map(([name, schedule]) => ({name, schedule}));
+    return _.map(JOBS, (name, schedule) => ({name, schedule}));
 }
 
 function run(name) {

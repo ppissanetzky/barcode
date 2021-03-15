@@ -13,5 +13,9 @@ RUN npm ci --only prod
 # Copy the server code
 COPY . .
 
+# Set the OS time zone
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 # Command to start the server
 CMD ["node", "server.js"]
