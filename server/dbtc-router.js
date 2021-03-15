@@ -1074,6 +1074,7 @@ router.get('/member/:userId', async (req, res) => {
         .sort((a, b) => b.count - a.count);
     const stats = db.getUserStats(member.id);
     const waitingFor = db.getWaitingFragsForUser(member.id);
+    const linksCompleted = db.getDbtcLinksCompletedForUser(member.id);
     res.json({
         ...member,
         isMe,
@@ -1081,7 +1082,8 @@ router.get('/member/:userId', async (req, res) => {
         tankJournals,
         availableFrags,
         stats,
-        waitingFor
+        waitingFor,
+        linksCompleted
     });
 });
 

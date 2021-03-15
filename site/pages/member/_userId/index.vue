@@ -53,6 +53,19 @@
             </v-card-text>
           </div>
 
+          <!-- DBTC links completed -->
+          <div v-if="member.linksCompleted.length">
+            <v-divider />
+            <v-card-text>
+              <h3>DBTC links completed</h3>
+              <div v-for="(lc, index) in member.linksCompleted" :key="index">
+                <span><strong>{{ lc.count }}</strong></span>
+                <router-link :to="`/frag/${lc.fragId}`" target="_blank" v-text="lc.name" />
+                <span> ({{ lc.type }})</span>
+              </div>
+            </v-card-text>
+          </div>
+
           <!-- DBTC stats -->
           <div v-if="member.stats.dbtc.length">
             <v-divider />

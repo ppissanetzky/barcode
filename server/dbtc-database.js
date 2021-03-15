@@ -815,34 +815,6 @@ const STATS_GIVE_BACK_FRAG_COUNT = `
     ORDER BY 1
 `;
 
-const STATS_COMPLETED_LINKS = `
-    SELECT
-        type,
-        SUM(CASE WHEN count >= 2 THEN 1 ELSE 0 END) AS count,
-        JSON_GROUP_ARRAY(motherId) as motherIds
-    FROM
-        (
-            SELECT
-                mothers.type AS type,
-                mothers.motherId AS motherId,
-                COUNT(DISTINCT recipientFrags.fragId) AS count
-            FROM
-                mothers,
-                frags as ownerFrags,
-                frags as recipientFrags
-            WHERE
-                mothers.rules = $rules AND
-                ownerFrags.motherId = mothers.motherId AND
-                ownerFrags.fragOf IS NOT NULL AND
-                ownerFrags.ownerId = $userId AND
-                recipientFrags.fragOf = ownerFrags.fragId
-            GROUP BY 1, 2
-        )
-    GROUP BY 1
-    ORDER BY 1
-
-`;
-
 const STATS_RECEIVED_FRAG_COUNT = `
     SELECT
         mothers.type AS type,
@@ -929,11 +901,6 @@ function getUserStats(userId) {
                 {
                     title: 'Frags put back',
                     data: data(STATS_GIVE_BACK_FRAG_COUNT, dbtcParams)
-                },
-                {
-                    title: 'Completed links',
-                    data: data(STATS_COMPLETED_LINKS, dbtcParams)
-                        .filter(({count}) => count > 0)
                 },
                 {
                     title: 'Frags received',
@@ -1233,6 +1200,35 @@ function getWaitingFragsForUser(userId) {
         {userId});
 }
 
+function getDbtcLinksCompletedForUser(userId) {
+    return db.all(
+        `
+        SELECT
+            mothers.name,
+            mothers.type,
+            source.fragId,
+            COUNT(DISTINCT given.fragId) AS count
+        FROM
+            mothers,
+            frags as source,
+            frags as given
+        WHERE
+            mothers.rules = 'dbtc'
+            AND mothers.motherId = source.motherId
+            AND source.fragOf IS NOT NULL
+            AND source.ownerId = $userId
+            AND given.fragOf = source.fragId
+        GROUP BY
+            mothers.motherId
+        HAVING
+            count >= 2
+        ORDER BY
+            count DESC
+        `,
+        {userId}
+    );
+}
+
 //-----------------------------------------------------------------------------
 
 module.exports = {
@@ -1273,5 +1269,6 @@ module.exports = {
     getUserStats,
     getMotherFrag,
     getAllDBTCFragsForUser,
-    getWaitingFragsForUser
+    getWaitingFragsForUser,
+    getDbtcLinksCompletedForUser
 };
