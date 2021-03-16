@@ -1,5 +1,43 @@
 <template>
   <v-card width="375px">
+
+    <v-dialog
+      v-model="oopsAlert"
+      max-width="375px"
+      persistent
+    >
+      <v-card>
+        <v-card-title>{{ frag.name }}</v-card-title>
+        <v-card-text>
+            If there's something wrong with this item, describe the problem below and we'll get back to you.
+        </v-card-text>
+        <v-card-text>
+          <v-textarea
+            v-model="oopsNotes"
+            rows="6"
+            hide-details
+            outlined
+            full-width
+          />
+        </v-card-text>
+        <v-card-text>
+          <v-btn
+            text
+            @click="oopsAlert = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            text
+            :disabled="!oopsNotes"
+            @click="sendOops"
+          >
+            OK
+          </v-btn>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
     <!-- Picture or placeholder -->
     <v-img
       height="300px"
@@ -69,6 +107,16 @@
             >
               <v-icon left>mdi-pencil</v-icon>
               Edit
+            </v-btn>
+          </v-list-item>
+          <v-list-item v-if="showEdit">
+            <v-btn
+              text
+              color="primary"
+              @click="oopsAlert = true"
+            >
+              <v-icon left>mdi-alert-box-outline</v-icon>
+              Oops
             </v-btn>
           </v-list-item>
           <v-list-item>
@@ -551,6 +599,9 @@ export default {
     shareAlert: false,
     shareLink: undefined,
 
+    oopsAlert: false,
+    oopsNotes: undefined,
+
     showTabs: false,
     tab: undefined,
     // Loading indicator for the 'become a fan' button
@@ -733,6 +784,14 @@ export default {
       this.shareAlert = true
       const { url } = await this.$axios.$get(`/api/dbtc/share/${this.frag.fragId}`)
       this.shareLink = url
+    },
+    sendOops () {
+      const url = `/api/dbtc/oops/${this.frag.fragId}`
+      const formData = new FormData()
+      formData.set('notes', this.oopsNotes)
+      this.$axios.$post(url, formData)
+      this.oopsNotes = undefined
+      this.oopsAlert = false
     },
     you (owner, caps) {
       if (owner.id === this.user.id) {

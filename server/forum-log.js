@@ -5,7 +5,7 @@ const {lookupUser, postToForumThread} = require('./xenforo');
 // This is a thread that is used by BARcode to post about its activity
 //-----------------------------------------------------------------------------
 
-const THREAD_ID = 28403;
+const LOG_THREAD_ID = 28403;
 
 //-----------------------------------------------------------------------------
 // We hold a list of messages and we post them all at once
@@ -19,7 +19,7 @@ async function postThem() {
     const message = queue.join('\n');
     queue = [];
     try {
-        await postToForumThread(THREAD_ID, message);
+        await postToForumThread(LOG_THREAD_ID, message);
     }
     catch (error) {
         console.error('Failed to post to the forum log :', message, error);
@@ -57,5 +57,6 @@ async function logToForum(message) {
 //-----------------------------------------------------------------------------
 
 module.exports = {
+    LOG_THREAD_ID,
     logToForum
 };

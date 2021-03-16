@@ -32,6 +32,8 @@ const {resizeImage} = require('./image-resizer');
 
 const {ageSince, age} = require('./dates');
 
+const {LOG_THREAD_ID} = require('./forum-log');
+
 //-----------------------------------------------------------------------------
 // Config
 //-----------------------------------------------------------------------------
@@ -1085,6 +1087,25 @@ router.get('/member/:userId', async (req, res) => {
         waitingFor,
         linksCompleted
     });
+});
+
+//-----------------------------------------------------------------------------
+// When a user reports that something is wrong with a frag. We post a message
+// the the log/activity thread about it in hopes that an admin will pick it
+// up and handle it.
+//-----------------------------------------------------------------------------
+
+router.post('/oops/:fragId', upload.none(), (req, res, next) => {
+    const {user, params: {fragId}, body: {notes}} = req;
+    const [frag] = db.selectFrag(fragId);
+    if (!frag) {
+        return next(INVALID_FRAG());
+    }
+    if (frag.ownerId !== user.id) {
+        return next(NOT_YOURS());
+    }
+    uberPost(LOG_THREAD_ID, 'oops-post', {user, frag, notes});
+    res.sendStatus(200);
 });
 
 //-----------------------------------------------------------------------------
