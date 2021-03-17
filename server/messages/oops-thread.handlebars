@@ -1,12 +1,16 @@
 {{!
-This one is used to create a new post in the log/activity thread when a user
+This one is used to create a new thread in the admin forum when a user
 reports that something is wrong with a frag.
     user - the user object representing the owner of the frag
     frag - all the data from 'mothers' and 'frags' for this item
     notes - the message the user typed in the oops form
 }}
-no title - this is a post
-
-@{{user.name}} needs help with [URL={{fragUrl frag.fragId}}]{{frag.name}}[/URL].
+{{user.name}} needs help with {{frag.name}}
 
 [QUOTE={{user.name}}]{{notes}}[/QUOTE]
+
+User: @{{user.name}}
+Link: [URL={{fragUrl frag.fragId}}]{{frag.name}}[/URL]
+Frag ID: {{frag.fragId}}
+Mother ID: {{frag.motherId}}
+Collection: {{frag.rules}}

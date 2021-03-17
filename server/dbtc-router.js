@@ -23,7 +23,8 @@ const {
     fragTransferred,
     journalUpdated,
     fragDied,
-    uberPost
+    uberPost,
+    startOopsThread
 } = require('./forum');
 
 const {saveImageFromUrl, isGoodId} = require('./utility');
@@ -1104,7 +1105,7 @@ router.post('/oops/:fragId', upload.none(), (req, res, next) => {
     if (frag.ownerId !== user.id) {
         return next(NOT_YOURS());
     }
-    uberPost(LOG_THREAD_ID, 'oops-post', {user, frag, notes});
+    startOopsThread(user, frag, notes);
     res.sendStatus(200);
 });
 

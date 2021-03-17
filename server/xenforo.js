@@ -40,20 +40,49 @@ const BARCODE_USER = 16211;
 //-----------------------------------------------------------------------------
 // XenForo custom groups
 //-----------------------------------------------------------------------------
-// BOD members are in group 3
-// Supporting members are in group 5
 
-const ALLOWED_GROUPS = new Set([3, 5]);
+// BOD
+const BOD = 3;
 
+// Supporting members
+const SM = 5;
+
+// BARcode admins
+const ADMIN = 12;
+
+//-----------------------------------------------------------------------------
+// Anyone in these groups is allowed to use the system
+//-----------------------------------------------------------------------------
+
+const ALLOWED_GROUPS = new Set([BOD, SM, ADMIN]);
+
+//-----------------------------------------------------------------------------
 // Anyone that belongs to these groups can impersonate another user
+//-----------------------------------------------------------------------------
 
-const IMPERSONATE_GROUPS = new Set([3]);
+const IMPERSONATE_GROUPS = new Set([BOD, ADMIN]);
 
+//-----------------------------------------------------------------------------
+// Anyone that belongs to these groups can use the admin interface
+//-----------------------------------------------------------------------------
+
+const ADMIN_GROUPS = new Set([BOD, ADMIN]);
+
+//-----------------------------------------------------------------------------
 // Anyone that belongs to these groups can hold equipment indefinitely
+//-----------------------------------------------------------------------------
 
-const EQUIPMENT_GROUPS = new Set([3]);
+const EQUIPMENT_GROUPS = new Set([BOD]);
 
+//-----------------------------------------------------------------------------
+// Admin forum ID
+//-----------------------------------------------------------------------------
+
+const ADMIN_FORUM_ID = 103;
+
+//-----------------------------------------------------------------------------
 // Tank journals forum ID
+//-----------------------------------------------------------------------------
 
 const TANK_JOURNALS_FORUM_ID = 22;
 
@@ -64,16 +93,12 @@ function getUserGroups(xfUser) {
     return [user_group_id, ...secondary_group_ids];
 }
 
+function isUserInGroup(xfUser, group) {
+    return getUserGroups(xfUser).some((id) => group.has(id));
+}
+
 function isXfUserAllowed(xfUser) {
-    return getUserGroups(xfUser).some((id) => ALLOWED_GROUPS.has(id));
-}
-
-function canXfUserImpersonate(xfUser) {
-    return getUserGroups(xfUser).some((id) => IMPERSONATE_GROUPS.has(id));
-}
-
-function canXfUserHoldEquipment(xfUser) {
-    return getUserGroups(xfUser).some((id) => EQUIPMENT_GROUPS.has(id));
+    return isUserInGroup(xfUser, ALLOWED_GROUPS);
 }
 
 //-----------------------------------------------------------------------------
@@ -94,14 +119,13 @@ function makeUser(xfUser) {
         age,
         message_count
     } = xfUser;
-    const allowed = isXfUserAllowed(xfUser);
     return ({
         id: parseInt(user_id, 10),
-        name: allowed ? username : username,
-        allowed,
-        canImpersonate: canXfUserImpersonate(xfUser),
-        canHoldEquipment: canXfUserHoldEquipment(xfUser),
-        isAdmin: canXfUserImpersonate(xfUser),
+        name: username,
+        allowed: isXfUserAllowed(xfUser),
+        canImpersonate: isUserInGroup(xfUser, IMPERSONATE_GROUPS),
+        canHoldEquipment: isUserInGroup(xfUser, EQUIPMENT_GROUPS),
+        isAdmin: isUserInGroup(xfUser, ADMIN_GROUPS),
         title: user_title,
         location,
         age,
@@ -543,6 +567,7 @@ async function getPost(postId) {
 
 module.exports = {
     BARCODE_USER,
+    ADMIN_FORUM_ID,
     makeUser,
     lookupUser,
     lookupUserWithFallback,

@@ -4,7 +4,12 @@ const db = require('./dbtc-database');
 
 const {BC_FORUM_MODE} = require('./barcode.config');
 
-const {lookupUser, startForumThread, postToForumThread} = require('./xenforo');
+const {
+    lookupUser,
+    startForumThread,
+    postToForumThread,
+    ADMIN_FORUM_ID
+} = require('./xenforo');
 
 const {renderMessage} = require('./messages.js');
 
@@ -120,6 +125,13 @@ function fragDied(user, frag, journal) {
 
 //-----------------------------------------------------------------------------
 
+async function startOopsThread(user, frag, notes) {
+    const [title, message] = await renderMessage('oops-thread', {user, frag, notes});
+    await startForumThread(undefined, ADMIN_FORUM_ID, title, message);
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     uberPost,
     itemAdded,
@@ -128,5 +140,6 @@ module.exports = {
     fragGiven,
     fragTransferred,
     journalUpdated,
-    fragDied
+    fragDied,
+    startOopsThread
 };
