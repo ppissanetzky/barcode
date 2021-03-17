@@ -7,8 +7,6 @@ const _ = require('lodash');
 
 const {db} = require('./dbtc-database');
 
-const {NOT_ADMIN} = require('./errors');
-
 const scheduler = require('./scheduler');
 
 //-----------------------------------------------------------------------------
@@ -123,7 +121,7 @@ function runScript(name, param) {
 router.use((req, res, next) => {
     const {user} = req;
     if (!user.isAdmin) {
-        return next(NOT_ADMIN());
+        return res.sendStatus(403);
     }
     next();
 });

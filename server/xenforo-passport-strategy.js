@@ -104,10 +104,10 @@ class XenForoPassportStrategy extends Strategy {
             // Validate the response
             const {success, user: xfUser} = response || {};
             if (!success) {
-                throw new Error('Auth response is not success');
+                throw new Unauthenticated('Auth response is not success');
             }
             if (!xfUser) {
-                throw new Error('Auth response did not have a user');
+                throw new Unauthenticated('Auth response did not have a user');
             }
 
             // Get details about the user
