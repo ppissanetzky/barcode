@@ -26,5 +26,10 @@ describe('Admin access', () => {
             .get('/admin/scripts')
             .set('cookie', `xfc_user=${name}`);
         expect(response.status).toBe(statusCode);
+        if (statusCode === 200) {
+            const {body: {scripts, jobs}} = response;
+            expect(scripts).toBeDefined();
+            expect(jobs).toBeDefined();
+        }
     });
 });
