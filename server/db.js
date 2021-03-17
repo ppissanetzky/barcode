@@ -177,7 +177,7 @@ class Database {
             }
             console.error(`Failed to open database ${file} version ${version}`);
             console.error(error);
-            // TODO: exit?
+            throw error;
         }
     }
 }

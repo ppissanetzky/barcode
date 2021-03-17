@@ -26,15 +26,18 @@ const ENV_VARIABLES = {
     BC_XF_DB_CREDENTIALS:  '111'
 };
 
-async function setup() {
-    return new Promise((resolve) => {
-        _.each(ENV_VARIABLES, (value, key) => {
-            process.env[key] = value;
-        });
-        process.env.BC_UPLOADS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'uploads-'));
-        process.env.BC_DATABASE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'databases-'));
-        resolve();
+function setup() {
+    _.each(ENV_VARIABLES, (value, key) => {
+        process.env[key] = value;
     });
+    process.env.BC_UPLOADS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'uploads-'));
+    process.env.BC_DATABASE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'databases-'));
+    // We have to require the app so that all the databases are created and migrated
+    // before the tests run. Otherwise, the tests step on each other
+
+    /* eslint-disable import/no-unassigned-import */
+    require('../app');
+    /* eslint-enable import/no-unassigned-import */
 }
 
 module.exports = setup;
