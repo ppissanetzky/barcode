@@ -31,7 +31,9 @@ const SCRIPTS = [
         param: 'Name',
         readonly: true,
         statements: [
-            'SELECT motherId, name, rules FROM mothers WHERE name like $param'
+            `
+            SELECT motherId, name, rules FROM mothers WHERE name like '%' || $param || '%'
+            `
         ]
     },
     {
