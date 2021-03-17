@@ -7,8 +7,8 @@ const path = require('path');
 const ENV_VARIABLES = {
 
     BC_XF_API_URL:  'https://bareefers.org/forum/api',
-    BC_UPLOADS_DIR:  fs.mkdtempSync(path.join(os.tmpdir(), 'uploads-')),
-    BC_DATABASE_DIR:  fs.mkdtempSync(path.join(os.tmpdir(), 'databases-')),
+    BC_UPLOADS_DIR:  '', // Set below
+    BC_DATABASE_DIR:  '', // Set below
     BC_SESSION_COOKIE_SECRETS:  '111',
     BC_SESSION_COOKIE_NAME:  'session-cookie',
     BC_SESSION_COOKIE_SECURE:  'no',
@@ -27,8 +27,13 @@ const ENV_VARIABLES = {
 };
 
 async function setup() {
-    _.each(ENV_VARIABLES, (value, key) => {
-        process.env[key] = value;
+    return new Promise((resolve) => {
+        _.each(ENV_VARIABLES, (value, key) => {
+            process.env[key] = value;
+        });
+        process.env.BC_UPLOADS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'uploads-'));
+        process.env.BC_DATABASE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'databases-'));
+        resolve();
     });
 }
 
