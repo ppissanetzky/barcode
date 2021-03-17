@@ -33,8 +33,6 @@ const {resizeImage} = require('./image-resizer');
 
 const {ageSince, age} = require('./dates');
 
-const {LOG_THREAD_ID} = require('./forum-log');
-
 //-----------------------------------------------------------------------------
 // Config
 //-----------------------------------------------------------------------------

@@ -57,6 +57,5 @@ async function logToForum(message) {
 //-----------------------------------------------------------------------------
 
 module.exports = {
-    LOG_THREAD_ID,
     logToForum
 };
