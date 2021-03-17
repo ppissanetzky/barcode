@@ -24,14 +24,13 @@
 
 const mysql = require('mysql2/promise');
 const {Client} = require('ssh2');
-const {fromUnixTime} = require('date-fns');
 const debug = require('debug')('barcode:get-supporting-members');
 
 const {lock} = require('../lock');
 const {database: userDatabase, getSetting, setSetting, getExpiringSupportingMembers} = require('../user-database');
 const {startConversation} = require('../xenforo');
 const {renderMessage} = require('../messages');
-const {differenceBetween} = require('../dates');
+const {fromUnixTime, differenceBetween} = require('../dates');
 const {logToForum} = require('../forum-log');
 
 //-----------------------------------------------------------------------------
@@ -311,8 +310,17 @@ async function getSupportingMembers() {
 
                 // If this userId was not there before, it is a new member
                 if (!existing.has(userId)) {
-                    debug('New member', userId);
-                    logToForum(`@${userId} is a new member`);
+                    debug('New member', userId, expiredEndDate);
+                    if (expiredEndDate) {
+                        // The distance between the time they expired and the time
+                        // they became active
+                        const diff = differenceBetween(fromUnixTime(expiredEndDate),
+                            fromUnixTime(activeStartDate));
+                        logToForum(`@${userId} rejoined after ${diff}`);
+                    }
+                    else {
+                        logToForum(`@${userId} is a new member`);
+                    }
                 }
             }
 

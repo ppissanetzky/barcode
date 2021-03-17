@@ -1,4 +1,7 @@
 
+const debug = require('debug')('barcode:forum-log');
+const ms = require('ms');
+
 const {lookupUser, postToForumThread} = require('./xenforo');
 
 //-----------------------------------------------------------------------------
@@ -6,6 +9,13 @@ const {lookupUser, postToForumThread} = require('./xenforo');
 //-----------------------------------------------------------------------------
 
 const LOG_THREAD_ID = 28403;
+
+//-----------------------------------------------------------------------------
+// How long to hold messages before we post them. This lets us batch them up
+// and post once rather than a bunch of times
+//-----------------------------------------------------------------------------
+
+const HOLD_TIME = '1 minute';
 
 //-----------------------------------------------------------------------------
 // We hold a list of messages and we post them all at once
@@ -16,6 +26,12 @@ let queue = [];
 //-----------------------------------------------------------------------------
 
 async function postThem() {
+    const count = queue.length;
+    if (count === 0) {
+        debug('Nothing to post');
+        return;
+    }
+    debug('Posting', count, 'messages');
     const message = queue.join('\n');
     queue = [];
     try {
@@ -42,11 +58,13 @@ async function logToForum(message) {
         }
         // Add the message to the queue
         queue.push(message);
+        debug(`Queuing message "${message}"`);
         // If this is the first message in the queue, set a timeout to
         // flush the queue. Otherwise, there should be a timeout already
         // and it will get flushed then.
         if (queue.length === 1) {
-            setTimeout(postThem, 60000);
+            debug('Posting in', HOLD_TIME);
+            setTimeout(postThem, ms(HOLD_TIME));
         }
     }
     catch (error) {
