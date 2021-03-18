@@ -3,7 +3,7 @@
 const xenForoApi = require('../xenforo-api');
 const {BARCODE_USER} = require('../xenforo');
 
-describe('XenForo API', () => {
+xdescribe('XenForo API', () => {
 
     it('should be able to get', async () => {
         const data = await xenForoApi.get('alerts/', {

@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test": "jest",
+    "test": "jest --runInBand && jest",
     "server": "nodemon server.js",
     "web-server": "dotenv -e ~/barcode-env -- docker-compose -f local-web-server/docker-compose.yml up"
   },
@@ -43,8 +43,6 @@
   "jest": {
     "testEnvironment": "node",
     "silent": true,
-    "globalSetup": "./tests/global-setup.js",
-    "globalTeardown": "./tests/global-teardown.js",
     "coveragePathIgnorePatterns": [
       "/node_modules/"
     ]
