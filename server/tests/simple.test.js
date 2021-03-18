@@ -7,13 +7,13 @@ See: https://github.com/JoshuaWise/better-sqlite3/pull/543
 
 const _ = require('lodash');
 const fs = require('fs');
+const assert = require('assert');
 const os = require('os');
 const path = require('path');
 const request = require('supertest');
-const {setupMockUsers} = require('./setup-mock-users');
-const XenForoApi = require('../xenforo-api');
 
 let app;
+let XenForoApi;
 
 beforeAll((done) => {
     const ENV_VARIABLES = {
@@ -44,10 +44,23 @@ beforeAll((done) => {
     process.env.BC_UPLOADS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'uploads-'));
     process.env.BC_DATABASE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'databases-'));
 
+    const {setupMockUsers} = require('./setup-mock-users');
+
     setupMockUsers();
 
     app = require('../app');
+    XenForoApi = require('../xenforo-api');
 
+    done();
+});
+
+afterAll((done) => {
+    const tmpdir = os.tmpdir();
+    const {BC_UPLOADS_DIR, BC_DATABASE_DIR} = process.env;
+    assert(BC_UPLOADS_DIR.startsWith(tmpdir));
+    assert(BC_DATABASE_DIR.startsWith(tmpdir));
+    fs.rmdirSync(BC_UPLOADS_DIR, {recursive: true});
+    fs.rmdirSync(BC_DATABASE_DIR, {recursive: true});
     done();
 });
 
