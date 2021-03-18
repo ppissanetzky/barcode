@@ -1,6 +1,6 @@
 {
   "name": "barcode",
-  "version": "1.33.6",
+  "version": "1.33.7",
   "private": true,
   "scripts": {
     "test": "xo && (cd server && npm test)",
