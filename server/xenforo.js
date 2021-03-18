@@ -243,7 +243,9 @@ async function startConversation(users, title, body, closed) {
     console.log(`"${title}"`);
     console.log(`"${body}"`);
     if (!POSTING_ENABLED) {
-        return;
+        return ({
+            url: 'not-posted'
+        });
     }
     const response = await XenForoApi.post('conversations/', {
         'recipient_ids[]': users,
@@ -258,6 +260,13 @@ async function startConversation(users, title, body, closed) {
     if (!(response && response.success)) {
         throw new Error('XF API failed to start conversation');
     }
+    const {conversation} = response;
+    if (!conversation) {
+        throw new Error('Missing conversation');
+    }
+    return ({
+        url: conversation.view_url
+    });
 }
 
 //-----------------------------------------------------------------------------
