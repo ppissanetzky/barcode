@@ -127,11 +127,12 @@ function fragDied(user, frag, journal) {
 //-----------------------------------------------------------------------------
 
 async function startOopsThread(user, frag, notes) {
-    // First, we send a PM to the user that asked for help
+    // Send a PM to the user that asked for help
     const [pmTitle, pmMessage] = await renderMessage('oops-pm', {user, frag, notes});
-    const conversation = await startConversation([user.id], pmTitle, pmMessage, false);
-    // Now, we post in the admin forum and reference the PM
-    const [title, message] = await renderMessage('oops-thread', {user, frag, notes, conversation});
+    await startConversation([user.id], pmTitle, pmMessage, true);
+
+    // Post in the admin forum
+    const [title, message] = await renderMessage('oops-thread', {user, frag, notes});
     await startForumThread(undefined, ADMIN_FORUM_ID, title, message);
 }
 

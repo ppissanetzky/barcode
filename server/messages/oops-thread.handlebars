@@ -4,7 +4,6 @@ reports that something is wrong with a frag.
     user - the user object representing the owner of the frag
     frag - all the data from 'mothers' and 'frags' for this item
     notes - the message the user typed in the oops form
-    conversation - info about the PM started with the user
 }}
 {{user.name}} needs help with {{frag.name}}
 
@@ -15,6 +14,3 @@ Link: [URL={{fragUrl frag.fragId}}]{{frag.name}}[/URL]
 Frag ID: {{frag.fragId}}
 Mother ID: {{frag.motherId}}
 Collection: {{frag.rules}}
-
-A PM has been sent to {{user.name}}: [URL={{conversation.url}}]reply here[/URL].
-
