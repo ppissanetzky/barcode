@@ -36,7 +36,9 @@ const MOCK_USERS = new Map([
     // A non-supporting member
     ['nsm', {id: 20, groupId: 0}],
     // An invalid user
-    ['invalid', {id: 21, groupId: SM, state: 'invalid'}]
+    ['invalid', {id: 21, groupId: SM, state: 'invalid'}],
+    // Another supporting member
+    ['sm2', {id: 11, groupId: SM}]
 ]);
 
 function getMockUser(rememberCookie) {
@@ -109,5 +111,6 @@ function setupMockUsers() {
 }
 
 module.exports = {
+    MOCK_USERS,
     setupMockUsers
 };

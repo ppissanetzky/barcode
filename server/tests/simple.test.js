@@ -5,64 +5,46 @@ with better-sqlite3 and jest.
 See: https://github.com/JoshuaWise/better-sqlite3/pull/543
 */
 
-const _ = require('lodash');
-const fs = require('fs');
-const assert = require('assert');
-const os = require('os');
-const path = require('path');
 const request = require('supertest');
 
-let app;
-let XenForoApi;
+const {setupMockUsers, MOCK_USERS} = require('./setup-mock-users');
+
+const {nowAsIsoString} = require('../dates');
+const app = require('../app');
+const XenForoApi = require('../xenforo-api');
+const DbtcDatabase = require('../dbtc-database');
+
+//-----------------------------------------------------------------------------
+// Utility to make a request with a given user name
+//-----------------------------------------------------------------------------
+
+async function getForUser(user, url) {
+    return request(app).get(url).set('cookie', `xfc_user=${user}`);
+}
+
+//-----------------------------------------------------------------------------
 
 beforeAll((done) => {
-    const ENV_VARIABLES = {
-
-        BC_XF_API_URL:  'https://bareefers.org/forum/api',
-        BC_UPLOADS_DIR:  '', // Set below
-        BC_DATABASE_DIR:  '', // Set below
-        BC_SESSION_COOKIE_SECRETS:  '111',
-        BC_SESSION_COOKIE_NAME:  'session-cookie',
-        BC_SESSION_COOKIE_SECURE:  'no',
-        BC_MARKET_ENABLED:  'yes',
-        BC_TEST_USER:  '0',
-        BC_FORUM_MODE:  '0',
-        BC_SMS_MODE:  '0',
-        BC_DISABLE_SCHEDULER:  '1',
-        BC_SITE_BASE_URL:  '/',
-        AWS_ACCESS_KEY_ID:  '111',
-        AWS_SECRET_ACCESS_KEY:  '111',
-        BCM_FACEBOOK_APP_ID:  '111',
-        BCM_FACEBOOK_APP_SECRET:  '111',
-        BC_XF_DB_SSH_CREDENTIALS:  '111',
-        BC_XF_DB_CREDENTIALS:  '111'
-    };
-
-    _.each(ENV_VARIABLES, (value, key) => {
-        process.env[key] = value;
-    });
-    process.env.BC_UPLOADS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'uploads-'));
-    process.env.BC_DATABASE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'databases-'));
-
-    const {setupMockUsers} = require('./setup-mock-users');
-
     setupMockUsers();
-
-    app = require('../app');
-    XenForoApi = require('../xenforo-api');
-
     done();
 });
 
-afterAll((done) => {
-    const tmpdir = os.tmpdir();
-    const {BC_UPLOADS_DIR, BC_DATABASE_DIR} = process.env;
-    assert(BC_UPLOADS_DIR.startsWith(tmpdir));
-    assert(BC_DATABASE_DIR.startsWith(tmpdir));
-    fs.rmdirSync(BC_UPLOADS_DIR, {recursive: true});
-    fs.rmdirSync(BC_DATABASE_DIR, {recursive: true});
-    done();
+//-----------------------------------------------------------------------------
+// Delete data from the database before each test
+//-----------------------------------------------------------------------------
+
+beforeEach((done) => {
+    DbtcDatabase.db.transaction(({run}) => {
+        run('DELETE FROM fans');
+        run('DELETE FROM journals');
+        run('DELETE FROM frags');
+        run('DELETE FROM mothers');
+        run('DELETE FROM shares');
+        done();
+    });
 });
+
+//-----------------------------------------------------------------------------
 
 describe('Mock XenForo API', () => {
     it('should have "auth/from-session"', async () => {
@@ -72,21 +54,19 @@ describe('Mock XenForo API', () => {
     });
 });
 
-describe('DBTC router', () => {
+//-----------------------------------------------------------------------------
+
+describe('Access with cookies', () => {
     it('should return 401 without cookies', async () => {
         const response = await request(app).get('/dbtc/your-collection');
         expect(response.status).toBe(401);
     });
     it('should return 401 with bad cookies', async () => {
-        const response = await request(app)
-            .get('/dbtc/your-collection')
-            .set('cookie', 'xfc_user=some-bad-user');
+        const response = await getForUser('some-bad-user', '/dbtc/your-collection');
         expect(response.status).toBe(401);
     });
     it('should succeed with cookies', async () => {
-        const response = await request(app)
-            .get('/dbtc/your-collection')
-            .set('cookie', 'xfc_user=sm1');
+        const response = await getForUser('sm1', '/dbtc/your-collection');
         expect(response.status).toBe(200);
         const {body} = response;
         expect(body).toBeDefined();
@@ -106,6 +86,8 @@ describe('DBTC router', () => {
     });
 });
 
+//-----------------------------------------------------------------------------
+
 describe('Admin access', () => {
     it.each([
         ['xxx', 401],
@@ -119,9 +101,7 @@ describe('Admin access', () => {
         ['bod-sm', 200],
         ['super', 200]
     ])('%s should return %i', async (name, statusCode) => {
-        const response = await request(app)
-            .get('/admin/scripts')
-            .set('cookie', `xfc_user=${name}`);
+        const response = await getForUser(name, '/admin/scripts');
         expect(response.status).toBe(statusCode);
         if (statusCode === 200) {
             const {body: {scripts, jobs}} = response;
@@ -131,3 +111,69 @@ describe('Admin access', () => {
     });
 });
 
+//-----------------------------------------------------------------------------
+
+describe('Frag access', () => {
+    const sm1 = MOCK_USERS.get('sm1');
+    const sm2 = MOCK_USERS.get('sm2');
+    expect(sm1).toBeDefined();
+    expect(sm2).toBeDefined();
+
+    it.each([
+        ['private', false],
+        ['dbtc', true],
+        ['pif', true]
+    ])('should be correct for %s frags', async (rules, visibleToBoth) => {
+        const [mother1, frag1] = DbtcDatabase.insertItem({
+            name: 'm1',
+            type: 'SPS',
+            rules,
+            flow: 'Medium',
+            light: 'Medium',
+            hardiness: 'Normal',
+            growthRate: 'Normal',
+            ownerId: sm1.id,
+            dateAcquired: nowAsIsoString(),
+            picture: 'pic1',
+            fragsAvailable: 0
+        });
+        expect(mother1).toBeDefined();
+        expect(frag1).toBeDefined();
+
+        // Check that it is in this user's collection
+        {
+            const response = await getForUser('sm1', '/dbtc/your-collection');
+            expect(response.status).toBe(200);
+            const {body: {frags, user}} = response;
+            expect(user.id).toBe(sm1.id);
+            expect(frags).toBeDefined();
+            expect(frags).toHaveLength(1);
+        }
+
+        // Check that this user can get it
+        {
+            const {body: {frag}} = await getForUser('sm1', `/dbtc/frag/${frag1}`);
+            expect(frag).toBeDefined();
+            expect(frag.motherId).toBe(mother1);
+            expect(frag.fragId).toBe(frag1);
+        }
+        // Check that the other user can or cannot
+        {
+            const {status, body} = await getForUser('sm2', `/dbtc/frag/${frag1}`);
+            const {frag} = body;
+            if (visibleToBoth) {
+                expect(frag).toBeDefined();
+                expect(frag.motherId).toBe(mother1);
+                expect(frag.fragId).toBe(frag1);
+
+            }
+            else {
+                expect(status).toBe(500);
+                expect(body).not.toHaveProperty('user');
+                expect(body).not.toHaveProperty('frag');
+            }
+        }
+    });
+});
+
+//-----------------------------------------------------------------------------

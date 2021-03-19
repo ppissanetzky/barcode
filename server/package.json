@@ -43,6 +43,8 @@
   "jest": {
     "testEnvironment": "node",
     "silent": true,
+    "globalSetup": "./tests/global-setup.js",
+    "globalTeardown": "./tests/global-teardown.js",
     "coveragePathIgnorePatterns": [
       "/node_modules/"
     ]
@@ -82,7 +84,8 @@
           "it",
           "beforeAll",
           "afterAll",
-          "expect"
+          "expect",
+          "beforeEach"
         ]
       }
     ]
