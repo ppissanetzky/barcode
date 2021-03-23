@@ -109,7 +109,7 @@
                 text
                 :disabled="!consent || validatePhoneNumber(phoneNumber) !== true || otpSendFailed"
                 :loading="sendingOtp"
-                @click="sendOtp"
+                @click="sendOtp(false)"
               >
                 Continue
               </v-btn>
@@ -143,7 +143,7 @@
                 text
                 :disabled="verifyingOtp || tooSoonToResend"
                 :loading="sendingOtp"
-                @click="sendOtp"
+                @click="sendOtp(true)"
               >
                 Resend code
               </v-btn>
@@ -689,7 +689,7 @@ export default {
     you (user) {
       return this.user.id === user.id ? 'You' : user.name
     },
-    async sendOtp () {
+    async sendOtp (isResend) {
       this.sendingOtp = true
       const formData = new FormData()
       formData.set('phoneNumber', cleanPhoneNumber(this.phoneNumber))
@@ -709,7 +709,9 @@ export default {
       setTimeout(() => {
         this.tooSoonToResend = false
       }, 35000)
-      this.step++
+      if (!isResend) {
+        this.step++
+      }
     },
     async verifyOtp () {
       const item = this.selectedItem
