@@ -43,16 +43,16 @@ jobs:
         name: Build and push web server
         uses: docker/build-push-action@v2
         with:
-          context: ./site
-          file: ./build/web-server.dockerfile
+          context: site
+          file: web-server.dockerfile
           push: true
           tags: ppissanetzky/barcode-web-server:${{ steps.get_version.outputs.version }}
       -
         name: Build and push API server
         uses: docker/build-push-action@v2
         with:
-          context: ./server
-          file: ./build/api-server.dockerfile
+          context: server
+          file: api-server.dockerfile
           push: true
           tags: ppissanetzky/barcode-api-server:${{ steps.get_version.outputs.version }}
       -

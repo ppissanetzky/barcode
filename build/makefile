@@ -1,5 +1,5 @@
 
-VERSION 	:= $(shell git describe)
+VERSION 	:= $(shell git describe --dirty)
 
 SITE_DIR	:= ../site
 SERVER_DIR	:= ../server
@@ -9,9 +9,9 @@ TARGET_DIR	:= ./target
 TARGET		:= barcode@barcode.bareefers.org
 
 build:
-	cd ${SITE_DIR} && npm ci && git diff --exit-code && npm run generate
-	docker build -t ppissanetzky/barcode-web-server:${VERSION} -f web-server.dockerfile ${SITE_DIR}
-	docker build -t ppissanetzky/barcode-api-server:${VERSION} -f api-server.dockerfile ${SERVER_DIR}
+	cd ${SITE_DIR} && npm ci && npm run generate
+	cd ${SITE_DIR} && docker build -t ppissanetzky/barcode-web-server:${VERSION} -f web-server.dockerfile .
+	cd ${SERVER_DIR} && docker build -t ppissanetzky/barcode-api-server:${VERSION} -f api-server.dockerfile .
 	docker push ppissanetzky/barcode-web-server:${VERSION}
 	docker push ppissanetzky/barcode-api-server:${VERSION}
 	echo "VERSION=${VERSION}" > ${TARGET_DIR}/barcode-prod/.env
