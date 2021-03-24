@@ -44,7 +44,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: site
-          file: web-server.dockerfile
+          file: site/web-server.dockerfile
           push: true
           tags: ppissanetzky/barcode-web-server:${{ steps.get_version.outputs.version }}
       -
@@ -52,7 +52,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: server
-          file: api-server.dockerfile
+          file: server/api-server.dockerfile
           push: true
           tags: ppissanetzky/barcode-api-server:${{ steps.get_version.outputs.version }}
       -
