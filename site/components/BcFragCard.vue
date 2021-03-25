@@ -1,6 +1,5 @@
 <template>
   <v-card width="375px">
-
     <v-dialog
       v-model="oopsAlert"
       max-width="375px"
@@ -9,7 +8,7 @@
       <v-card>
         <v-card-title>{{ frag.name }}</v-card-title>
         <v-card-text>
-            If there's something wrong with this item, describe the problem below and we'll get back to you.
+          If there's something wrong with this item, describe the problem below and we'll get back to you.
         </v-card-text>
         <v-card-text>
           <v-textarea
@@ -105,7 +104,9 @@
               color="primary"
               :to="`/add-new-item?fragId=${frag.fragId}`"
             >
-              <v-icon left>mdi-pencil</v-icon>
+              <v-icon left>
+                mdi-pencil
+              </v-icon>
               Edit
             </v-btn>
           </v-list-item>
@@ -115,7 +116,9 @@
               color="primary"
               @click="oopsAlert = true"
             >
-              <v-icon left>mdi-alert-box-outline</v-icon>
+              <v-icon left>
+                mdi-alert-box-outline
+              </v-icon>
               Oops
             </v-btn>
           </v-list-item>
@@ -125,7 +128,9 @@
               color="primary"
               :to="`/frag/${frag.fragId}`"
             >
-              <v-icon left>mdi-link</v-icon>
+              <v-icon left>
+                mdi-link
+              </v-icon>
               Link
             </v-btn>
           </v-list-item>
@@ -135,7 +140,9 @@
               color="primary"
               @click="redirectToMother"
             >
-              <v-icon left>mdi-mother-nurse</v-icon>
+              <v-icon left>
+                mdi-mother-nurse
+              </v-icon>
               Mother
             </v-btn>
           </v-list-item>
@@ -145,7 +152,9 @@
               color="primary"
               @click="getShareLink"
             >
-              <v-icon left>mdi-export-variant</v-icon>
+              <v-icon left>
+                mdi-export-variant
+              </v-icon>
               Share
             </v-btn>
           </v-list-item>
@@ -245,7 +254,7 @@
         class="my-1 mr-1"
         @click:close="removeFan"
       >
-        You're in line
+        You've requested a frag
       </v-chip>
 
       <!-- A chip that shows how many people are in line -->
@@ -257,7 +266,7 @@
         color="deep-orange lighten-1"
         class="my-1 mr-1"
       >
-        {{ frag.fanCount }} waiting
+        {{ frag.fanCount }} requested
       </v-chip>
 
       <!-- A chip to show the total number of available frags -->
@@ -317,7 +326,7 @@
             <v-icon>mdi-account-multiple-outline</v-icon>
           </v-tab>
           <v-tab v-if="!isPrivate" href="#like">
-            <v-icon>mdi-human-queue</v-icon>
+            <v-icon>mdi-chat-question-outline</v-icon>
           </v-tab>
           <slot name="tabs" />
         </v-tabs>
@@ -462,7 +471,7 @@
               Only <a :href="`/member/${user.id}`" target="_blank">{{ you(frag.owner) }}</a>
             </v-card-text>
             <v-card-text v-else>
-              <v-simple-table>
+              <v-simple-table dense>
                 <tbody>
                   <tr
                     v-for="kid in kids"
@@ -495,22 +504,22 @@
           <!-- Fan/Like -->
           <v-tab-item v-if="!isPrivate" value="like">
             <v-card-title v-if="likes === 0">
-              No one waiting
+              No one has requested a frag
             </v-card-title>
             <div v-else>
               <v-card-title v-if="likes === 1">
-                1 member is waiting for a frag
+                1 member has requested a frag
               </v-card-title>
               <v-card-title v-else>
-                {{ likes }} members are waiting for a frag
+                {{ likes }} members have requested a frag
               </v-card-title>
               <v-card-text>
                 <v-simple-table dense>
                   <template v-slot:default>
                     <tbody>
-                      <tr v-for="(fan, index) in fans" :key="fan.id">
+                      <tr v-for="fan in fans" :key="fan.id">
                         <td>
-                          {{ index + 1 }}. <a :href="`/member/${fan.id}`" target="_blank">{{ you(fan, true) }}</a>
+                          <a :href="`/member/${fan.id}`" target="_blank">{{ you(fan, true) }}</a>
                           <span v-if="fan.location"> in {{ fan.location }}</span>
                         </td>
                       </tr>
@@ -531,19 +540,30 @@
                 </v-btn>
               </v-card-text>
             </div>
-            <div v-else-if="canBecomeAFan">
-              <v-card-text>Get in line to be notified when frags are available</v-card-text>
-              <v-card-text>
-                <v-btn
-                  small
-                  color="secondary"
-                  :loading="loadingFan"
-                  @click="becomeAFan"
-                >
-                  Get in line
-                </v-btn>
-              </v-card-text>
-            </div>
+            <v-card-text v-else-if="canBecomeAFan">
+              <p v-if="isDbtc">
+                Have you read the <a href="https://bareefers.org/forum/threads/dbtc-info-rules.23030/" target="_blank">DBTC rules</a>?
+              </p>
+              <p>
+                Do you understand that requesting a frag doesn't guarantee you'll get one and that this is not first-come, first-served?
+              </p>
+              <p>
+                Do you have enough experience to keep this item and have a suitable home for it?
+              </p>
+              <v-checkbox
+                v-model="getIt"
+                label="Yes"
+              />
+              <v-btn
+                small
+                color="secondary"
+                :disabled="!getIt"
+                :loading="loadingFan"
+                @click="becomeAFan"
+              >
+                Request a frag
+              </v-btn>
+            </v-card-text>
           </v-tab-item>
 
           <slot name="tabs-items" />
@@ -605,7 +625,8 @@ export default {
     showTabs: false,
     tab: undefined,
     // Loading indicator for the 'become a fan' button
-    loadingFan: false
+    loadingFan: false,
+    getIt: false
   }),
   computed: {
     frag () {
@@ -629,6 +650,9 @@ export default {
     },
     isAlive () {
       return this.frag.isAlive
+    },
+    isDbtc () {
+      return this.frag.rules === 'dbtc'
     },
     isPrivate () {
       return this.frag.rules === 'private'
