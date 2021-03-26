@@ -53,11 +53,11 @@ function itemAdded(fragId) {
         assert(user, `Failed to look up user ${frag.ownerId}`);
         const [title, message] = await renderMessage('new-item-thread', {user, frag});
         const forumId = getForumForType(frag.type);
-        const newThreadId = await startForumThread(user.id, forumId, title, message);
-        if (newThreadId) {
-            console.log(`Created thread ${newThreadId}`);
-            // Update the database with the new thread ID
-            db.setMotherThreadId(frag.motherId, newThreadId);
+        const thread = await startForumThread(user.id, forumId, title, message);
+        if (thread) {
+            console.log(`Created thread ${thread.threadId}`);
+            // Update the database with the new thread
+            db.setMotherThread(frag.motherId, thread.threadId, thread.viewUrl);
         }
     });
 }

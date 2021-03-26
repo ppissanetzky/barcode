@@ -13,6 +13,8 @@ const {BC_DISABLE_SCHEDULER} = require('./barcode.config');
 
 const JOBS = {
 
+    'at 1:45 am': 'add-thread-urls',
+
     'at 2:00 am': 'backup-database',
 
     'at 3:00 am': 'make-thumbnails',

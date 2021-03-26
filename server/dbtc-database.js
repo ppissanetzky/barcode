@@ -1010,12 +1010,15 @@ function updateFrag(values) {
 
 //-----------------------------------------------------------------------------
 
-const UPDATE_THREAD_ID = `
-    UPDATE mothers SET threadId = $threadId WHERE motherId = $motherId
-`;
-
-function setMotherThreadId(motherId, threadId) {
-    db.run(UPDATE_THREAD_ID, {motherId, threadId});
+function setMotherThread(motherId, threadId, threadUrl) {
+    db.run(
+        `
+        UPDATE mothers
+        SET threadId = $threadId, threadUrl = $threadUrl
+        WHERE motherId = $motherId
+        `,
+        {motherId, threadId, threadUrl}
+    );
 }
 
 //-----------------------------------------------------------------------------
@@ -1260,7 +1263,7 @@ module.exports = {
     addFan,
     removeFan,
     isFan,
-    setMotherThreadId,
+    setMotherThread,
     shareFrag,
     getShare,
     getUserIds,

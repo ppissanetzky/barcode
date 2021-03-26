@@ -331,11 +331,15 @@ async function findUsersWithPrefix(prefix, all) {
 //-----------------------------------------------------------------------------
 
 function convertThread(thread) {
+    if (!thread) {
+        return;
+    }
     const startDate = utcIsoStringFromDate(new Date(thread.post_date * 1000));
     const lastPostDate = utcIsoStringFromDate(new Date(thread.last_post_date * 1000));
     return ({
         startDate,
         lastPostDate,
+        userId:         thread.user_id,
         sortKey:        thread.last_post_date,
         threadId:       thread.thread_id,
         startAge:       age(startDate, 'today', 'ago'),
@@ -404,15 +408,25 @@ async function getTankJournalsForUser(userId) {
 }
 
 //-----------------------------------------------------------------------------
+// Get information about a thread
+//-----------------------------------------------------------------------------
+
+async function getThread(threadId) {
+    if (isGoodId(threadId)) {
+        const {thread} = await XenForoApi.get(`threads/${threadId}/`);
+        // Could be undefined
+        return convertThread(thread);
+    }
+}
+
+//-----------------------------------------------------------------------------
 // Make sure the thread belongs to the given user.
 //-----------------------------------------------------------------------------
 
 async function validateUserThread(userId, threadId) {
-    if (isGoodId(threadId)) {
-        const {thread} = await XenForoApi.get(`threads/${threadId}/`);
-        if (thread && thread.user_id === userId) {
-            return convertThread(thread);
-        }
+    const thread = await getThread(threadId);
+    if (thread && thread.userId === userId) {
+        return thread;
     }
 }
 
@@ -510,9 +524,9 @@ async function startForumThread(userId, forumId, title, message) {
     console.log(`"${title}"`);
     console.log(`"${message}"`);
     if (!POSTING_ENABLED) {
-        return 0;
+        return {threadId: 0};
     }
-    const {thread: {thread_id}} = await XenForoApi.post('threads/', {
+    const {thread} = await XenForoApi.post('threads/', {
         node_id: forumId,
         title,
         message,
@@ -522,7 +536,7 @@ async function startForumThread(userId, forumId, title, message) {
         // This will create the thread on behalf of the given user
         'XF-Api-User': userId || BARCODE_USER
     });
-    return thread_id;
+    return convertThread(thread);
 }
 
 //-----------------------------------------------------------------------------
@@ -593,7 +607,8 @@ module.exports = {
     getAlerts,
     markAllAlertsRead,
     getPost,
-    getTankJournalsForUser
+    getTankJournalsForUser,
+    getThread
 };
 
 // (async function() {
