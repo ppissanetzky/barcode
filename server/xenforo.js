@@ -189,6 +189,7 @@ async function lookupUser(userId, forDisplayOnly, includeEmail) {
             api_bypass_permissions: 1
         });
         const isAllowed = isXfUserAllowed(user);
+        /*
         if (!isAllowed) {
             console.log('USER NOT ALLOWED',
                 user.username,
@@ -197,6 +198,7 @@ async function lookupUser(userId, forDisplayOnly, includeEmail) {
                 user.user_group_id,
                 user.secondary_group_ids);
         }
+        */
         if (user && (forDisplayOnly || isAllowed)) {
             // Create the user and cache it
             const result = cacheUser(makeUser(user));
@@ -627,3 +629,43 @@ module.exports = {
 
 // })();
 
+/*
+(async function() {
+    const rows = dbtcDatabase.db.all(
+        `
+        select
+        ownerId,
+        mothers.type,
+        (sum(julianday('now') - julianday(dateAcquired)) / totals.total) * 100 as pct
+
+    from
+        mothers,
+        frags,
+        (
+            select type, sum(julianday('now') - julianday(dateAcquired)) total
+            from mothers, frags
+            where mothers.rules = 'dbtc'
+            and mothers.motherId = frags.motherId
+            and frags.isAlive = 1
+            and status is null
+            group by 1
+        ) as totals
+    where
+        mothers.rules = 'dbtc'
+        and mothers.motherId = frags.motherId
+        and frags.isAlive = 1
+        and status is null
+        and mothers.type = totals.type
+        and mothers.type = 'SPS'
+    group by
+        1 , 2
+    order by
+        3 desc        `
+    );
+
+    for (const row of rows) {
+        const user = await lookupUser(row.ownerId, true);
+        console.log(`${user.name},${Math.round(row.pct)}`);
+    }
+})();
+*/
