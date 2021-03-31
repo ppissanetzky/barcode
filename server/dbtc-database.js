@@ -9,7 +9,7 @@ const {BC_MARKET_ENABLED} = require('./barcode.config');
 
 //-----------------------------------------------------------------------------
 
-const DBTC_DB_VERSION = 6;
+const DBTC_DB_VERSION = 7;
 
 const db = new Database('dbtc', DBTC_DB_VERSION);
 
@@ -90,24 +90,19 @@ function getAllDBTCFragsForUser(userId) {
     return db.all(
         `
         SELECT
-            mothers.*,
-            frags.*,
+            lf.*,
             motherFans.fanCount
         FROM
-            mothers,
-            frags
+            liveFrags AS lf
         LEFT OUTER JOIN
             motherFans
         ON
-            mothers.motherId = motherFans.motherId
+            lf.motherId = motherFans.motherId
         WHERE
-            mothers.rules = 'dbtc' AND
-            frags.motherId = mothers.motherId AND
-            frags.ownerId = $userId AND
-            frags.isAlive = 1 AND
-            frags.status IS NULL
+            lf.rules = 'dbtc' AND
+            lf.ownerId = $userId
         ORDER BY
-            mothers.name ASC
+            lf.name ASC
         `,
         {userId}
     );
@@ -534,15 +529,16 @@ function clearFragPicture(picture) {
 
 //-----------------------------------------------------------------------------
 
-const SELECT_COLLECTION_PAGED = `
+const SELECT_COLLECTION_PAGED =
+    `
     SELECT
         mf.*,
         -- 1 if this user owns the mother frag
         CASE WHEN mf.ownerId = $userId THEN 1 ELSE 0 END as ownsIt,
         -- Adds up all the available children frags
         children.fragsAvailable AS otherFragsAvailable,
-        -- Ends up being 1 if the user owns one of the children frags
-        MAX(CASE WHEN frags.ownerId = $userId THEN 1 ELSE 0 END) AS hasOne,
+        -- Ends up being the userId if the user owns one of the frags
+        motherOwners.ownerId AS hasOne,
         -- Ends up being 1 if the user is a fan
         MAX(CASE WHEN fans.userId = $userId THEN 1 ELSE 0 END) AS isFan,
         -- Counts the number of fans
@@ -551,14 +547,10 @@ const SELECT_COLLECTION_PAGED = `
         motherFrags AS mf,
         children
     LEFT OUTER JOIN
-        frags
+        motherOwners
     ON
-        -- Skip the mother frag in the children
-        frags.fragOf IS NOT NULL
-        -- The child has to be alive
-        AND frags.isAlive = 1
-        -- And it has to have the same mother
-        AND frags.motherId = mf.motherId
+        mf.motherId = motherOwners.motherId AND
+        motherOwners.ownerId = $userId
     LEFT OUTER JOIN
         fans
     ON
