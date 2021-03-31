@@ -335,6 +335,7 @@ function getItemForThread(threadId) {
 //-----------------------------------------------------------------------------
 
 module.exports = {
+    database: db,
     getAllItems,
     getItemForUser,
     getQueue,

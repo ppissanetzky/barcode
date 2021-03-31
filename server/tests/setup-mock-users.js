@@ -3,8 +3,8 @@ const express = require('express');
 const request = require('supertest');
 
 const {toUnixTime} = require('../dates');
-
 const XenForoApi = require('../xenforo-api');
+const app = require('../app');
 
 jest.mock('../xenforo-api');
 
@@ -110,7 +110,17 @@ function setupMockUsers() {
     });
 }
 
+//-----------------------------------------------------------------------------
+// Utility to make a request with a given user name
+//-----------------------------------------------------------------------------
+
+async function getForUser(user, url) {
+    return request(app).get(url).set('cookie', `xfc_user=${user}`);
+}
+
 module.exports = {
     MOCK_USERS,
-    setupMockUsers
+    setupMockUsers,
+    XenForoApi,
+    getForUser
 };

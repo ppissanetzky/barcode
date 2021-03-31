@@ -3,6 +3,7 @@ const _ = require('lodash');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const assert = require('assert');
 
 const ENV_VARIABLES = {
 
@@ -32,6 +33,16 @@ async function setup() {
     });
     process.env.BC_UPLOADS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'uploads-'));
     process.env.BC_DATABASE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'databases-'));
+
+    const userDatabase = require('../user-database');
+    const dbtcDatabase = require('../dbtc-database');
+    const equipmentDatabase = require('../equipment-database');
+    const marketDatabaseConnect = require('../market/market-database');
+
+    assert(userDatabase.database.connect());
+    assert(dbtcDatabase.db.connect());
+    assert(equipmentDatabase.database.connect());
+    assert(marketDatabaseConnect());
 }
 
 module.exports = setup;
