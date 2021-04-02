@@ -1,6 +1,8 @@
 # Ubuntu
 FROM ubuntu:20.04
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 # Install curl to install nvm
 RUN apt-get update \
     && apt-get install -y curl \
@@ -40,8 +42,11 @@ RUN npm ci --only prod
 COPY . .
 
 # Set the OS time zone
+RUN apt-get install tzdata
 ENV TZ=America/Los_Angeles
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN dpkg-reconfigure tzdata
+RUN date
 
 # Command to start the server
 CMD ["node", "server.js"]
