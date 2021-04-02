@@ -1,5 +1,31 @@
-# Slim LTS node on buster (Debian 10)
-FROM node:lts-buster-slim
+# Ubuntu
+FROM ubuntu:20.04
+
+# Install curl to install nvm
+RUN apt-get update \
+    && apt-get install -y curl \
+    && apt-get -y autoclean
+
+# Setup for nvm
+ENV NVM_DIR /home/nvm
+ENV NODE_VERSION 14.16.0
+RUN mkdir $NVM_DIR
+
+# Install nvm, which will install node
+RUN curl --silent -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
+
+# Now, get rid of curl
+RUN apt-get purge -y curl \
+    && apt-get -y autoremove \
+    && apt-get -y clean
+
+# Add node and npm to path so the commands are available
+ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
+ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+
+# confirm installation
+RUN node -v
+RUN npm -v
 
 # This is where the application lives
 WORKDIR /home/node/app
