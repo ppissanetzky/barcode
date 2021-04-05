@@ -58,6 +58,12 @@ function deleteBan(userId) {
     db.run(DELETE_BAN, {userId});
 }
 
+function getFirstBanTierForItem(itemId) {
+    return db.first(
+        'SELECT * FROM banTiers WHERE itemId = $itemId ORDER BY tier LIMIT 1',
+        {itemId});
+}
+
 const SELECT_ITEM = `
     SELECT
         items.*,
@@ -350,5 +356,6 @@ module.exports = {
     transferItem,
     getAllBans,
     deleteBan,
-    getItemForThread
+    getItemForThread,
+    getFirstBanTierForItem
 };

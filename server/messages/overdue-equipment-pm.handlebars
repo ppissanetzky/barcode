@@ -3,11 +3,26 @@ This one is used to ask a user with overdue equipment to pass it on via a forum 
     item - the item
     user - the user
     days - number of days
+    firstBanTier - the first ban tier for this item, or undefined if there isn't one
 }}
 The {{item.shortName}} is overdue
 
 You've had the {{item.shortName}} for {{days}} days.
 Please arrange to pass it on ASAP.
+
+If you are having trouble finding someone to receive the {{item.shortName}} or if there is no one in line, please contact a member of the board of directors near you:
+
+    @Wlachnit in Pleasanton
+    @JVU in Walnut Creek, Antioch or Brentwood
+    @svreef in Scotts Valley
+    @The_Lazy_Reefer in Oakland
+    @IOnceWasLegend or @Srt4eric in San Jose
+    @rygh in Union City
+    @Coral reefer or @sfsuphysics in San Francisco
+
+{{#if firstBanTier}}
+[B]Note that if you keep the {{item.shortName}} for more than {{firstBanTier.afterDays}} days, you may be banned from borrowing equipment for a period of time.[/B]
+{{/if}}
 
 Refer to [URL={{item.rules}}]the rules[/URL] for borrowing this item.
 

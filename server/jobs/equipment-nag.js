@@ -9,7 +9,7 @@ const {logToForum} = require('../forum-log');
 
 //-----------------------------------------------------------------------------
 
-async function alert(item, entry, days) {
+async function alert(item, entry, days, firstBanTier) {
     const {dateReceived, userId, phoneNumber} = entry;
     // Lookup the user
     const user = await lookupUser(userId, true);
@@ -54,7 +54,7 @@ async function alert(item, entry, days) {
     // Try a PM which may also send an e-mail
     //-------------------------------------------------------------------------
     try {
-        const [title, message] = await renderMessage('overdue-equipment-pm', {item, user, days});
+        const [title, message] = await renderMessage('overdue-equipment-pm', {item, user, days, firstBanTier});
         await startConversation([userId], title, message, true);
         console.log('PM sent');
         logToForum(`Notified @${user.name} via PM`);
@@ -95,8 +95,10 @@ lock('equipment-nag', async () => {
             if (days < alertStartDay) {
                 continue;
             }
+            // Get the first ban tier for this item - can be undefined
+            const firstBanTier = db.getFirstBanTierForItem(itemId);
             // Alert
-            await alert(item, entry, days);
+            await alert(item, entry, days, firstBanTier);
         }
     }
     // Now, delete expired bans

@@ -82,22 +82,25 @@ class Database {
         return new DatabaseConnection(this);
     }
 
-    // Returns the rows
-
+    // Returns all the rows or an empty array
     all(query, params) {
         const connection = new DatabaseConnection(this);
         return connection.all(query, params);
     }
 
-    // Returns the last row ID
+    // Returns the first row, or undefined
+    first(query, params) {
+        const connection = new DatabaseConnection(this);
+        return connection.first(query, params);
+    }
 
+    // Returns the last row ID
     run(query, params) {
         const connection = new DatabaseConnection(this);
         return connection.run(query, params);
     }
 
     // Returns the number of changed rows
-
     change(query, params) {
         const connection = new DatabaseConnection(this);
         return connection.change(query, params);
