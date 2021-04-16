@@ -72,6 +72,13 @@ const SCRIPTS = [
             'DELETE FROM frags WHERE motherId = $param',
             'DELETE FROM mothers WHERE motherId = $param'
         ]
+    },
+    {
+        name: 'Move to PIF',
+        param: 'Mother ID',
+        statements: [
+            'UPDATE mothers SET rules = "pif" WHERE motherId = $param'
+        ]
     }
 ];
 
