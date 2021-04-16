@@ -77,7 +77,7 @@ const SCRIPTS = [
         name: 'Move to PIF',
         param: 'Mother ID',
         statements: [
-            'UPDATE mothers SET rules = "pif" WHERE motherId = $param'
+            'UPDATE mothers SET rules = \'pif\' WHERE motherId = $param'
         ]
     }
 ];
