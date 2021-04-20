@@ -25,6 +25,14 @@ const router = express.Router();
 
 const SCRIPTS = [
     {
+        name: 'Frag details',
+        param: 'Frag ID',
+        readonly: true,
+        statements: [
+            'SELECT * FROM mothers, frags WHERE mothers.motherId = frags.motherId AND frags.fragId = $param'
+        ]
+    },
+    {
         name: 'Find mothers by name',
         param: 'Name',
         readonly: true,
