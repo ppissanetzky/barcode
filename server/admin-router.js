@@ -5,9 +5,15 @@ const express = require('express');
 const multer = require('multer');
 const _ = require('lodash');
 
-const {db} = require('./dbtc-database');
+const {db: dbtcDatabase} = require('./dbtc-database');
+const {database: equipmentDatabase} = require('./equipment-database');
 
 const scheduler = require('./scheduler');
+
+const DATABASES = {
+    dbtc: dbtcDatabase,
+    equipment: equipmentDatabase
+};
 
 //-----------------------------------------------------------------------------
 // To process multi-part posts
@@ -30,7 +36,8 @@ const SCRIPTS = [
         readonly: true,
         statements: [
             'SELECT * FROM mothers, frags WHERE mothers.motherId = frags.motherId AND frags.fragId = $param'
-        ]
+        ],
+        db: 'dbtc'
     },
     {
         name: 'Find mothers by name',
@@ -40,15 +47,17 @@ const SCRIPTS = [
             `
             SELECT motherId, name, rules FROM mothers WHERE name like '%' || $param || '%'
             `
-        ]
+        ],
+        db: 'dbtc'
     },
     {
         name: 'Find mothers by owner',
-        param: 'Owner ID',
+        param: 'userid',
         readonly: true,
         statements: [
             'SELECT motherId, name, ownerId, rules FROM motherFrags WHERE ownerId = $param'
-        ]
+        ],
+        db: 'dbtc'
     },
     {
         name: 'Mother details',
@@ -61,7 +70,8 @@ const SCRIPTS = [
                 (SELECT fragId FROM frags WHERE motherId = $param)`,
             'SELECT userId AS fanId FROM fans WHERE motherId = $param',
             'SELECT * FROM frags WHERE motherId = $param'
-        ]
+        ],
+        db: 'dbtc'
     },
     {
         name: 'Delete frag',
@@ -69,7 +79,8 @@ const SCRIPTS = [
         statements: [
             'DELETE FROM journals WHERE fragId = $param',
             'DELETE FROM frags WHERE fragId = $param'
-        ]
+        ],
+        db: 'dbtc'
     },
     {
         name: 'Delete mother',
@@ -79,14 +90,34 @@ const SCRIPTS = [
             'DELETE FROM journals WHERE fragId IN (SELECT fragId FROM frags WHERE motherId = $param)',
             'DELETE FROM frags WHERE motherId = $param',
             'DELETE FROM mothers WHERE motherId = $param'
-        ]
+        ],
+        db: 'dbtc'
     },
     {
         name: 'Move to PIF',
         param: 'Mother ID',
         statements: [
             'UPDATE mothers SET rules = \'pif\' WHERE motherId = $param'
-        ]
+        ],
+        db: 'dbtc'
+    },
+    {
+        name: 'List bans',
+        readonly: true,
+        param: '',
+        statements: [
+            'SELECT * FROM bans'
+        ],
+        db: 'equipment'
+
+    },
+    {
+        name: 'Remove ban',
+        param: 'userid',
+        statements: [
+            'DELETE FROM bans WHERE userId = $param'
+        ],
+        db: 'equipment'
     }
 ];
 
@@ -96,6 +127,12 @@ const SCRIPTS = [
 //-----------------------------------------------------------------------------
 
 assert.strictEqual(new Set(SCRIPTS.map(({name}) => name)).size, SCRIPTS.length);
+
+//-----------------------------------------------------------------------------
+// Make sure every script has 'db' and it exists in DATABASES
+//-----------------------------------------------------------------------------
+
+assert(SCRIPTS.every(({db}) => db && DATABASES[db]));
 
 //-----------------------------------------------------------------------------
 
@@ -110,7 +147,8 @@ function runScript(name, param) {
     if (!script) {
         throw new Error(`Invalid script "${name}"`);
     }
-    return db.transaction(({all, change}) => {
+    const {db} = script;
+    return DATABASES[db].transaction(({all, change}) => {
         const {readonly, statements} = script;
         const results = [];
         for (const statement of statements) {

@@ -7,29 +7,32 @@
     </v-row>
     <v-row>
       <v-col>
-        <v-select
+        <v-autocomplete
           v-model="selectedScript"
           :items="scriptNames"
           label="Script"
-          dense
           outlined
           hide-details
           clearable
         />
       </v-col>
-      <v-col>
+      <v-col v-if="paramLabel">
+        <bc-user-autocomplete
+          v-if="paramLabel === 'userid'"
+          v-model="userId"
+        />
         <v-text-field
+          v-else
           v-model="param"
           :label="paramLabel"
           clearable
-          dense
           outlined
           hide-details
         />
       </v-col>
       <v-col>
         <v-btn
-          :disabled="!(selectedScript && param)"
+          :disabled="!canRun"
           :color="readonly[selectedScript] ? '' : 'error'"
           @click="runScript"
         >
@@ -103,7 +106,9 @@
   </v-container>
 </template>
 <script>
+import BcUserAutocomplete from '../components/BcUserAutocomplete.vue'
 export default {
+  components: { BcUserAutocomplete },
   async fetch () {
     const { scripts, jobs } = await this.$axios.$get('/api/admin/scripts')
     this.scriptNames = scripts.map(({ name }) => name)
@@ -131,6 +136,7 @@ export default {
       // Scripts
       selectedScript: undefined,
       param: undefined,
+      userId: undefined,
       paramLabel: undefined,
       output: undefined,
       tables: [],
@@ -140,17 +146,34 @@ export default {
       selectedJob: undefined
     }
   },
+  computed: {
+    canRun () {
+      return this.selectedScript &&
+        (this.param || !this.paramLabel ||
+        (this.paramLabel === 'userid' && this.userId))
+    }
+  },
   watch: {
     selectedScript (value) {
       this.param = undefined
       this.paramLabel = this.paramNames[value]
+      this.userId = undefined
     }
   },
   methods: {
     async runScript () {
       const formData = new FormData()
       formData.set('script', this.selectedScript)
-      formData.set('param', this.param)
+      switch (this.paramLabel) {
+        case '':
+          formData.set('param', null)
+          break
+        case 'userid':
+          formData.set('param', this.userId.id)
+          break
+        default:
+          formData.set('param', this.param)
+      }
       const result = await this.$axios.$post('/api/admin/run', formData)
       if (result.error) {
         this.output = result.error
@@ -161,7 +184,10 @@ export default {
       this.output = JSON.stringify(result, null, 2)
       this.tables = result.map((list) => {
         if (list.length === 0) {
-          return null
+          return ({
+            headers: ['No data found'],
+            rows: []
+          })
         }
         const [first] = list
         const headers = Object.keys(first)
