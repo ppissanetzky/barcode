@@ -1110,13 +1110,13 @@ router.post('/oops/:fragId', upload.none(), (req, res, next) => {
 
 //-----------------------------------------------------------------------------
 
-router.get('/swaps', async (req, res, next) => {
+router.get('/swaps', async (req, res) => {
     const swaps = db.getSwaps();
-    for (swap of swaps) {
+    for (const swap of swaps) {
         swap.participants = [];
         const participants = db.getSwapParticipants(swap.swapId);
-        for (participant of participants) {
-            const user = await lookupUser(participant.traderId)
+        for (const participant of participants) {
+            const user = await lookupUser(participant.traderId);
             swap.participants.push({
                 name: user.name,
                 user,
@@ -1148,7 +1148,7 @@ router.get('/swap/:swapId/frags', (req, res, next) => {
 });
 
 router.post('/swap/add', upload.none(), async (req, res, next) => {
-    const {user, body:{ swapId, sourceFragId, traderId, category}} = req;
+    const {user, body:{swapId, sourceFragId, traderId, category}} = req;
     const swap = db.getSwap(swapId);
     if (!swap) {
         return next(INVALID_SWAP());
