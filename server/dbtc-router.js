@@ -56,7 +56,8 @@ const {
     INVALID_RULES,
     NOT_YOURS,
     INVALID_IMPORT,
-    INVALID_THREAD
+    INVALID_THREAD,
+    INVALID_SWAP
 } = require('./errors');
 
 //-----------------------------------------------------------------------------
@@ -1105,6 +1106,68 @@ router.post('/oops/:fragId', upload.none(), (req, res, next) => {
     }
     startOopsThread(user, frag, notes);
     res.sendStatus(200);
+});
+
+//-----------------------------------------------------------------------------
+
+router.get('/swaps', async (req, res, next) => {
+    const swaps = db.getSwaps();
+    for (swap of swaps) {
+        swap.participants = [];
+        const participants = db.getSwapParticipants(swap.swapId);
+        for (participant of participants) {
+            const user = await lookupUser(participant.traderId)
+            swap.participants.push({
+                name: user.name,
+                user,
+                items: participant.items
+            });
+        }
+        swap.participants = _.sortBy(swap.participants, 'name');
+    }
+    res.json({swaps});
+});
+
+router.get('/swap/:swapId', (req, res, next) => {
+    const {params: {swapId}} = req;
+    const swap = db.getSwap(swapId);
+    if (!swap) {
+        return next(INVALID_SWAP());
+    }
+    res.json({swap});
+});
+
+router.get('/swap/:swapId/frags', (req, res, next) => {
+    const {params: {swapId}} = req;
+    const swap = db.getSwap(swapId);
+    if (!swap) {
+        return next(INVALID_SWAP());
+    }
+    const frags = db.getSwapFrags(swapId);
+    res.json({swap, frags});
+});
+
+router.post('/swap/add', upload.none(), async (req, res, next) => {
+    const {user, body:{ swapId, sourceFragId, traderId, category}} = req;
+    const swap = db.getSwap(swapId);
+    if (!swap) {
+        return next(INVALID_SWAP());
+    }
+    if (!swap.isOpen) {
+        return next(INVALID_SWAP());
+    }
+    const frag = db.validateFrag(user.id, sourceFragId, true, -1);
+    if (!frag) {
+        return next(INVALID_FRAG());
+    }
+    if (traderId) {
+        const trader = await lookupUser(traderId);
+        if (!trader) {
+            return next(INVALID_RECIPIENT());
+        }
+    }
+    db.addSwapFrag(swapId, frag.fragId, traderId || user.id, category || 'standard');
+    res.json({});
 });
 
 //-----------------------------------------------------------------------------

@@ -104,7 +104,10 @@ module.exports = {
     MISSING_PICTURE:        error.bind(null, 'MIP'),
 
     // Invalid picture
-    INVALID_PICTURE_INDEX:  error.bind(null, 'IPI')
+    INVALID_PICTURE_INDEX:  error.bind(null, 'IPI'),
+
+    // Invalid swap
+    INVALID_SWAP:           error.bind(null, 'INS')
 };
 
 //-----------------------------------------------------------------------------

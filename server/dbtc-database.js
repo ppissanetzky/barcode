@@ -9,7 +9,7 @@ const {BC_MARKET_ENABLED} = require('./barcode.config');
 
 //-----------------------------------------------------------------------------
 
-const DBTC_DB_VERSION = 7;
+const DBTC_DB_VERSION = 8;
 
 const db = new Database('dbtc', DBTC_DB_VERSION);
 
@@ -1231,6 +1231,62 @@ function getDbtcLinksCompletedForUser(userId) {
 
 //-----------------------------------------------------------------------------
 
+function getSwaps() {
+    return db.all('SELECT * FROM swaps ORDER BY date DESC');
+}
+
+function getSwap(swapId) {
+    return db.first('SELECT * FROM swaps WHERE swapId = $swapId', {swapId});
+}
+
+function getSwapFrags(swapId) {
+    return db.all('SELECT * FROM swapFrags WHERE swapId = $swapId', {swapId});
+}
+
+function getSwapParticipants(swapId) {
+    return db.all(
+        `
+        SELECT
+            traderId,
+            COUNT(DISTINCT swapFragId) as items
+        FROM
+            swapFrags
+        WHERE
+            swapId = $swapId
+        GROUP BY
+            traderId
+        `,
+        {swapId}
+    );
+}
+
+function addSwapFrag(swapId, sourceFragId, traderId, category) {
+    db.run(
+        `
+        INSERT INTO swapFrags
+        (
+            swapFragId,
+            swapId,
+            sourceFragId,
+            traderId,
+            category,
+            resultingFragId
+        )
+        VALUES
+        (
+            NULL,
+            $swapId,
+            $sourceFragId,
+            $traderId,
+            $category,
+            NULL
+        )
+        `,
+        {swapId, sourceFragId, traderId, category}
+    );
+}
+//-----------------------------------------------------------------------------
+
 module.exports = {
     db,
     selectAllFragsForUser,
@@ -1270,5 +1326,10 @@ module.exports = {
     getMotherFrag,
     getAllDBTCFragsForUser,
     getWaitingFragsForUser,
-    getDbtcLinksCompletedForUser
+    getDbtcLinksCompletedForUser,
+    getSwaps,
+    getSwap,
+    getSwapFrags,
+    addSwapFrag,
+    getSwapParticipants
 };
