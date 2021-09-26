@@ -79,14 +79,22 @@ const SELECT_SUPPORTING_MEMBERS =
         DATEDIFF(FROM_UNIXTIME(LEAST(active.end_date, UNIX_TIMESTAMP())), FROM_UNIXTIME(active.start_date)) AS activeDays,
         expired.start_date  AS expiredStartDate,
         expired.end_date    AS expiredEndDate,
-        IFNULL(DATEDIFF(FROM_UNIXTIME(expired.end_date), DATE_SUB(NOW(), INTERVAL 1 YEAR)), 0) as expiredDays
+        IFNULL(DATEDIFF(FROM_UNIXTIME(expired.end_date), DATE_SUB(NOW(), INTERVAL 1 YEAR)), 0) AS expiredDays
     FROM
         xf_user_upgrade_active AS active
     LEFT OUTER JOIN
-        xf_user_upgrade_expired AS expired
+        (
+            SELECT
+                user_id, user_upgrade_id, MIN(start_date) AS start_date, MAX(end_date) AS end_date
+            FROM
+                xf_user_upgrade_expired
+            WHERE
+                user_upgrade_id = 1
+            GROUP BY
+                1, 2
+        ) AS expired
     ON
         expired.user_id = active.user_id AND
-        expired.user_upgrade_id = active.user_upgrade_id AND
         expired.end_date >= UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 1 YEAR))
     WHERE
         active.user_upgrade_id = 1
@@ -295,6 +303,15 @@ async function getSupportingMembers() {
                     expiredEndDate,
                     expiredDays
                 } = row;
+
+                if (userId === 14891) {
+                    debug('Inserting ', userId,
+                        convert(activeStartDate),
+                        convert(activeEndDate),
+                        activeDays,
+                        convert(expiredStartDate),
+                        convert(expiredEndDate));
+                }
 
                 const {changes} = statement.run({
                     userId,
