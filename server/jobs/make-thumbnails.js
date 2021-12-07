@@ -12,9 +12,9 @@ function source(name) {
     return path.join(BC_UPLOADS_DIR, name);
 }
 
-lock('make-thumbnails', () => {
+lock('make-thumbnails', () =>
 
-    return Promise.all(fs.readdirSync(BC_UPLOADS_DIR, {withFileTypes: true})
+    Promise.all(fs.readdirSync(BC_UPLOADS_DIR, {withFileTypes: true})
         // Keep only regular files that don't have a . in the name
         .filter((dirent) => dirent.isFile() && !dirent.name.includes('.'))
         .map(async ({name}) => {
@@ -31,5 +31,5 @@ lock('make-thumbnails', () => {
                 console.log('Renaming');
                 fs.rename(source(name), `${source(name)}.bad`, () => {});
             }
-        }));
-});
+        }))
+);

@@ -15,9 +15,8 @@ const _ = require('lodash');
 
 async function saveImageFromUrl(upload, url) {
     return new Promise((resolve, reject) => {
-        upload.storage.getDestination(null, null, (error, directory) => {
-            return error ? reject(error) : resolve(directory);
-        });
+        upload.storage.getDestination(null, null, (error, directory) =>
+            error ? reject(error) : resolve(directory));
     })
         .then((directory) => new Promise((resolve, reject) => {
             upload.storage.getFilename(null, null, (error, filename) => {

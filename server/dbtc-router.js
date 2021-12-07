@@ -319,8 +319,9 @@ router.post('/add-new-item', upload.single('picture'), (req, res) => {
         timestamp: body.dateAcquired,
         entryType: 'acquired',
         picture,
-        notes: body.source ?
-            `Got it from ${body.source}` : 'Acquired it'
+        notes: body.source
+            ? `Got it from ${body.source}`
+            : 'Acquired it'
     });
     // Post to the forum out of band
     itemAdded(fragId);
@@ -486,9 +487,9 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
         fragId: newFragId,
         timestamp: dateAcquired,
         entryType: 'acquired',
-        notes: transfer ?
-            `Transferred from ${user.name}` :
-            `Got it from ${user.name}`
+        notes: transfer
+            ? `Transferred from ${user.name}`
+            : `Got it from ${user.name}`
     });
 
     // Add a journal entry for the one who gave it
@@ -497,9 +498,9 @@ router.post('/give-a-frag', upload.single('picture'), async (req, res, next) => 
         timestamp: dateAcquired,
         entryType: 'gave',
         picture,
-        notes: transfer ?
-            `Transferred to ${recipient.name}` :
-            `Gave a frag to ${recipient.name}`
+        notes: transfer
+            ? `Transferred to ${recipient.name}`
+            : `Gave a frag to ${recipient.name}`
     });
     // Remove the recipient from the fans table
     db.removeFan(recipient.id, frag.motherId);

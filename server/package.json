@@ -75,7 +75,12 @@
         "error",
         "always"
       ],
-      "new-cap": 0
+      "new-cap": 0,
+      "import/extensions": 0,
+      "comma-dangle": 0,
+      "node/prefer-global/process": 0,
+      "operator-linebreak": 0,
+      "unicorn/prefer-object-from-entries": 0
     },
     "overrides": [
       {

@@ -3,7 +3,7 @@
   "version": "1.36.1",
   "private": true,
   "scripts": {
-    "test": "xo && (cd server && npm test)",
+    "test": "(cd server && xo && npm test)",
     "install": "(cd site && npm i) && (cd server && npm i)",
     "dev": "(cd site && npm run dev)",
     "generate": "(cd site && npm run generate)",
@@ -14,6 +14,6 @@
     "push": "(cd build && make build push)"
   },
   "devDependencies": {
-    "xo": "^0.40.1"
+    "xo": "^0.47.0"
   }
 }

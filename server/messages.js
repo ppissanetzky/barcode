@@ -15,13 +15,11 @@ const {age} = require('./dates');
 // THAT'S WHY THE fragUrl HELPER HAS TO CHECK THE TYPE
 //-----------------------------------------------------------------------------
 
-handlebars.registerHelper('pictureUrl', (picture) => {
-    return `${BC_SITE_BASE_URL}/uploads/${picture}`;
-});
+handlebars.registerHelper('pictureUrl', (picture) =>
+    `${BC_SITE_BASE_URL}/uploads/${picture}`);
 
-handlebars.registerHelper('originalPictureUrl', (picture) => {
-    return `${BC_SITE_BASE_URL}/uploads/original/${picture}`;
-});
+handlebars.registerHelper('originalPictureUrl', (picture) =>
+    `${BC_SITE_BASE_URL}/uploads/original/${picture}`);
 
 handlebars.registerHelper('fragUrl', (fragId, tab) => {
     let url = `${BC_SITE_BASE_URL}/frag/${fragId}`;
@@ -31,17 +29,14 @@ handlebars.registerHelper('fragUrl', (fragId, tab) => {
     return url;
 });
 
-handlebars.registerHelper('motherUrl', (motherId) => {
-    return `${BC_SITE_BASE_URL}/kids/${motherId}`;
-});
+handlebars.registerHelper('motherUrl', (motherId) =>
+    `${BC_SITE_BASE_URL}/kids/${motherId}`);
 
-handlebars.registerHelper('age', (date) => {
-    return age(date, 'today', 'ago');
-});
+handlebars.registerHelper('age', (date) =>
+    age(date, 'today', 'ago'));
 
-handlebars.registerHelper('equipmentUrl', (/* itemId */) => {
-    return `${BC_SITE_BASE_URL}/equipment`;
-});
+handlebars.registerHelper('equipmentUrl', (/* itemId */) =>
+    `${BC_SITE_BASE_URL}/equipment`);
 
 //-----------------------------------------------------------------------------
 // Given the name of a template file in the 'messages' directory and

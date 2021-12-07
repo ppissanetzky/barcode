@@ -31,7 +31,8 @@ lock('reply-to-mentions', async (debug) => {
 
     // Get all the alerts that are after our last alert time,
     // are mentions and are in a post
-    const alerts = (await getAlerts()).filter(({action, event_date, content_type}) =>
+    const allAlerts = await getAlerts();
+    const alerts = allAlerts.filter(({action, event_date, content_type}) =>
         event_date > lastAlertTime &&
         action === 'mention' &&
         content_type === 'post');
