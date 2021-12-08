@@ -10,7 +10,7 @@ const {
 
 //-----------------------------------------------------------------------------
 
-const EQUIPMENT_DB_VERSION = 2;
+const EQUIPMENT_DB_VERSION = 3;
 
 const db = new Database('equipment', EQUIPMENT_DB_VERSION);
 
@@ -20,7 +20,8 @@ const SELECT_ITEMS = `
     SELECT
         items.*,
         CASE WHEN queue.userId IS NOT NULL THEN 1 ELSE 0 END AS inList,
-        CASE WHEN queue.dateReceived IS NOT NULL THEN 1 ELSE 0 END AS hasIt
+        CASE WHEN queue.dateReceived IS NOT NULL THEN 1 ELSE 0 END AS hasIt,
+        CASE WHEN queue.dateDone IS NOT NULL THEN 1 ELSE 0 END AS isAvailable
     FROM
         items
     LEFT OUTER JOIN
@@ -68,7 +69,8 @@ const SELECT_ITEM = `
     SELECT
         items.*,
         CASE WHEN queue.userId IS NOT NULL THEN 1 ELSE 0 END AS inList,
-        CASE WHEN queue.dateReceived IS NOT NULL THEN 1 ELSE 0 END AS hasIt
+        CASE WHEN queue.dateReceived IS NOT NULL THEN 1 ELSE 0 END AS hasIt,
+        CASE WHEN queue.dateDone IS NOT NULL THEN 1 ELSE 0 END AS isAvailable
     FROM
         items
     LEFT OUTER JOIN
@@ -176,7 +178,8 @@ const INSERT_QUEUE = `
         userId,
         phoneNumber,
         dateReceived,
-        location
+        location,
+        dateDone
     )
     VALUES (
         $itemId,
@@ -184,7 +187,8 @@ const INSERT_QUEUE = `
         $userId,
         $phoneNumber,
         NULL,
-        $location
+        $location,
+        NULL
     )
 `;
 
@@ -204,6 +208,25 @@ const DELETE_FROM_QUEUE = `
 
 function removeFromQueue(itemId, userId) {
     db.run(DELETE_FROM_QUEUE, {itemId, userId});
+}
+
+//-----------------------------------------------------------------------------
+
+function updateDone(itemId, userId) {
+    const UPDATE_DONE = `
+        UPDATE queue
+        SET dateDone = $dateDone
+        WHERE
+            itemId = $itemId AND
+            userId = $userId AND
+            dateDone IS NULL
+        `;
+    const now = new Date();
+    db.run(UPDATE_DONE, {
+        itemId,
+        userId,
+        dateDone: now.toISOString()
+    });
 }
 
 //-----------------------------------------------------------------------------
@@ -357,5 +380,6 @@ module.exports = {
     getAllBans,
     deleteBan,
     getItemForThread,
-    getFirstBanTierForItem
+    getFirstBanTierForItem,
+    updateDone
 };

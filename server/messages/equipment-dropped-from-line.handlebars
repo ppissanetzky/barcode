@@ -10,7 +10,7 @@ no title - this is a post
 [B]Have the {{item.shortName}}[/B]
 
 {{#each queue.haves}}
-@{{this.user.name}} for {{this.age}}{{#if this.user.location}} - {{this.user.location}}{{/if}}{{#if this.overdue}} [COLOR=red]OVERDUE[/COLOR]{{/if}}
+@{{this.user.name}} for {{this.age}}{{#if this.user.location}} - {{this.user.location}}{{#if this.isAvailable}} [B]AVAILABLE[/B]{{/if}}{{/if}}{{#if this.overdue}} [COLOR=red]OVERDUE[/COLOR]{{/if}}
 {{/each}}
 
 {{#if queue.waiters.length}}

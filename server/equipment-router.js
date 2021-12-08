@@ -213,7 +213,7 @@ async function getQueue(item) {
             entry.user.location = entry.location;
         }
         // If that user has the item
-        const {dateReceived} = entry;
+        const {dateReceived, dateDone} = entry;
         if (dateReceived) {
             entry.hasIt = true;
             entry.age = age(dateReceived, 'less than a day');
@@ -221,6 +221,10 @@ async function getQueue(item) {
             // If this user can hold equipment indefinitely, we don't mark
             // it as overdue. That's where equipment is held when no one is in line
             entry.overdue = !entry.user.canHoldEquipment && entry.days > item.maxDays;
+            entry.isAvailable = Boolean(dateDone);
+            entry.daysAvailable = dateDone
+                ? Math.floor(differenceInDays(now, dateFromIsoString(dateDone)))
+                : 0;
             haves.push(entry);
         }
         else {
@@ -229,9 +233,11 @@ async function getQueue(item) {
     });
     // Calculate the expected days until each waiting user gets it
     // First, fill out an array with the number of days until each user that
-    // has it will pass it on - based on the item's maxDays.
+    // has it will pass it on - based on the item's maxDays. If that user has
+    // marked it as available, use 0 days
     // Sort it so so the shortest wait is first.
-    const waits = haves.map(({days}) => Math.max(item.maxDays - days, 0)).sort();
+    const waits = haves.map(({days, isAvailable}) =>
+        isAvailable ? 0 : Math.max(item.maxDays - days, 0)).sort();
     // Now, we iterate over all the users waiting. For each one, we
     // get the first item from the waits array - that's how long it will
     // take. Then, we push that wait plus maxDays into the back of the array
@@ -466,6 +472,49 @@ router.put('/conversation/:itemId', async (req, res, next) => {
         await startConversation(recipients, title, body);
     }
     res.status(200).end();
+});
+
+//-----------------------------------------------------------------------------
+// When a user is done with an item
+//-----------------------------------------------------------------------------
+
+router.put('/done/:itemId', async (req, res, next) => {
+    const {user, params: {itemId}} = req;
+    // Make sure the item is valid
+    const item = db.getItemForUser(itemId, user.id);
+    if (!item) {
+        return next(INVALID_EQUIPMENT());
+    }
+    // Make sure this user has the item
+    if (!item.hasIt) {
+        return next(NOT_YOURS());
+    }
+    // Get the queue
+    let queue = await getQueue(item);
+    // Only proceed if it is not already available, otherwise do nothing
+    if (!item.isAvailable) {
+        // Mark it as done now
+        db.updateDone(itemId, user.id);
+        // Get the queue again
+        queue = await getQueue(item);
+        // Post that the user is done
+        uberPost(item.threadId, 'equipment-available', {item, user, queue});
+        // Get the waiters
+        const {waiters} = queue;
+        if (waiters.length > 0) {
+            // Send a group PM to all the waiters
+            const next = waiters.map(({user: {id}}) => id);
+            // Collect all the recipients
+            const recipients = [user.id, ...next];
+            // Render the message
+            const [title, body] = await renderMessage('equipment-ready-pm', {user, item});
+            // Now start the conversation
+            await startConversation(recipients, title, body);
+        }
+    }
+
+    // Return the queue
+    res.json({queue});
 });
 
 //-----------------------------------------------------------------------------

@@ -273,14 +273,14 @@
             </v-card-text>
             <v-card-text v-else>
               <p>
-                Automatically start a conversation with the next few people in line to let them know you're done with the {{ selectedItem.shortName }}.
+                Let folks know that you're done with the {{ selectedItem.shortName }}.
               </p>
               <v-btn
                 text
                 :loading="startingConversation"
                 @click="startConversation"
               >
-                Start conversation
+                OK
               </v-btn>
             </v-card-text>
           </div>
@@ -315,6 +315,7 @@
                       <a :href="`/member/${entry.user.id}`" target="_blank">{{ you(entry.user) }}</a>
                       <span v-if="entry.overdue" class="error--text"><strong> for {{ entry.age }}</strong></span>
                       <span v-else> for {{ entry.age }}</span>
+                      <span v-if="entry.isAvailable"><strong> available</strong></span>
                     </td>
                     <td class="text-right">
                       {{ entry.user.location }}
@@ -407,14 +408,14 @@
                       </v-btn>
                     </v-list-item>
 
-                    <v-list-item v-if="item.hasIt">
+                    <v-list-item v-if="item.hasIt && !item.isAvailable">
                       <v-btn
                         small
                         text
                         :loading="loadingQueue"
                         @click.stop="showStartConversationDialogFor(item)"
                       >
-                        Notify next in line
+                        You're done with it
                       </v-btn>
                     </v-list-item>
 
@@ -775,8 +776,12 @@ export default {
     async startConversation () {
       const item = this.selectedItem
       this.startingConversation = true
-      const url = `/api/equipment/conversation/${item.itemId}`
-      await this.$axios.$put(url)
+      const url = `/api/equipment/done/${item.itemId}`
+      const { queue } = await this.$axios.$put(url)
+      // Now, the item is available
+      item.isAvailable = true
+      // And we have the latest queue for this item
+      item.queue = queue
       this.startingConversation = false
       this.showStartConversationDialog = false
     }
