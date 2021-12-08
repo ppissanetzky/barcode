@@ -14,10 +14,10 @@ jobs:
         with:
           node-version: 14.16.0
       - run: npm ci
-      - working-directory: site
-        env:
+      - env:
           BC_VERSION: test
         run: npx nuxt generate --fail-on-error --dotenv false
+        working-directory: ./site
       - env:
           BC_XF_API_KEY: ${{ secrets._BC_XF_API_KEY }}
         run: npm test
