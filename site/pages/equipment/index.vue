@@ -268,10 +268,7 @@
           </v-toolbar>
           <v-progress-linear v-if="loadingQueue || !selectedItem.queue" indeterminate />
           <div v-else>
-            <v-card-text v-if="!selectedItem.queue.waiters.length">
-              There's no one in line.
-            </v-card-text>
-            <v-card-text v-else>
+            <v-card-text>
               <p>
                 Let folks know that you're done with the {{ selectedItem.shortName }}.
               </p>
