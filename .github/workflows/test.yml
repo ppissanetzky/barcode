@@ -20,4 +20,5 @@ jobs:
         working-directory: ./site
       - env:
           BC_XF_API_KEY: ${{ secrets._BC_XF_API_KEY }}
+          BC_GOOGLE_API_KEY: ${{ secrets.BC_GOOGLE_API_KEY }}
         run: npm test
