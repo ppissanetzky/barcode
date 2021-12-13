@@ -3,9 +3,14 @@ This one is used to start a conversation between the person holding an item and
 the next few people in line
     item - the item
     user - the user
+    distances - an array of waiters with distance information
 }}
 {{user.name}} is done with the {{item.shortName}}
 
 Please make arrangements with @{{user.name}} to exchange the {{item.shortName}}. {{#if user.location}}{{user.name}} is in {{user.location}}.{{/if}}
+
+{{#each distances}}
+@{{this.user.name}} is {{this.durationText}} ({{this.distanceText}}) away in {{this.destinationName}}.
+{{/each}}
 
 [I]This message was automatically sent by BARcode[/I]

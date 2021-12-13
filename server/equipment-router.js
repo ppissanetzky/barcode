@@ -26,9 +26,11 @@ const db = require('./equipment-database');
 
 const {validatePhoneNumber, sendSms} = require('./aws');
 
-const {uberPost} = require('./forum');
+const {later, uberPost} = require('./forum');
 const {renderMessage} = require('./messages');
 const {logToForum} = require('./forum-log');
+
+const {getNearest} = require('./places/distance');
 
 //-----------------------------------------------------------------------------
 // The router
@@ -497,20 +499,52 @@ router.put('/done/:itemId', async (req, res, next) => {
         db.updateDone(itemId, user.id);
         // Get the queue again
         queue = await getQueue(item);
-        // Post that the user is done
-        uberPost(item.threadId, 'equipment-available', {item, user, queue});
-        // Get the waiters
-        const {waiters} = queue;
-        if (waiters.length > 0) {
-            // Send a group PM to all the waiters
-            const next = waiters.map(({user: {id}}) => id);
-            // Collect all the recipients
-            const recipients = [user.id, ...next];
-            // Render the message
-            const [title, body] = await renderMessage('equipment-ready-pm', {user, item});
-            // Now start the conversation
-            await startConversation(recipients, title, body);
-        }
+
+        // Do the rest of the work after the request is done
+        later(async () => {
+            // Get the haves and waiters from the queue
+            const {haves, waiters} = queue;
+            // This will be an array of the nearest waiters with distance
+            // information
+            const distances = [];
+            // Wrap this up in a try/catch because it is not strictly
+            // necessary and we don't know whether it will be flaky or
+            // not.
+            try {
+                // Get the location for this user from the queue
+                const [origin] = haves
+                    .filter(({userId}) => userId === user.id)
+                    .map(({location}) => location);
+                if (origin) {
+                    // Get the locations of all the waiters
+                    const destinations = waiters.map(({location}) => location);
+                    const nearest = await getNearest(origin, destinations);
+                    // Pick the first five
+                    nearest.slice(0, 5).forEach((distance) => {
+                        distances.push({
+                            ...distance,
+                            ...waiters[distance.index]
+                        });
+                    });
+                }
+            }
+            catch (error) {
+                console.error('Failed to calculate distance :', error);
+            }
+            // Post that the user is done
+            uberPost(item.threadId, 'equipment-available', {item, user, queue, distances});
+            if (waiters.length > 0) {
+                // Send a group PM to all the waiters
+                const next = waiters.map(({user: {id}}) => id);
+                // Collect all the recipients
+                const recipients = [user.id, ...next];
+                // Render the message
+                const [title, body] = await renderMessage('equipment-ready-pm',
+                    {user, item, distances});
+                // Now start the conversation
+                await startConversation(recipients, title, body);
+            }
+        });
     }
 
     // Return the queue
@@ -520,4 +554,74 @@ router.put('/done/:itemId', async (req, res, next) => {
 //-----------------------------------------------------------------------------
 
 module.exports = router;
+
+/*
+(async () => {
+    const now = new Date();
+
+    const {items} = db.getAllItems(0);
+
+    for (const item of items) {
+        // We will warn only if the item has been available for maxDays * 2
+        const warnAfterDays = item.maxDays * 2;
+        // Get the queue for this item
+        const queue = db.getQueue(item.itemId);
+        // This is an array of entries that have been available too long
+        const available = [];
+        // This is an array of people that have been waiting for too long
+        const waiting = [];
+        // Now, iterate over the queue
+        for (const entry of queue) {
+            const {userId, timestamp, dateReceived, dateDone} = entry;
+            // The item is available
+            if (dateReceived && dateDone) {
+                const daysAvailable = differenceInDays(now, dateFromIsoString(dateDone));
+                if (daysAvailable > warnAfterDays) {
+                    const user = await lookupUser(userId, true);
+                    const ageAvailable = age(dateDone);
+                    available.push({
+                        ...entry,
+                        daysAvailable,
+                        ageAvailable,
+                        user,
+                        location: entry.location || user.location
+                    });
+                    console.log(item.name, user.name, 'available', daysAvailable, ageAvailable);
+                }
+            }
+            // This user is waiting
+            if (!dateReceived) {
+                const daysWaiting = differenceInDays(now, dateFromIsoString(timestamp));
+                if (daysWaiting > warnAfterDays) {
+                    const user = await lookupUser(userId, true);
+                    const ageWaiting = age(timestamp);
+                    waiting.push({
+                        ...entry,
+                        daysWaiting,
+                        ageWaiting,
+                        user
+                    });
+                    console.log(item.name, user.name, 'waiting', daysWaiting, ageWaiting);
+                }
+            }
+        }
+        // If we have available items and lazy waiters, post
+        if (available.length > 0 && waiting.length > 0) {
+            // Post to the forum
+            uberPost(item.threadId, 'equipment-lazy', {item, queue, available, waiting});
+        }
+    }
+})();
+*/
+
+/*
+(async () => {
+    const history = db.getHistoryForItem(1);
+    for (const entry of history) {
+        const {userId, days} = entry;
+        const user = await lookupUser(userId, true);
+        console.log(`${user.name},${user.canHoldEquipment ? 1 : 0},${days}`);
+    }
+})();
+*/
 

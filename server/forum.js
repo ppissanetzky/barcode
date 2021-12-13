@@ -17,7 +17,9 @@ const {renderMessage} = require('./messages.js');
 //-----------------------------------------------------------------------------
 
 function later(f) {
-    Promise.resolve().then(f).catch((error) => console.error(error));
+    setTimeout(() => {
+        Promise.resolve().then(f).catch((error) => console.error(error));
+    }, 500);
 }
 
 //-----------------------------------------------------------------------------
@@ -139,6 +141,7 @@ async function startOopsThread(user, frag, notes) {
 //-----------------------------------------------------------------------------
 
 module.exports = {
+    later,
     uberPost,
     itemAdded,
     itemImported,

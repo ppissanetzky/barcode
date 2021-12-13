@@ -363,6 +363,13 @@ function getItemForThread(threadId) {
 
 //-----------------------------------------------------------------------------
 
+function getHistoryForItem(itemId) {
+    const SELECT_HISTORY = 'SELECT * FROM history WHERE itemId = $itemId';
+    return db.all(SELECT_HISTORY, {itemId});
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     database: db,
     getAllItems,
@@ -381,5 +388,6 @@ module.exports = {
     deleteBan,
     getItemForThread,
     getFirstBanTierForItem,
-    updateDone
+    updateDone,
+    getHistoryForItem
 };

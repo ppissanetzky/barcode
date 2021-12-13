@@ -3,10 +3,14 @@ This one is used to create a new post when a user says that they are
 done using the item
     item - the item
     user - the user who is done
+    distances - an array of waiters with distance information
 }}
 no title - this is a post
 
 @{{user.name}} is done using the [URL={{equipmentUrl item.itemId}}]{{item.shortName}}[/URL].
+{{#each distances}}
+@{{this.user.name}} is {{this.durationText}} ({{this.distanceText}}) away in {{this.destinationName}}.
+{{/each}}
 
 [B]Have the {{item.shortName}}[/B]
 

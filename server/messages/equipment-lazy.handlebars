@@ -1,0 +1,20 @@
+{{!
+This one is used to create a new post when items are available for a long time
+and people have been waiting for a long time also
+    item - the item
+    queue - the queue
+    available - an array of available queue entries
+    waiting - an array of lazy entries
+}}
+no title - this is a post
+
+Let's keep the [URL={{equipmentUrl item.itemId}}]{{item.shortName}}[/URL] moving!
+
+{{#each available}}
+@{{this.user.name}} has had one available for {{this.ageAvailable}}{{#if this.location}} in {{this.location}}{{/if}}.
+{{/each}}
+
+{{#each waiting}}
+@{{this.user.name}} has been waiting for {{this.ageWaiting}}{{#if this.location}} in {{this.location}}{{/if}}.
+{{/each}}
+
