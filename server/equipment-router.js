@@ -32,6 +32,7 @@ const {renderMessage} = require('./messages');
 const {logToForum} = require('./forum-log');
 
 const {getNearest} = require('./places/distance');
+const {getListOfPlaceNames} = require('./places/places');
 
 //-----------------------------------------------------------------------------
 // The router
@@ -506,6 +507,14 @@ router.get('/recipients/:itemId', async (req, res, next) => {
     }
     const recipients = await queue.getRecipients();
     res.json({recipients});
+});
+
+//-----------------------------------------------------------------------------
+// Return a list of places
+//-----------------------------------------------------------------------------
+
+router.get('/places', (req, res) => {
+    res.json({places: getListOfPlaceNames()});
 });
 
 // ============================================================================

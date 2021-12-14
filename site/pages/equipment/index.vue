@@ -48,24 +48,16 @@
               Enter your location
             </v-stepper-step>
             <v-stepper-content step="2">
-              <div v-if="user.location">
+              <div>
                 <p>
-                  Your city is set to "{{ user.location }}" in your forum profile. If this is incorrect, change it below.
+                  Please enter your location below.
                 </p>
               </div>
-              <div v-else>
-                <p>
-                  Your forum profile is missing your location which is required to borrow items.
-                  If you add your location to your <a href="https://www.bareefers.org/forum/account/account-details" target="_blank">forum profile</a> you'll be able to skip this step in the future.
-                </p>
-                <p>
-                  Please enter your city below.
-                </p>
-              </div>
-              <v-text-field
+              <v-autocomplete
                 v-model="city"
                 outlined
-                label="City"
+                label="Location"
+                :items="places"
                 :rules="[validateCity]"
               />
               <v-btn
@@ -545,6 +537,8 @@ export default {
       otpIncorrect: false,
       // The city entered in the location step
       city: undefined,
+      // The list of places for the location step
+      places: undefined,
       // Set to true while we are dropping out
       droppingOut: false,
       // Set to true while we are loading an item's queue
@@ -592,31 +586,29 @@ export default {
       }
     },
     async showGetInLineDialogFor (item) {
-      // If this user can hold equipment, we skip the whole dialog and just
-      // put them in line
-      if (this.user && this.user.canHoldEquipment) {
-        const url = `/api/equipment/queue/${item.itemId}`
-        const { queue } = await this.$axios.$post(url)
-        // Now, the user is in the list
-        item.inList = true
-        // And we have the latest queue for this item
-        item.queue = queue
-      } else {
-        // Before we show the dialog, we reset its state
-        // of its state
-        this.step = 1
-        this.phoneNumber = undefined
-        this.consent = false
-        this.sendingOtp = false
-        this.otpSendFailed = false
-        this.tooSoonToResend = true
-        this.otp = undefined
-        this.verifyingOtp = false
-        this.otpIncorrect = false
-        this.city = this.user.location
-        this.selectedItem = item
-        this.showGetInLineDialog = true
+      // Before we show the dialog, we reset its state
+      this.step = 1
+      this.phoneNumber = undefined
+      this.consent = false
+      this.sendingOtp = false
+      this.otpSendFailed = false
+      this.tooSoonToResend = true
+      this.otp = undefined
+      this.verifyingOtp = false
+      this.otpIncorrect = false
+      this.selectedItem = item
+      // If we don't have a list of places, load it now
+      if (!this.places) {
+        const { places } = await this.$axios.$get('/api/equipment/places')
+        this.places = places
       }
+      if (this.places.includes(this.user.location)) {
+        this.city = this.user.location
+      } else {
+        this.city = undefined
+      }
+
+      this.showGetInLineDialog = true
     },
     showStartConversationDialogFor (item) {
       this.selectedItem = item
@@ -690,7 +682,10 @@ export default {
     },
     validateCity (value) {
       if (!value) {
-        return 'Your city is required'
+        return 'Your location is required'
+      }
+      if (!this.places || !this.places.includes(value)) {
+        return 'Invalid location'
       }
       return true
     },
