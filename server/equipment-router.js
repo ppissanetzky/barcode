@@ -2,7 +2,7 @@ const assert = require('assert');
 
 const express = require('express');
 const multer = require('multer');
-const {differenceInSeconds, differenceInMinutes, differenceInDays, formatDistance} = require('date-fns');
+const {differenceInSeconds, differenceInMinutes} = require('date-fns');
 
 const {
     INVALID_EQUIPMENT,
@@ -18,7 +18,7 @@ const {
     NOT_YOURS
 } = require('./errors');
 
-const {age, dateFromIsoString, nowAsIsoString} = require('./dates');
+const {dateFromIsoString, nowAsIsoString} = require('./dates');
 
 const {lookupUser, startConversation} = require('./xenforo');
 
