@@ -111,7 +111,8 @@ class Database {
         const all = connection.all.bind(connection);
         const run = connection.run.bind(connection);
         const change = connection.change.bind(connection);
-        return connection.transaction(() => func({all, run, change}));
+        const first = connection.first.bind(connection);
+        return connection.transaction(() => func({all, run, change, first}));
     }
 
     //-------------------------------------------------------------------------

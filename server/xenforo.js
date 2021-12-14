@@ -9,12 +9,14 @@ const bbob = require('@bbob/core').default;
 const {BC_FORUM_MODE} = require('./barcode.config');
 
 const dbtcDatabase = require('./dbtc-database');
+const equipmentDatabase = require('./equipment-database');
 
 const {utcIsoStringFromDate, utcIsoStringFromUnixTime, age} = require('./dates');
 
 const {isGoodId} = require('./utility');
 
 const XenForoApi = require('./xenforo-api');
+
 
 //-----------------------------------------------------------------------------
 // TEST USERS
@@ -69,12 +71,6 @@ const IMPERSONATE_GROUPS = new Set([BOD, ADMIN]);
 const ADMIN_GROUPS = new Set([BOD, ADMIN]);
 
 //-----------------------------------------------------------------------------
-// Anyone that belongs to these groups can hold equipment indefinitely
-//-----------------------------------------------------------------------------
-
-const EQUIPMENT_GROUPS = new Set([BOD]);
-
-//-----------------------------------------------------------------------------
 // Admin forum ID
 //-----------------------------------------------------------------------------
 
@@ -119,15 +115,16 @@ function makeUser(xfUser) {
         age,
         message_count
     } = xfUser;
+    const holder = equipmentDatabase.getHolder(user_id);
     return ({
         id: parseInt(user_id, 10),
         name: username,
         allowed: isXfUserAllowed(xfUser),
         canImpersonate: isUserInGroup(xfUser, IMPERSONATE_GROUPS),
-        canHoldEquipment: isUserInGroup(xfUser, EQUIPMENT_GROUPS),
+        canHoldEquipment: Boolean(holder),
         isAdmin: isUserInGroup(xfUser, ADMIN_GROUPS),
         title: user_title,
-        location,
+        location: holder ? holder.location : location,
         age,
         isStaff: is_staff,
         registerDate: utcIsoStringFromUnixTime(register_date),

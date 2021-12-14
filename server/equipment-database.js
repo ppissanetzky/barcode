@@ -10,7 +10,7 @@ const {
 
 //-----------------------------------------------------------------------------
 
-const EQUIPMENT_DB_VERSION = 3;
+const EQUIPMENT_DB_VERSION = 4;
 
 const db = new Database('equipment', EQUIPMENT_DB_VERSION);
 
@@ -86,6 +86,11 @@ function getItemForUser(itemId, userId) {
     const [row] = db.all(SELECT_ITEM, {userId, itemId});
     // Can be undefined
     return row;
+}
+
+function getItem(itemId) {
+    // Can be undefined
+    return getItemForUser(itemId, null);
 }
 
 //-----------------------------------------------------------------------------
@@ -231,6 +236,37 @@ function updateDone(itemId, userId) {
 
 //-----------------------------------------------------------------------------
 
+const IS_IN_QUEUE = `
+    SELECT
+        userId
+    FROM
+        queue
+    WHERE
+        itemId = $itemId AND
+        userId = $userId
+`;
+
+const INSERT_HOLDER = `
+    INSERT INTO queue (
+        itemId,
+        timestamp,
+        userId,
+        phoneNumber,
+        dateReceived,
+        location,
+        dateDone
+    )
+    VALUES (
+        $itemId,
+        $timestamp,
+        $userId,
+        NULL,
+        $timestamp,
+        $location,
+        $timestamp
+    )
+`;
+
 const UPDATE_QUEUE = `
     UPDATE
         queue
@@ -290,15 +326,40 @@ const INSERT_BAN = `
 `;
 
 function transferItem(itemId, fromUserId, toUserId, exemptFromBans) {
-    return db.transaction(({all, run}) => {
+    return db.transaction(({all, run, first}) => {
         const now = new Date();
-        // First, we set the date received to now for
-        // the recipient
-        run(UPDATE_QUEUE, {
+        // It is possible that the target userId is not in the queue
+        const isInQueue = first(IS_IN_QUEUE, {
             itemId,
-            userId: toUserId,
-            dateReceived: now.toISOString()
+            userId: toUserId
         });
+        // If the user is already in the queue, update the
+        // date received
+        if (isInQueue) {
+            // Now, we set the date received to now for
+            // the recipient
+            run(UPDATE_QUEUE, {
+                itemId,
+                userId: toUserId,
+                dateReceived: now.toISOString()
+            });
+        }
+        // Otherwise, we have to insert the user into the queue
+        // We set the timestamp, datReceived and dateDone to now.
+        // We use the location from the holders table
+        else {
+            // The user must be a holder
+            const holder = getHolder(toUserId);
+            assert(holder);
+            const {location} = holder;
+            // Insert them into the queue
+            run(INSERT_HOLDER, {
+                itemId,
+                timestamp: now.toISOString(),
+                userId: toUserId,
+                location
+            });
+        }
         // Now, get the dateReceived for the giver
         const [fromEntry] = all(SELECT_QUEUE_ENTRY, {
             itemId,
@@ -370,9 +431,22 @@ function getHistoryForItem(itemId) {
 
 //-----------------------------------------------------------------------------
 
+function getHolders() {
+    const SELECT_HOLDERS = 'SELECT userId, location FROM holders';
+    return db.all(SELECT_HOLDERS);
+}
+
+function getHolder(userId) {
+    const SELECT_HOLDER = 'SELECT userId, location FROM holders WHERE userId = $userId';
+    return db.first(SELECT_HOLDER, {userId});
+}
+
+//-----------------------------------------------------------------------------
+
 module.exports = {
     database: db,
     getAllItems,
+    getItem,
     getItemForUser,
     getQueue,
     getQueueForUser,
@@ -389,5 +463,7 @@ module.exports = {
     getItemForThread,
     getFirstBanTierForItem,
     updateDone,
-    getHistoryForItem
+    getHistoryForItem,
+    getHolders,
+    getHolder
 };

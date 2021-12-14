@@ -23,6 +23,7 @@ const {age, dateFromIsoString, nowAsIsoString} = require('./dates');
 const {lookupUser, startConversation} = require('./xenforo');
 
 const db = require('./equipment-database');
+const {makeEquipmentQueue} = require('./equipment-queue');
 
 const {validatePhoneNumber, sendSms} = require('./aws');
 
@@ -50,17 +51,6 @@ router.get('/', async (req, res) => {
     const {user} = req;
     const {items, ban} = db.getAllItems(user.id);
     res.json({user, items, ban});
-});
-
-//-----------------------------------------------------------------------------
-
-router.get('/:itemId', async (req, res) => {
-    const {params: {itemId}} = req;
-    const queue = db.getQueue(itemId);
-    await Promise.all(queue.map(async (entry) => {
-        entry.user = await lookupUser(entry.userId, true);
-    }));
-    res.json({queue});
 });
 
 //-----------------------------------------------------------------------------
@@ -193,68 +183,17 @@ router.post('/otp', upload.none(), async (req, res, next) => {
 });
 
 //-----------------------------------------------------------------------------
-// Gets the queue and splits it into 'haves' and 'waiters'. Augments it with
-// age and eta
+// This is the old version that is used to return the queue via JSON and
+// takes an item object instead of an itemId. It now returns undefined if
+// the item is invalid.
 //-----------------------------------------------------------------------------
 
 async function getQueue(item) {
-    const now = new Date();
-    const queue = db.getQueue(item.itemId);
-    const haves = [];
-    const waiters = [];
-    await Promise.all(queue.map(async (entry) => {
-        // Look up the user
-        entry.user = await lookupUser(entry.userId, true);
-    }));
-    // Now, augment it
-    queue.forEach((entry) => {
-        // Remove the phone number, it's only for the server
-        delete entry.phoneNumber;
-        // Use our location for the user if we have one
-        if (entry.location) {
-            entry.user.location = entry.location;
-        }
-        // If that user has the item
-        const {dateReceived, dateDone} = entry;
-        if (dateReceived) {
-            entry.hasIt = true;
-            entry.age = age(dateReceived, 'less than a day');
-            entry.days = Math.floor(differenceInDays(now, dateFromIsoString(dateReceived)));
-            // If this user can hold equipment indefinitely, we don't mark
-            // it as overdue. That's where equipment is held when no one is in line
-            entry.overdue = !entry.user.canHoldEquipment && entry.days > item.maxDays;
-            entry.isAvailable = Boolean(dateDone);
-            entry.daysAvailable = dateDone
-                ? Math.floor(differenceInDays(now, dateFromIsoString(dateDone)))
-                : 0;
-            haves.push(entry);
-        }
-        else {
-            waiters.push(entry);
-        }
-    });
-    // Calculate the expected days until each waiting user gets it
-    // First, fill out an array with the number of days until each user that
-    // has it will pass it on - based on the item's maxDays. If that user has
-    // marked it as available, use 0 days
-    // Sort it so so the shortest wait is first.
-    const waits = haves.map(({days, isAvailable}) =>
-        isAvailable ? 0 : Math.max(item.maxDays - days, 0)).sort();
-    // Now, we iterate over all the users waiting. For each one, we
-    // get the first item from the waits array - that's how long it will
-    // take. Then, we push that wait plus maxDays into the back of the array
-    // because that's how long that waiting user will have it for.
-    if (waits.length > 0) {
-        waiters.forEach((entry) => {
-            const wait = waits.shift();
-            const date = new Date();
-            date.setDate(date.getDate() + wait);
-            entry.eta = wait < 1 ? 'soon' : `in ${formatDistance(date, now)}`;
-            // Now, push that wait plus max days
-            waits.push(wait + item.maxDays);
-        });
+    const queue = await makeEquipmentQueue(item.itemId);
+    if (queue) {
+        const {haves, waiters} = queue;
+        return ({haves, waiters});
     }
-    return ({haves, waiters});
 }
 
 //-----------------------------------------------------------------------------
@@ -392,17 +331,20 @@ router.put('/queue/:itemId/:verb/:otherUserId', async (req, res, next) => {
     if (!destItem) {
         return next(INVALID_EQUIPMENT());
     }
+    // Lookup the users
+    const fromUser = await lookupUser(source, true);
+    const toUser = await lookupUser(dest, true);
     // The destination has to be in line but not have it
     if (!(destItem.inList && !destItem.hasIt)) {
-        return next(NOT_YOURS());
+        // Or can be a holder
+        if (!toUser.canHoldEquipment) {
+            return next(NOT_YOURS());
+        }
     }
     // The destination cannot be banned
     if (db.getBan(dest)) {
         return next(BANNED());
     }
-    // Lookup the users
-    const fromUser = await lookupUser(source, true);
-    const toUser = await lookupUser(dest, true);
     // OK, everything is good, move it and see if that resulted
     // in the source user being banned. Users that can hold
     // equipment are exempt from bans
@@ -548,6 +490,42 @@ router.put('/done/:itemId', async (req, res, next) => {
     }
 
     // Return the queue
+    res.json({queue});
+});
+
+//-----------------------------------------------------------------------------
+// Return the list of potential recipients for an item
+//-----------------------------------------------------------------------------
+
+router.get('/recipients/:itemId', async (req, res, next) => {
+    const {params: {itemId}} = req;
+    const queue = await makeEquipmentQueue(itemId);
+    // Make sure the item is valid
+    if (!queue) {
+        return next(INVALID_EQUIPMENT());
+    }
+    const recipients = await queue.getRecipients();
+    res.json({recipients});
+});
+
+// ============================================================================
+// THIS ONE HAS TO GO LAST
+// Because otherwise, it could try to match one of the other ones
+// ============================================================================
+
+//-----------------------------------------------------------------------------
+// Returns the queue for the given item.
+//-----------------------------------------------------------------------------
+
+router.get('/:itemId', async (req, res, next) => {
+    const {params: {itemId}} = req;
+    const queue = db.getQueue(itemId);
+    if (queue.length === 0) {
+        return next(INVALID_EQUIPMENT());
+    }
+    await Promise.all(queue.map(async (entry) => {
+        entry.user = await lookupUser(entry.userId, true);
+    }));
     res.json({queue});
 });
 

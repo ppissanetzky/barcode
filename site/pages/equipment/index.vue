@@ -633,12 +633,27 @@ export default {
       this.otherUserId = undefined
       this.transferring = false
       await this.loadQueueFor(item)
+      this.loadingQueue = true
       // Now, populate the targets of the transfer
-      const target = item.hasIt ? item.queue.waiters : item.queue.haves
-      this.targets = target.map(({ user: { id, name } }) => ({
-        value: id,
-        text: name
-      }))
+      //
+      // If the user has the item, we're going to get the full
+      // list of possible recipients from the server because it
+      // will include users who are not in the queue but can
+      // hold it
+      if (item.hasIt) {
+        const url = `/api/equipment/recipients/${item.itemId}`
+        const { recipients } = await this.$axios.$get(url)
+        this.targets = recipients.map(({ id, name, holder }) => ({
+          value: id,
+          text: `${name}${holder ? ' (to hold)' : ''}`
+        }))
+      } else {
+        this.targets = item.queue.haves.map(({ user: { id, name } }) => ({
+          value: id,
+          text: name
+        }))
+      }
+      this.loadingQueue = false
       // Show the dialog
       this.showTransferDialog = true
     },
