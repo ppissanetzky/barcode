@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const ordinal = require('ordinal');
 
 const {Client} = require('@googlemaps/google-maps-services-js');
 
@@ -65,7 +66,7 @@ async function reverseGeocode(place) {
         }
     });
     if (data?.status === 'OK') {
-        console.log('RG\n', place, JSON.stringify(data.results, null, 2));
+        // console.log('RG\n', place, JSON.stringify(data.results, null, 2));
         const [{place_id: placeId}] = data.results;
         // Cache it
         if (placeId) {
@@ -99,8 +100,8 @@ async function getDistanceMatrix(origins, destinations) {
             }
         }
     }
-    console.log('ORIGIN PLACES\n', JSON.stringify(originPlaces, null, 2));
-    console.log('DESTINATION PLACES\n', JSON.stringify(destinationPlaces, null, 2));
+    // console.log('ORIGIN PLACES\n', JSON.stringify(originPlaces, null, 2));
+    // console.log('DESTINATION PLACES\n', JSON.stringify(destinationPlaces, null, 2));
     // Now, compose the distance matrix request
     const params = {
         key: BC_GOOGLE_API_KEY,
@@ -108,9 +109,9 @@ async function getDistanceMatrix(origins, destinations) {
         destinations: destinationPlaces.map(({placeId}) => `place_id:${placeId}`),
         units: 'imperial'
     };
-    console.log('PARAMS\n', JSON.stringify(params, null, 2));
+    // console.log('PARAMS\n', JSON.stringify(params, null, 2));
     const {data} = await client.distancematrix({params});
-    console.log('RESPONSE\n', JSON.stringify(data, null, 2));
+    // console.log('RESPONSE\n', JSON.stringify(data, null, 2));
 
     const {rows} = data;
 
@@ -146,7 +147,9 @@ async function getNearest(origin, destinations) {
         if (destination) {
             result.push({
                 ...destination,
-                index
+                index,
+                ordinal: ordinal(index + 1),
+                same: destination.originName === destination.destinationName
             });
         }
     });

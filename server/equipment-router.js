@@ -448,34 +448,34 @@ router.put('/done/:itemId', async (req, res, next) => {
             // Get the haves and waiters from the queue
             const {haves, waiters} = queue;
             // This will be an array of the nearest waiters with distance
-            // information
-            const distances = [];
+            // information or undefined if there is no distance info
+            let distances;
             // Wrap this up in a try/catch because it is not strictly
             // necessary and we don't know whether it will be flaky or
             // not.
             try {
                 // Get the location for this user from the queue
-                const [origin] = haves
-                    .filter(({userId}) => userId === user.id)
-                    .map(({location}) => location);
+                const entry = haves.find(({userId}) => userId === user.id);
+                const origin = entry?.location;
                 if (origin) {
                     // Get the locations of all the waiters
                     const destinations = waiters.map(({location}) => location);
                     const nearest = await getNearest(origin, destinations);
-                    // Pick the first five
-                    nearest.slice(0, 5).forEach((distance) => {
-                        distances.push({
+                    if (nearest.length > 0) {
+                        // Pick the first five
+                        distances = nearest.slice(0, 5).map((distance) => ({
                             ...distance,
                             ...waiters[distance.index]
-                        });
-                    });
+                        }));
+                    }
                 }
             }
             catch (error) {
                 console.error('Failed to calculate distance :', error);
             }
             // Post that the user is done
-            uberPost(item.threadId, 'equipment-available', {item, user, queue, distances});
+            uberPost(item.threadId, 'equipment-available', {
+                item, user, queue, distances});
             if (waiters.length > 0) {
                 // Send a group PM to all the waiters
                 const next = waiters.map(({user: {id}}) => id);

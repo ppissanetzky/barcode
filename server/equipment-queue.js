@@ -65,6 +65,10 @@ async function makeEquipmentQueue(itemId) {
         if (entry.location) {
             entry.user.location = entry.location;
         }
+        // Or, the opposite
+        else {
+            entry.location = entry.user.location;
+        }
         // If that user has the item
         const {dateReceived, dateDone} = entry;
         if (dateReceived) {
