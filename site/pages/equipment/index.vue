@@ -588,6 +588,10 @@ export default {
     async showGetInLineDialogFor (item) {
       // Before we show the dialog, we reset its state
       this.step = 1
+      // If they can hold equipment, skip the confirmation step
+      if (this.user.canHoldEquipment) {
+        this.step = 2
+      }
       this.phoneNumber = undefined
       this.consent = false
       this.sendingOtp = false
