@@ -1,0 +1,11 @@
+{{!
+This one is used to start a conversation between the people holding an item and
+a new person that just got in line when the queue was previously empty
+    item - the item
+    user - the user
+}}
+{{user.name}} got in line for the {{item.shortName}}
+
+Just wanted to let you know that @{{user.name}} got in line for the {{item.shortName}}. {{#if user.location}}@{{user.name}} is in {{user.location}}.{{/if}}
+
+[I]This message was automatically sent by BARcode[/I]

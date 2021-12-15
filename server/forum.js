@@ -78,6 +78,14 @@ function uberPost(threadId, messageName, context) {
     });
 }
 
+function uberPm(userIds, messageName, context) {
+    later(async () => {
+        const [title, body] = await renderMessage(messageName, context);
+        // Now start the conversation
+        await startConversation(userIds, title, body, false);
+    });
+}
+
 //-----------------------------------------------------------------------------
 
 function itemImported(user, threadId, motherId, fragId) {
@@ -143,6 +151,7 @@ async function startOopsThread(user, frag, notes) {
 module.exports = {
     later,
     uberPost,
+    uberPm,
     itemAdded,
     itemImported,
     madeFragsAvailable,

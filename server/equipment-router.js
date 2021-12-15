@@ -27,7 +27,7 @@ const {makeEquipmentQueue} = require('./equipment-queue');
 
 const {validatePhoneNumber, sendSms} = require('./aws');
 
-const {later, uberPost} = require('./forum');
+const {later, uberPost, uberPm} = require('./forum');
 const {renderMessage} = require('./messages');
 const {logToForum} = require('./forum-log');
 
@@ -260,6 +260,17 @@ router.post('/queue/:itemId', upload.none(), async (req, res, next) => {
     const queue = await getQueue(item);
     // Post to the forum
     uberPost(item.threadId, 'equipment-got-in-line', {item, user, queue});
+    // If the queue was empty before this (there's only 1 waiter now),
+    // let the holders know about this exciting new development
+    if (queue.waiters.length === 1 && queue.haves.length > 0) {
+        // Collect all the recipients
+        const recipients = [
+            user.id,
+            ...queue.haves.map(({userId}) => userId)
+        ];
+        // Send the PM
+        uberPm(recipients, 'equipment-first-in-line-pm', {user, item});
+    }
     // Return the queue
     res.json({queue});
 });
