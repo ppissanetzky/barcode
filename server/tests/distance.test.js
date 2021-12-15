@@ -24,7 +24,9 @@ describe('Distance', () => {
             // duration: 797,
             index: 2,
             same: false,
-            ordinal: '3rd'
+            ordinal: '3rd',
+            originIndex: 0,
+            destinationIndex: 2
         },
         {
             origin: 'San Francisco',
@@ -37,7 +39,9 @@ describe('Distance', () => {
             // duration: 2035,
             index: 4,
             same: false,
-            ordinal: '5th'
+            ordinal: '5th',
+            originIndex: 0,
+            destinationIndex: 4
         },
         {
             origin: 'San Francisco',
@@ -50,7 +54,9 @@ describe('Distance', () => {
             // duration: 2339,
             index: 0,
             same: false,
-            ordinal: '1st'
+            ordinal: '1st',
+            originIndex: 0,
+            destinationIndex: 0
         },
         {
             origin: 'San Francisco',
@@ -63,7 +69,9 @@ describe('Distance', () => {
             // duration: 2803,
             index: 1,
             same: false,
-            ordinal: '2nd'
+            ordinal: '2nd',
+            originIndex: 0,
+            destinationIndex: 1
         }];
 
         const nearest = await getNearest(origin, destinations);

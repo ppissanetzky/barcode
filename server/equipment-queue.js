@@ -70,7 +70,7 @@ async function makeEquipmentQueue(itemId) {
             entry.location = entry.user.location;
         }
         // If that user has the item
-        const {dateReceived, dateDone} = entry;
+        const {dateReceived, dateDone, timestamp} = entry;
         if (dateReceived) {
             entry.hasIt = true;
             entry.age = age(dateReceived, 'less than a day');
@@ -82,9 +82,14 @@ async function makeEquipmentQueue(itemId) {
             entry.daysAvailable = dateDone
                 ? Math.floor(differenceInDays(now, dateFromIsoString(dateDone)))
                 : 0;
+            entry.ageAvailable = dateDone
+                ? age(dateDone)
+                : '';
             haves.push(entry);
         }
         else {
+            entry.daysWaiting = Math.floor(differenceInDays(now, dateFromIsoString(timestamp)));
+            entry.ageWaiting = age(timestamp, 'less than a day');
             waiters.push(entry);
         }
     });

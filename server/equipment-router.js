@@ -544,65 +544,6 @@ module.exports = router;
 
 /*
 (async () => {
-    const now = new Date();
-
-    const {items} = db.getAllItems(0);
-
-    for (const item of items) {
-        // We will warn only if the item has been available for maxDays * 2
-        const warnAfterDays = item.maxDays * 2;
-        // Get the queue for this item
-        const queue = db.getQueue(item.itemId);
-        // This is an array of entries that have been available too long
-        const available = [];
-        // This is an array of people that have been waiting for too long
-        const waiting = [];
-        // Now, iterate over the queue
-        for (const entry of queue) {
-            const {userId, timestamp, dateReceived, dateDone} = entry;
-            // The item is available
-            if (dateReceived && dateDone) {
-                const daysAvailable = differenceInDays(now, dateFromIsoString(dateDone));
-                if (daysAvailable > warnAfterDays) {
-                    const user = await lookupUser(userId, true);
-                    const ageAvailable = age(dateDone);
-                    available.push({
-                        ...entry,
-                        daysAvailable,
-                        ageAvailable,
-                        user,
-                        location: entry.location || user.location
-                    });
-                    console.log(item.name, user.name, 'available', daysAvailable, ageAvailable);
-                }
-            }
-            // This user is waiting
-            if (!dateReceived) {
-                const daysWaiting = differenceInDays(now, dateFromIsoString(timestamp));
-                if (daysWaiting > warnAfterDays) {
-                    const user = await lookupUser(userId, true);
-                    const ageWaiting = age(timestamp);
-                    waiting.push({
-                        ...entry,
-                        daysWaiting,
-                        ageWaiting,
-                        user
-                    });
-                    console.log(item.name, user.name, 'waiting', daysWaiting, ageWaiting);
-                }
-            }
-        }
-        // If we have available items and lazy waiters, post
-        if (available.length > 0 && waiting.length > 0) {
-            // Post to the forum
-            uberPost(item.threadId, 'equipment-lazy', {item, queue, available, waiting});
-        }
-    }
-})();
-*/
-
-/*
-(async () => {
     const history = db.getHistoryForItem(1);
     for (const entry of history) {
         const {userId, days} = entry;

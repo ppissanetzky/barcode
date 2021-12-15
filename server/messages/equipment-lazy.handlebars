@@ -9,12 +9,18 @@ and people have been waiting for a long time also
 no title - this is a post
 
 Let's keep the [URL={{equipmentUrl item.itemId}}]{{item.shortName}}[/URL] moving!
-
 {{#each available}}
+
 @{{this.user.name}} has had one available for {{this.ageAvailable}}{{#if this.location}} in {{this.location}}{{/if}}.
+{{#if this.distances}}
+[LIST]
+{{#each this.distances}}
+{{#if this.same}}
+[*]@{{this.user.name}} is also in {{this.destinationName}} and is {{this.ordinal}} in line.
+{{else}}
+[*]@{{this.user.name}} is {{this.durationText}} ({{this.distanceText}}) away in {{this.destinationName}} and is {{this.ordinal}} in line.
+{{/if}}
 {{/each}}
-
-{{#each waiting}}
-@{{this.user.name}} has been waiting for {{this.ageWaiting}}{{#if this.location}} in {{this.location}}{{/if}}.
+[/LIST]
+{{/if}}
 {{/each}}
-

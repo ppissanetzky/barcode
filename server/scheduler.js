@@ -25,7 +25,9 @@ const JOBS = {
 
     'at 9:30 am': 'equipment-nag',
 
-    'every 10 minutes': 'reply-to-mentions'
+    'every 10 minutes': 'reply-to-mentions',
+
+    'at 9:00 am on Monday and Thursday': 'keep-equipment-moving'
 };
 
 //-----------------------------------------------------------------------------

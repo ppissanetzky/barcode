@@ -124,9 +124,11 @@ async function getDistanceMatrix(origins, destinations) {
             if (status === 'OK' && distance && duration) {
                 result[originPlaces[rowIndex].index][destinationPlaces[elementIndex].index] = {
                     origin: origins[originPlaces[rowIndex].index],
+                    originIndex: originPlaces[rowIndex].index,
                     originName: originPlaces[rowIndex].place.name,
                     destination: destinations[destinationPlaces[elementIndex].index],
                     destinationName: destinationPlaces[elementIndex].place.name,
+                    destinationIndex: destinationPlaces[elementIndex].index,
                     distanceText: distance.text,
                     distance: distance.value,
                     durationText: duration.text,
