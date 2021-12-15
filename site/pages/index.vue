@@ -44,6 +44,15 @@
             />
           </v-card-actions>
           <v-card-actions>
+            <v-checkbox
+              v-model="aliveFilter"
+              label="Alive"
+              clearable
+              outlined
+              hide-details
+            />
+          </v-card-actions>
+          <v-card-actions>
             <v-btn color="secondary" @click="clearFilter">
               Clear
             </v-btn>
@@ -97,6 +106,9 @@
         </v-chip>
         <v-chip v-if="filters.collection" label close class="my-1 mr-1" @click:close="removeCollectionFilter">
           {{ filters.collection }}
+        </v-chip>
+        <v-chip v-if="filters.alive" label close class="my-1 mr-1" @click:close="removeAliveFilter">
+          Alive
         </v-chip>
       </v-col>
       <v-col>
@@ -152,6 +164,7 @@ export default {
     this.frags = frags
     this.originalFrags = frags
     this.view = yourCollectionView || 'cards'
+    this.applyFilter()
   },
   data () {
     return {
@@ -169,7 +182,8 @@ export default {
       showFilter: false,
       nameFilter: undefined,
       typeFilter: undefined,
-      collectionFilter: undefined
+      collectionFilter: undefined,
+      aliveFilter: true
     }
   },
   watch: {
@@ -202,21 +216,27 @@ export default {
       this.collectionFilter = undefined
       this.applyFilter()
     },
+    removeAliveFilter () {
+      this.aliveFilter = undefined
+      this.applyFilter()
+    },
     clearFilter () {
       this.nameFilter = undefined
       this.typeFilter = undefined
       this.collectionFilter = undefined
+      this.aliveFilter = undefined
       this.filters = undefined
       this.showFilter = false
       this.frags = this.originalFrags
     },
     applyFilter () {
       this.showFilter = false
-      if (this.nameFilter || this.typeFilter || this.collectionFilter) {
+      if (this.nameFilter || this.typeFilter || this.collectionFilter || this.aliveFilter) {
         this.filters = {
           name: this.nameFilter,
           type: this.typeFilter,
-          collection: this.collectionFilter
+          collection: this.collectionFilter,
+          alive: this.aliveFilter
         }
       } else {
         this.filters = undefined
@@ -231,6 +251,9 @@ export default {
           return false
         }
         if (this.collectionFilter && frag.rules.toUpperCase() !== this.collectionFilter) {
+          return false
+        }
+        if (this.aliveFilter && !frag.isAlive) {
           return false
         }
         return true
