@@ -8,6 +8,7 @@ const db = require('../equipment-database');
 const {makeEquipmentQueue} = require('../equipment-queue');
 const {getDistanceMatrix} = require('../places/distance');
 const {uberPost} = require('../forum');
+const systemSettings = require('../system-settings');
 
 lock('keep-equipment-moving', async () => {
     const {items} = db.getAllItems(0);
@@ -47,15 +48,15 @@ lock('keep-equipment-moving', async () => {
         // order.
         for (const candidate of flatMatrix) {
             const {originIndex, originName, destinationIndex, destinationName} = candidate;
-            // These are the entries from 'available' and 'waiters'
-            const source = available[originIndex];
-            const target = waiters[destinationIndex];
             // If we have already allocated this candidate, skip it
             if (allocated.has(destinationIndex)) {
                 continue;
             }
-            // If we have more than 2, skip it
-            if (source.distances?.length > 2) {
+            // These are the entries from 'available' and 'waiters'
+            const source = available[originIndex];
+            const target = waiters[destinationIndex];
+            // If we have more than this many, skip it
+            if (source.distances?.length >= systemSettings.equipmentReadyCandidates) {
                 continue;
             }
             // Otherwise, mark it as allocated
