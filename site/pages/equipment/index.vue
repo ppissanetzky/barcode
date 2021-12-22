@@ -356,128 +356,70 @@
         cols="auto"
       >
         <v-card width="375px">
-          <v-img
-            height="300px"
-            contain
-            :src="item.picture ? `/bc/${item.picture}` : `/bc/picture-placeholder.png`"
-          >
-            <v-app-bar flat color="rgba(0, 0, 0, 0)">
-              <v-spacer />
-              <v-menu bottom left>
-                <template v-slot:activator="{on, attrs}">
-                  <v-btn
-                    icon
-                    color="primary"
-                    v-bind="attrs"
-                    v-on="on"
-                  >
-                    <v-icon>mdi-dots-vertical</v-icon>
-                  </v-btn>
-                </template>
-                <v-list>
-                  <v-list-item>
-                    <v-btn
-                      small
-                      text
-                      @click.stop="showQueueFor(item)"
-                    >
-                      Show the queue
-                    </v-btn>
-                  </v-list-item>
-
-                  <div v-if="!ban">
-                    <v-list-item v-if="item.hasIt">
-                      <v-btn
-                        small
-                        text
-                        :loading="loadingQueue"
-                        @click.stop="showTransferDialogFor(item)"
-                      >
-                        You passed it on
-                      </v-btn>
-                    </v-list-item>
-
-                    <v-list-item v-if="item.hasIt && !item.isAvailable">
-                      <v-btn
-                        small
-                        text
-                        :loading="loadingQueue"
-                        @click.stop="showStartConversationDialogFor(item)"
-                      >
-                        You're done with it
-                      </v-btn>
-                    </v-list-item>
-
-                    <v-list-item v-if="!item.hasIt && item.inList">
-                      <v-btn
-                        small
-                        text
-                        @click.stop="showDropOutDialogFor(item)"
-                      >
-                        Drop out
-                      </v-btn>
-                    </v-list-item>
-                    <v-list-item v-if="!item.hasIt && item.inList">
-                      <v-btn
-                        text
-                        small
-                        :loading="loadingQueue"
-                        @click.stop="showTransferDialogFor(item)"
-                      >
-                        You received it
-                      </v-btn>
-                    </v-list-item>
-                    <v-list-item v-if="!item.hasIt && !item.inList">
-                      <v-btn
-                        text
-                        small
-                        @click.stop="showGetInLineDialogFor(item)"
-                      >
-                        Get in line
-                      </v-btn>
-                    </v-list-item>
-                  </div>
-                </v-list>
-              </v-menu>
-            </v-app-bar>
-          </v-img>
-          <v-divider />
           <v-card-title v-text="item.name" />
-          <v-list>
-            <v-list-item>
-              <v-list-item-icon>
-                <v-icon>mdi-book-open-variant</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title>
-                  <a :href="item.rules" target="_blank">Rules</a> and <a :href="item.instructions" target="_blank">instructions</a>
-                </v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-
-            <v-list-item>
-              <v-list-item-icon>
-                <v-icon>mdi-pound-box-outline</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title>
-                  {{ item.quantity }} available
-                </v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-
-            <v-list-item>
-              <v-list-item-icon>
-                <v-icon>mdi-account-clock-outline</v-icon>
-              </v-list-item-icon>
-
-              <v-list-item-content>
-                <v-list-item-title>
-                  Borrow it for up to {{ item.maxDays }} days
-                </v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list>
+          <v-divider />
+          <v-card-text>
+            <v-row>
+              <v-col />
+              <v-col cols="6">
+                <v-img :src="item.picture ? `/bc/${item.picture}` : `/bc/picture-placeholder.png`" />
+              </v-col>
+              <v-col />
+            </v-row>
+          </v-card-text>
+          <v-card-subtitle>
+            {{ item.quantity }} available to borrow for {{ item.maxDays }} days.
+            See <a :href="item.rules" target="_blank">rules</a> and <a :href="item.instructions" target="_blank">instructions</a>.
+          </v-card-subtitle>
+          <v-card-actions>
+            <v-btn
+              small
+              outlined
+              text
+              @click.stop="showQueueFor(item)"
+            >
+              Queue
+            </v-btn>
+            <v-btn
+              v-if="!ban && item.hasIt && !item.isAvailable"
+              small
+              outlined
+              text
+              :loading="loadingQueue"
+              @click.stop="showStartConversationDialogFor(item)"
+            >
+              Done with it
+            </v-btn>
+            <v-btn
+              v-if="!ban && item.hasIt"
+              small
+              outlined
+              text
+              :loading="loadingQueue"
+              @click.stop="showTransferDialogFor(item)"
+            >
+              Passed on
+            </v-btn>
+            <v-btn
+              v-if="!item.hasIt && item.inList"
+              small
+              outlined
+              text
+              @click.stop="showDropOutDialogFor(item)"
+            >
+              Drop out of line
+            </v-btn>
+            <v-btn
+              v-if="!ban && !item.hasIt && !item.inList"
+              small
+              outlined
+              text
+              @click.stop="showGetInLineDialogFor(item)"
+            >
+              Get in line
+            </v-btn>
+            <v-spacer />
+          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
