@@ -13,6 +13,13 @@ class EquipmentQueue {
         this.waiters = waiters;
     }
 
+    toJSON() {
+        return {
+            haves: this.haves,
+            waiters: this.waiters
+        };
+    }
+
     hasIt(userId) {
         return this.haves.some((entry) => entry.userId === userId);
     }
@@ -83,7 +90,7 @@ async function makeEquipmentQueue(itemId) {
                 ? Math.floor(differenceInDays(now, dateFromIsoString(dateDone)))
                 : 0;
             entry.ageAvailable = dateDone
-                ? age(dateDone)
+                ? age(dateDone, 'less than a day')
                 : '';
             haves.push(entry);
         }
@@ -109,7 +116,7 @@ async function makeEquipmentQueue(itemId) {
             const wait = waits.shift();
             const date = new Date();
             date.setDate(date.getDate() + wait);
-            entry.eta = wait < 1 ? 'soon' : `in ${formatDistance(date, now)}`;
+            entry.eta = wait <= 1 ? 'soon' : `in ${formatDistance(date, now)}`;
             // Now, push that wait plus max days
             waits.push(wait + item.maxDays);
         });

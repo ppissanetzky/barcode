@@ -49,11 +49,41 @@ const router = express.Router();
 const upload = multer();
 
 //-----------------------------------------------------------------------------
+// Get a list of items with information about the user
+//-----------------------------------------------------------------------------
 
 router.get('/', async (req, res) => {
     const {user} = req;
     const {items, ban} = db.getAllItems(user.id);
     res.json({user, items, ban});
+});
+
+//-----------------------------------------------------------------------------
+// This one returns the user, ban item and queue
+//-----------------------------------------------------------------------------
+
+router.get('/queue/:itemId', async (req, res, next) => {
+    const {user, params: {itemId}} = req;
+    const item = db.getItemForUser(itemId, user.id);
+    if (!item) {
+        return next(INVALID_EQUIPMENT());
+    }
+    const queue = await makeEquipmentQueue(itemId);
+    const ban = db.getBan(user.id);
+    res.json({user, ban, item, queue});
+});
+
+//-----------------------------------------------------------------------------
+// Get information about the item
+//-----------------------------------------------------------------------------
+
+router.get('/item/:itemId', async (req, res, next) => {
+    const {user, params: {itemId}} = req;
+    const item = db.getItemForUser(itemId, user.id);
+    if (!item) {
+        return next(INVALID_EQUIPMENT());
+    }
+    res.json({user, item});
 });
 
 //-----------------------------------------------------------------------------
@@ -385,23 +415,6 @@ router.put('/queue/:itemId/:verb/:otherUserId', async (req, res, next) => {
 });
 
 //-----------------------------------------------------------------------------
-// This one just returns the queue for the given item
-//-----------------------------------------------------------------------------
-
-router.get('/queue/:itemId', async (req, res, next) => {
-    const {user, params: {itemId}} = req;
-    // Make sure the item is valid
-    const item = db.getItemForUser(itemId, user.id);
-    if (!item) {
-        return next(INVALID_EQUIPMENT());
-    }
-    // Get the latest queue
-    const queue = await getQueue(item);
-    // Respond
-    res.json({queue});
-});
-
-//-----------------------------------------------------------------------------
 // When a user is done with an item
 //-----------------------------------------------------------------------------
 
@@ -498,27 +511,6 @@ router.get('/recipients/:itemId', async (req, res, next) => {
 
 router.get('/places', (req, res) => {
     res.json({places: getListOfPlaceNames()});
-});
-
-// ============================================================================
-// THIS ONE HAS TO GO LAST
-// Because otherwise, it could try to match one of the other ones
-// ============================================================================
-
-//-----------------------------------------------------------------------------
-// Returns the queue for the given item.
-//-----------------------------------------------------------------------------
-
-router.get('/:itemId', async (req, res, next) => {
-    const {params: {itemId}} = req;
-    const queue = db.getQueue(itemId);
-    if (queue.length === 0) {
-        return next(INVALID_EQUIPMENT());
-    }
-    await Promise.all(queue.map(async (entry) => {
-        entry.user = await lookupUser(entry.userId, true);
-    }));
-    res.json({queue});
 });
 
 //-----------------------------------------------------------------------------

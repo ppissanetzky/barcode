@@ -35,8 +35,8 @@ handlebars.registerHelper('motherUrl', (motherId) =>
 handlebars.registerHelper('age', (date) =>
     age(date, 'today', 'ago'));
 
-handlebars.registerHelper('equipmentUrl', (/* itemId */) =>
-    `${BC_SITE_BASE_URL}/equipment`);
+handlebars.registerHelper('equipmentUrl', (itemId) =>
+    `${BC_SITE_BASE_URL}/equipment/queue/${itemId}`);
 
 //-----------------------------------------------------------------------------
 // Given the name of a template file in the 'messages' directory and
