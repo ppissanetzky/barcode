@@ -1178,6 +1178,9 @@ router.post('/swap/add', upload.none(), async (req, res, next) => {
 router.get('/find-users', async (req, res) => {
     const {query} = req;
     const {prefix} = query;
+    if (!prefix) {
+        return res.json({users: []});
+    }
     const all = query.all === 'true';
     const fullUsers = await findUsersWithPrefix(prefix, all);
     // Make it smaller, only returning [[id, name],...]
