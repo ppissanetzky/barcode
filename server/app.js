@@ -43,6 +43,7 @@ const equipmentRouter = require('./equipment-router');
 const userRouter = require('./user-router');
 const adminRouter = require('./admin-router');
 const marketRouter = require('./market/public-router');
+const tankRouter = require('./tank-router');
 
 //-----------------------------------------------------------------------------
 // The XenForo stuff
@@ -255,6 +256,7 @@ app.use('/dbtc', dbtcRouter, or404);
 app.use('/equipment', equipmentRouter, or404);
 app.use('/user', userRouter, or404);
 app.use('/admin', adminRouter, or404);
+app.use('/tank', tankRouter, or404);
 
 //-----------------------------------------------------------------------------
 // Error handler

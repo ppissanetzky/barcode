@@ -1,0 +1,21 @@
+                        value
+note
+good
+bad
+maintenance
+wc                      gallons
+removed                             livestock or frag
+died                                livestock or frag
+parameter   alkalinity  dKh
+parameter   calcium     ppm
+parameter   magnesium   ppm
+parameter   iodine      ppm
+parameter   nitrate     ppm
+parameter   phosphate   ppm
+parameter   salinity    sg
+parameter   ph-high     value
+parameter   ph-low      value
+
+
+
+

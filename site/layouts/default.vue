@@ -85,9 +85,15 @@
           </v-list-item-content>
         </v-list-item>
         <v-list-item to="/">
-          <v-list-item-icon><v-icon>mdi-fishbowl-outline</v-icon></v-list-item-icon>
+          <v-list-item-icon><v-icon>mdi-rhombus-split</v-icon></v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>Your collection</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item to="/tanks">
+          <v-list-item-icon><v-icon>mdi-fishbowl-outline</v-icon></v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Your tanks</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
         <v-list-item to="/collection/dbtc">

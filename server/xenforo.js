@@ -402,7 +402,8 @@ async function getTankJournalsForUser(userId) {
         page: 1,
         starter_id: userId
     });
-    return threads ? threads.map(({title, view_url}) => ({title, url: view_url})) : [];
+    return threads ? threads.map(({title, view_url, thread_id}) =>
+        ({title, url: view_url, threadId: thread_id})) : [];
 }
 
 //-----------------------------------------------------------------------------

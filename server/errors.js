@@ -107,7 +107,10 @@ module.exports = {
     INVALID_PICTURE_INDEX:  error.bind(null, 'IPI'),
 
     // Invalid swap
-    INVALID_SWAP:           error.bind(null, 'INS')
+    INVALID_SWAP:           error.bind(null, 'INS'),
+
+    // Invalid tank
+    INVALID_TANK:           error.bind(null, 'INT')
 };
 
 //-----------------------------------------------------------------------------
