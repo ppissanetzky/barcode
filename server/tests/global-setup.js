@@ -38,11 +38,13 @@ async function setup() {
     const dbtcDatabase = require('../dbtc-database');
     const equipmentDatabase = require('../equipment-database');
     const marketDatabaseConnect = require('../market/market-database');
+    const tankDatabaseConnect = require('../tank-database');
 
     assert(userDatabase.database.connect());
     assert(dbtcDatabase.db.connect());
     assert(equipmentDatabase.database.connect());
     assert(marketDatabaseConnect());
+    assert(tankDatabaseConnect());
 }
 
 module.exports = setup;
