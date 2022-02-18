@@ -10,7 +10,8 @@ const {
     addDays,
     addYears,
     fromUnixTime,
-    getUnixTime
+    getUnixTime,
+    formatDistanceToNowStrict
 } = require('date-fns');
 
 // ----------------------------------------------------------------------------
@@ -121,10 +122,18 @@ function differenceToNow(isoStringOrDateThen) {
     return formatDistance(new Date(), dateFromIsoStringOrDate(isoStringOrDateThen));
 }
 
+function strictDifferenceToNow(isoStringOrDateThen) {
+    return formatDistanceToNowStrict(dateFromIsoStringOrDate(isoStringOrDateThen));
+}
+
 // ----------------------------------------------------------------------------
 
 function toUnixTime(isoStringOrDate) {
     return getUnixTime(dateFromIsoStringOrDate(isoStringOrDate));
+}
+
+function nowAsUnixTime() {
+    return getUnixTime(new Date());
 }
 
 // ----------------------------------------------------------------------------
@@ -147,5 +156,7 @@ module.exports = {
     addYears,
     validIsoString,
     fromUnixTime,
-    toUnixTime
+    toUnixTime,
+    nowAsUnixTime,
+    strictDifferenceToNow
 };

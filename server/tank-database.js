@@ -1,12 +1,14 @@
 'use strict';
 
+const _ = require('lodash');
+
 const {Database, DatabaseConnection} = require('./db');
 
-const {nowAsIsoString, utcIsoStringFromString} = require('./dates');
+const {nowAsIsoString, utcIsoStringFromString, toUnixTime, nowAsUnixTime} = require('./dates');
 
 //-----------------------------------------------------------------------------
 
-const TANK_DB_VERSION = 1;
+const TANK_DB_VERSION = 2;
 
 const database = new Database('tank', TANK_DB_VERSION);
 
@@ -54,44 +56,108 @@ class TankDatabaseConnection extends DatabaseConnection {
         return tankId;
     }
 
-    addJournal(tankId, {timestamp = null, type, subType = null,
-        value = null, picture = null, note = null, isPrivate = null}) {
-        timestamp = fixDate(timestamp);
-        this.run(
-            `INSERT INTO journals
-                (tankId, timestamp, type, subType, value, picture, note, isPrivate)
-            VALUES
-                ($tankId, $timestamp, $type, $subType, $value, $picture, $note, $isPrivate)
-            `,
-            {tankId, timestamp, type, subType, value, picture, note, isPrivate}
+    getEntryTypes() {
+        return this.all('SELECT * FROM entryTypes ORDER BY entryTypeId');
+    }
+
+    getEntryType(entryTypeId) {
+        return this.first(
+            'SELECT * FROM entryTypes WHERE entryTypeId = $entryTypeId',
+            {entryTypeId}
         );
     }
 
-    getJournals(tankId) {
+    //-------------------------------------------------------------------------
+    // 'time' can be null or an ISO string date/time
+    //-------------------------------------------------------------------------
+
+    addEntry(tankId, {entryTypeId, time = null, value = null, comment = null, isPrivate = null }) {
+        // If 'time' came in as a number, we assume it is already unix time
+        if (!_.isNumber(time)) {
+            time = time ? toUnixTime(time) : nowAsUnixTime();
+        }
+        return this.run(
+            `
+            INSERT INTO entries
+                (tankId, entryTypeId, time, value, comment, isPrivate)
+            VALUES
+                ($tankId, $entryTypeId, $time, $value, $comment, $isPrivate)
+            `,
+            {tankId, entryTypeId, time, value, comment, isPrivate}
+        );
+    }
+
+    deleteEntry(tankId, rowid) {
+        return this.change(
+            `
+            DELETE FROM entries WHERE tankId = $tankId AND rowid = $rowid
+            `,
+            {tankId, rowid}
+        );
+    }
+
+    updateEntry({rowid, value, comment, time}) {
+        return this.change(
+            `
+            UPDATE entries
+            SET
+                value = $value,
+                comment = $comment,
+                time = $time
+            WHERE
+                rowid = $rowid
+            `,
+            {rowid, value, comment, time}
+        );
+    }
+
+    getEntries(tankId) {
         return this.all(
-            'SELECT * FROM journals WHERE tankId = $tankId ORDER BY timestamp',
+            'SELECT rowid, * FROM entries WHERE tankId = $tankId ORDER BY time DESC',
             {tankId}
         );
     }
 
-    getLatestParameters(tankId) {
+    getEntry(tankId, rowid) {
+        return this.first(
+            `
+            SELECT e.rowid AS rowid, *
+            FROM entryTypes AS et, entries AS e
+            WHERE
+                e.tankId = $tankId
+                AND e.rowid = $rowid
+                AND et.entryTypeId = e.entryTypeId
+            `,
+            {tankId, rowid}
+        );
+    }
+
+    getLatestParameters(tankId, tracked) {
         return this.all(
             `
-            SELECT timestamp, subType AS name, value
-            FROM journals
+            SELECT
+                et.*,
+                e.time AS time,
+                e.value AS value,
+                e.comment AS comment,
+                e.isPrivate AS isPrivate
+            FROM
+                entryTypes AS et,
+                entries AS e
             WHERE
-                tankId = $tankId
-                AND type = 'parameter'
-                AND timestamp = (
-                    SELECT MAX(timestamp)
-                    FROM journals AS sub
+                e.entryTypeId = et.entryTypeId
+                AND e.tankId = $tankId
+                AND $tracked = IFNULL(et.isTracked, 0)
+                AND time = (
+                    SELECT MAX(time)
+                    FROM entries AS sub
                     WHERE
-                        sub.tankId = journals.tankId
-                        AND sub.type = journals.type
-                        AND sub.subType = journals.subType
+                        sub.tankId = $tankId AND
+                        sub.entryTypeId = et.entryTypeId
                 )
-            ORDER BY subType
-            `, {tankId}
+            ORDER BY
+                et.entryTypeId
+            `, {tankId, tracked: tracked ? 1 : 0}
         );
     }
 }

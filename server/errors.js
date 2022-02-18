@@ -110,7 +110,10 @@ module.exports = {
     INVALID_SWAP:           error.bind(null, 'INS'),
 
     // Invalid tank
-    INVALID_TANK:           error.bind(null, 'INT')
+    INVALID_TANK:           error.bind(null, 'INT'),
+
+    // Invalid entry
+    INVALID_ENTRY:          error.bind(null, 'IEN')
 };
 
 //-----------------------------------------------------------------------------

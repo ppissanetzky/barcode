@@ -45,13 +45,12 @@
                   :key="p.name"
                 >
                   <v-card
-                    shaped
                     :color="p.color"
                     width="100px"
                   >
                     <v-card-text>
                       <div>
-                        {{ p.abbreviation }}
+                        {{ p.name }}
                       </div>
                       <div class="text-h5">
                         <strong>{{ p.text }}</strong>
@@ -68,7 +67,7 @@
           <v-sheet
             color="primary"
             height="42px"
-            @click.stop="$router.push(`/tank/${tank.tankId}`)"
+            @click.stop="$router.push(`/tank/parameters/${tank.tankId}`)"
           >
             <v-card-actions>
               <v-spacer />
