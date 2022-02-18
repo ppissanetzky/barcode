@@ -328,91 +328,91 @@ router.get('/entry/:tankId/:rowid', (req, res, next) => {
 
 module.exports = router;
 
-const fs = require('fs');
-const sax = require('./sax.js');
+// const fs = require('fs');
+// const sax = require('./sax.js');
 
-async function importApexDataLog(db, xmlStream) {
-    return new Promise((resolve, reject) => {
-        const types = new Set(['alk', 'ca', 'mg']);
-        const state = {
-            timezone: null,
-            date: null,
-            type: null,
-            last: {
-                alk: null,
-                ca: null,
-                mg: null
-            }
-        };
-        const plucks = {
-            'datalog/timezone': (text) => {
-                state.timezone = text;
-                throw new Error('CACA');
-            },
-            'open:datalog/record': () => {
-                state.date = null;
-                state.type = null;
-            },
-            'datalog/record/date': (text) => {
-                state.date = text;
-                state.type = null;
-            },
-            'datalog/record/probe/type': (text) => {
-                state.type = text;
-            },
-            'datalog/record/probe/value': (text) => {
-                const {type} = state;
-                if (types.has(type)) {
-                    const last = state.last[type];
-                    if (text !== last) {
-                        console.log('Got value', state.date, state.type, text);
-                        state.last[type] = text;
-                    }
-                }
-            }
-        };
-        const path = [];
-        const stream = sax.createStream(true, {
-            trim: true
-        });
-        stream.on('error', (error) => {
-            console.log('GOT A STREAM ERROR');
-            reject(error);
-        });
-        stream.on('opentag', ({name}) => {
-            path.push(name);
-            const pluck = plucks[`open:${path.join('/')}`];
-            if (pluck) {
-                pluck();
-            }
-        });
-        stream.on('text', (text) => {
-            const pluck = plucks[path.join('/')];
-            if (pluck) {
-                pluck(text);
-            }
-        });
-        stream.on('closetag', (name) => {
-            const last = path.pop();
-            if (last !== name) {
-                throw new Error(`${path.join('/')} : close ${name}`);
-            }
-        });
-        stream.on('end', () => resolve);
+// async function importApexDataLog(db, xmlStream) {
+//     return new Promise((resolve, reject) => {
+//         const types = new Set(['alk', 'ca', 'mg']);
+//         const state = {
+//             timezone: null,
+//             date: null,
+//             type: null,
+//             last: {
+//                 alk: null,
+//                 ca: null,
+//                 mg: null
+//             }
+//         };
+//         const plucks = {
+//             'datalog/timezone': (text) => {
+//                 state.timezone = text;
+//                 throw new Error('CACA');
+//             },
+//             'open:datalog/record': () => {
+//                 state.date = null;
+//                 state.type = null;
+//             },
+//             'datalog/record/date': (text) => {
+//                 state.date = text;
+//                 state.type = null;
+//             },
+//             'datalog/record/probe/type': (text) => {
+//                 state.type = text;
+//             },
+//             'datalog/record/probe/value': (text) => {
+//                 const {type} = state;
+//                 if (types.has(type)) {
+//                     const last = state.last[type];
+//                     if (text !== last) {
+//                         console.log('Got value', state.date, state.type, text);
+//                         state.last[type] = text;
+//                     }
+//                 }
+//             }
+//         };
+//         const path = [];
+//         const stream = sax.createStream(true, {
+//             trim: true
+//         });
+//         stream.on('error', (error) => {
+//             console.log('GOT A STREAM ERROR');
+//             reject(error);
+//         });
+//         stream.on('opentag', ({name}) => {
+//             path.push(name);
+//             const pluck = plucks[`open:${path.join('/')}`];
+//             if (pluck) {
+//                 pluck();
+//             }
+//         });
+//         stream.on('text', (text) => {
+//             const pluck = plucks[path.join('/')];
+//             if (pluck) {
+//                 pluck(text);
+//             }
+//         });
+//         stream.on('closetag', (name) => {
+//             const last = path.pop();
+//             if (last !== name) {
+//                 throw new Error(`${path.join('/')} : close ${name}`);
+//             }
+//         });
+//         stream.on('end', () => resolve);
 
-        xmlStream.on('error', (error) => reject(error));
-        xmlStream.pipe(stream);
-    });
-}
+//         xmlStream.on('error', (error) => reject(error));
+//         xmlStream.pipe(stream);
+//     });
+// }
 
-(async function () {
-    const stream = fs.createReadStream('/home/pablo/foo.xml');
-    try {
-        await importApexDataLog(null, stream);
-        console.log('Done');
-    }
-    catch (error) {
-        console.error('Failed with', error);
-    }
-});
+// (async function () {
+//     const stream = fs.createReadStream('/home/pablo/foo.xml');
+//     try {
+//         await importApexDataLog(null, stream);
+//         console.log('Done');
+//     }
+//     catch (error) {
+//         console.error('Failed with', error);
+//     }
+// });
 

@@ -71,7 +71,7 @@ class TankDatabaseConnection extends DatabaseConnection {
     // 'time' can be null or an ISO string date/time
     //-------------------------------------------------------------------------
 
-    addEntry(tankId, {entryTypeId, time = null, value = null, comment = null, isPrivate = null }) {
+    addEntry(tankId, {entryTypeId, time = null, value = null, comment = null, isPrivate = null}) {
         // If 'time' came in as a number, we assume it is already unix time
         if (!_.isNumber(time)) {
             time = time ? toUnixTime(time) : nowAsUnixTime();
