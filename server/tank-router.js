@@ -1,5 +1,8 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
+
 const express = require('express');
 const multer = require('multer');
 const _ = require('lodash');
@@ -7,7 +10,10 @@ const _ = require('lodash');
 const {age, fromUnixTime} = require('./dates');
 const {entryInfo, parameterInfo, noteInfo} = require('./tank-parameters');
 const {getTankJournalsForUser} = require('./xenforo');
-const {INVALID_TANK, INVALID_ENTRY} = require('./errors');
+const {INVALID_TANK, INVALID_ENTRY, INVALID_IMPORT} = require('./errors');
+const {BC_UPLOADS_DIR} = require('./barcode.config');
+const {parseTridentDataLog} = require('./trident-datalog');
+const {importTankEntries} = require('./tank-import');
 
 //-----------------------------------------------------------------------------
 // A function that returns a new connection to the database, so we can
@@ -23,8 +29,12 @@ const connect = require('./tank-database');
 const router = express.Router();
 
 //-----------------------------------------------------------------------------
+// The destinaton for uploaded import files
+//-----------------------------------------------------------------------------
 
-const upload = multer();
+const upload = multer({
+    dest: path.join(BC_UPLOADS_DIR, 'imports')
+});
 
 //-----------------------------------------------------------------------------
 // Creates a database connection and saves it in req.db
@@ -45,7 +55,6 @@ function augmentTank(db, tank) {
     }
     tank.parameters = parameters;
     const notes = db.getLatestParameters(tank.tankId, false);
-    console.log(notes);
     for (const note of notes) {
         Object.assign(note, noteInfo(note));
     }
@@ -326,93 +335,55 @@ router.get('/entry/:tankId/:rowid', (req, res, next) => {
 
 //-----------------------------------------------------------------------------
 
+router.post('/import', upload.single('data'), async (req, res, next) => {
+    const {db, user, body, file} = req;
+    const {tankId, source} = body;
+    const filePath = file?.path;
+    if (!filePath) {
+        return next(INVALID_IMPORT());
+    }
+    try {
+        const tank = db.getTankForUser(user.id, tankId);
+        // This could be because the tank doesn't exist or
+        // it belongs to someone else.
+        if (!tank) {
+            return next(INVALID_TANK());
+        }
+        // Get the parser given the 'source'
+        let parser;
+        switch (source) {
+            case 'trident-datalog':
+                parser = parseTridentDataLog;
+                break;
+
+            default:
+                console.error(`Invalid import source "${source}"`);
+                break;
+        }
+        // This is not an import problem, it is a problem with the request
+        // having an unknown source
+        if (!parser) {
+            return next(INVALID_IMPORT());
+        }
+        // Do it!
+        const {imported, invalid, existing} =
+            await importTankEntries(db, tank.tankId, filePath, parser);
+        console.log('Import tank', tankId, source, filePath, 'imported', imported,
+            'invalid', invalid, 'existing', existing);
+        res.json({imported, invalid, existing});
+    }
+    catch (error) {
+        console.log('Import failed', source, filePath, error);
+        res.json({failed: true});
+    }
+    finally {
+        if (filePath) {
+            console.log('Removing', filePath);
+            fs.unlink(filePath, () => {});
+        }
+    }
+});
+
+//-----------------------------------------------------------------------------
+
 module.exports = router;
-
-// const fs = require('fs');
-// const sax = require('./sax.js');
-
-// async function importApexDataLog(db, xmlStream) {
-//     return new Promise((resolve, reject) => {
-//         const types = new Set(['alk', 'ca', 'mg']);
-//         const state = {
-//             timezone: null,
-//             date: null,
-//             type: null,
-//             last: {
-//                 alk: null,
-//                 ca: null,
-//                 mg: null
-//             }
-//         };
-//         const plucks = {
-//             'datalog/timezone': (text) => {
-//                 state.timezone = text;
-//                 throw new Error('CACA');
-//             },
-//             'open:datalog/record': () => {
-//                 state.date = null;
-//                 state.type = null;
-//             },
-//             'datalog/record/date': (text) => {
-//                 state.date = text;
-//                 state.type = null;
-//             },
-//             'datalog/record/probe/type': (text) => {
-//                 state.type = text;
-//             },
-//             'datalog/record/probe/value': (text) => {
-//                 const {type} = state;
-//                 if (types.has(type)) {
-//                     const last = state.last[type];
-//                     if (text !== last) {
-//                         console.log('Got value', state.date, state.type, text);
-//                         state.last[type] = text;
-//                     }
-//                 }
-//             }
-//         };
-//         const path = [];
-//         const stream = sax.createStream(true, {
-//             trim: true
-//         });
-//         stream.on('error', (error) => {
-//             console.log('GOT A STREAM ERROR');
-//             reject(error);
-//         });
-//         stream.on('opentag', ({name}) => {
-//             path.push(name);
-//             const pluck = plucks[`open:${path.join('/')}`];
-//             if (pluck) {
-//                 pluck();
-//             }
-//         });
-//         stream.on('text', (text) => {
-//             const pluck = plucks[path.join('/')];
-//             if (pluck) {
-//                 pluck(text);
-//             }
-//         });
-//         stream.on('closetag', (name) => {
-//             const last = path.pop();
-//             if (last !== name) {
-//                 throw new Error(`${path.join('/')} : close ${name}`);
-//             }
-//         });
-//         stream.on('end', () => resolve);
-
-//         xmlStream.on('error', (error) => reject(error));
-//         xmlStream.pipe(stream);
-//     });
-// }
-
-// (async function () {
-//     const stream = fs.createReadStream('/home/pablo/foo.xml');
-//     try {
-//         await importApexDataLog(null, stream);
-//         console.log('Done');
-//     }
-//     catch (error) {
-//         console.error('Failed with', error);
-//     }
-// });
-

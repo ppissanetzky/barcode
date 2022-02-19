@@ -87,6 +87,22 @@ class TankDatabaseConnection extends DatabaseConnection {
         );
     }
 
+    // Find an entry, given tankId, time, type and value
+
+    findEntry(tankId, entryTypeId, time, value) {
+        return this.first(
+            `
+            SELECT * FROM entries
+            WHERE
+                tankId = $tankId AND
+                entryTypeId = $entryTypeId AND
+                time = $time AND
+                value = $value
+            `,
+            {tankId, entryTypeId, time, value}
+        );
+    }
+
     deleteEntry(tankId, rowid) {
         return this.change(
             `

@@ -113,7 +113,7 @@ module.exports = {
     INVALID_TANK:           error.bind(null, 'INT'),
 
     // Invalid entry
-    INVALID_ENTRY:          error.bind(null, 'IEN')
+    INVALID_ENTRY:          error.bind(null, 'IEN'),
 };
 
 //-----------------------------------------------------------------------------

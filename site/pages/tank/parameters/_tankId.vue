@@ -114,8 +114,6 @@
               <template v-slot:activator="{ on, attrs }">
                 <v-btn
                   color="primary"
-                  fab
-                  x-small
                   v-bind="attrs"
                   v-on="on"
                 >
@@ -148,6 +146,18 @@
                     @click="addEntry(type.entryTypeId)"
                   >
                     {{ type.name }}
+                  </v-chip>
+                </v-card-text>
+                <v-divider />
+                <v-card-text>
+                  <v-chip
+                    small
+                    label
+                    color="primary"
+                    class="ma-1"
+                    @click="$router.push(`/tank/import/trident-datalog/${tank.tankId}`)"
+                  >
+                    Import Trident data
                   </v-chip>
                 </v-card-text>
               </v-card>
