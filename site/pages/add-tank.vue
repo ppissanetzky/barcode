@@ -172,9 +172,9 @@ export default {
       set('dateStarted', utcIsoStringFromString(this.dateStarted))
       set('description', this.description)
       set('threadId', this.threadId)
-      const { tankId } = await this.$axios.$post('/api/tank/add', formData)
+      await this.$axios.$post('/api/tank/add', formData)
       this.submitting = false
-      this.$router.replace(`/tank/${tankId}`)
+      this.$router.replace('/tanks')
     }
   }
 }
