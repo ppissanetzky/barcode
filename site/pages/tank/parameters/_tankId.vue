@@ -399,7 +399,9 @@ export default {
 
     addEntry (entryTypeId) {
       const date = format(new Date(), 'P pp')
-      const entry = this.entryTypes.find(type => type.entryTypeId === entryTypeId)
+      const entry = {
+        ...this.entryTypes.find(type => type.entryTypeId === entryTypeId)
+      }
       this.dialog = {
         entry,
         date,
