@@ -86,7 +86,9 @@
       "operator-linebreak": 0,
       "unicorn/prefer-object-from-entries": 0
     },
-    "ignores": ["sax.js"],
+    "ignores": [
+      "sax.js"
+    ],
     "overrides": [
       {
         "files": "tests/*",
