@@ -223,6 +223,10 @@ export default {
     const tankId = this.$route.params.tankId
     const url = `/api/tank/${tankId}`
     const { tank } = await this.$axios.$get(url)
+    const { tridentIpAddress, tridentPort = '80' } =
+      await this.$axios.$get('/api/user/settings')
+    this.address = tridentIpAddress
+    this.port = tridentPort
     this.tank = tank
   },
   data () {
@@ -230,7 +234,7 @@ export default {
       tank: undefined,
       step: 1,
       address: undefined,
-      port: '80',
+      port: undefined,
       file: undefined,
       importing: false,
       result: {}
@@ -282,6 +286,11 @@ export default {
       formData.set('source', 'trident-datalog')
       formData.set('data', this.file)
       this.result = await this.$axios.$post(url, formData)
+      // Save the Trident IP address and port in user settings
+      const settings = new FormData()
+      settings.set('tridentIpAddress', this.address)
+      settings.set('tridentPort', this.port)
+      await this.$axios.$post('/api/user/settings', settings)
       this.importing = false
       this.step++
     }
