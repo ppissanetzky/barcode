@@ -103,9 +103,10 @@
           v-if="tank"
           elevation="6"
         >
-          <v-card-title>
-            {{ tank.name }}
-            <v-spacer />
+          <v-card-title>{{ tank.name }}</v-card-title>
+          <v-toolbar
+            flat
+          >
             <v-menu
               offset-y
               close-on-content-click
@@ -117,7 +118,8 @@
                   v-bind="attrs"
                   v-on="on"
                 >
-                  <v-icon>mdi-plus</v-icon>
+                  Add
+                  <!-- <v-icon>mdi-plus</v-icon> -->
                 </v-btn>
               </template>
               <v-card flat max-width="500px">
@@ -199,8 +201,7 @@
               outlined
               dense
             />
-            <v-spacer />
-          </v-card-title>
+          </v-toolbar>
           <v-card-text>
             <v-data-table
               :headers="headers"
@@ -208,6 +209,7 @@
               :search="search"
               item-key="rowid"
               hide-default-header
+              mobile-breakpoint="0"
               dense
               @click:row="clickRow"
             >
