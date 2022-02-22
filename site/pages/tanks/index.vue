@@ -22,6 +22,21 @@
         >
           <v-card-title v-text="tank.name" />
           <v-card-subtitle>
+            <div v-if="tank.thread">
+              <v-chip
+                small
+                label
+                color="#1f63a6"
+                class="white--text my-1 mr-1"
+                :href="tank.thread.viewUrl"
+                target="_blank"
+              >
+                Thread
+                <v-icon small right>
+                  mdi-open-in-new
+                </v-icon>
+              </v-chip>
+            </div>
             <div v-if="tank.model">
               {{ tank.model }}
             </div>

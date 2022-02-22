@@ -9,7 +9,7 @@ const _ = require('lodash');
 
 const {age, fromUnixTime} = require('./dates');
 const {entryInfo, parameterInfo, noteInfo} = require('./tank-parameters');
-const {getTankJournalsForUser} = require('./xenforo');
+const {getTankJournalsForUser, getThread} = require('./xenforo');
 const {INVALID_TANK, INVALID_ENTRY, INVALID_IMPORT} = require('./errors');
 const {BC_UPLOADS_DIR} = require('./barcode.config');
 const {parseTridentDataLog} = require('./trident-datalog');
@@ -69,11 +69,14 @@ function augmentParameter(parameter) {
 // Gets the list of tanks for a user
 //-----------------------------------------------------------------------------
 
-router.get('/list', (req, res) => {
+router.get('/list', async (req, res) => {
     const {db, user} = req;
     const tanks = db.getTanksForUser(user.id);
     for (const tank of tanks) {
         augmentTank(db, tank);
+        if (tank.threadId) {
+            tank.thread = await getThread(tank.threadId);
+        }
     }
     res.json({tanks});
 });
