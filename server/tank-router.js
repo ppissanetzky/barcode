@@ -7,9 +7,9 @@ const express = require('express');
 const multer = require('multer');
 const _ = require('lodash');
 
-const {age, fromUnixTime} = require('./dates');
+const {age, fromUnixTime, toUnixTime, format} = require('./dates');
 const {entryInfo, parameterInfo, noteInfo} = require('./tank-parameters');
-const {getTankJournalsForUser, getThread} = require('./xenforo');
+const {getTankJournalsForUser, getThread, getThreadPosts} = require('./xenforo');
 const {INVALID_TANK, INVALID_ENTRY, INVALID_IMPORT} = require('./errors');
 const {BC_UPLOADS_DIR} = require('./barcode.config');
 const {parseTridentDataLog} = require('./trident-datalog');
@@ -385,6 +385,65 @@ router.post('/import', upload.single('data'), async (req, res, next) => {
             fs.unlink(filePath, () => {});
         }
     }
+});
+
+//-----------------------------------------------------------------------------
+
+router.get('/pictures/:tankId', async (req, res, next) => {
+    const {db, user, params} = req;
+    const {tankId} = params;
+    const tank = db.getTankForUser(user.id, tankId);
+    // This could be because the tank doesn't exist or
+    // it belongs to someone else.
+    // TODO: We should allow others to have a limited view of
+    // someone else's tank
+    if (!tank) {
+        return next(INVALID_TANK());
+    }
+    const pictures = [];
+    if (tank.threadId) {
+        let posts = await getThreadPosts(user.id, tank.threadId);
+        posts = posts.filter(({attachments, user: {id}}) =>
+            id === user.id && attachments?.length > 0);
+        for (const post of posts) {
+            const {postDate, viewUrl, attachments} = post;
+            for (const attachment of attachments) {
+                pictures.push({
+                    time: toUnixTime(postDate),
+                    picture: attachment,
+                    url: viewUrl
+                });
+            }
+        }
+    }
+
+    // TODO: Once we hook up livestock, add pictures from their
+    // journals
+
+    // Sort them in descending order by time (latest first)
+    pictures.sort((a, b) => b.time - a.time);
+
+    // Now, group them by month
+    const map = new Map();
+    for (const picture of pictures) {
+        const {time} = picture;
+        const key = format(fromUnixTime(time), 'yyyyMM');
+        const existing = map.get(key);
+        if (existing) {
+            existing.push(picture);
+        }
+        else {
+            map.set(key, [picture]);
+        }
+    }
+    const months = [];
+    for (const [, pictures] of map) {
+        // Get the time of the first picture
+        // This will be the most recent for this month
+        const [{time}] = pictures;
+        months.push({time, pictures});
+    }
+    res.json({months});
 });
 
 //-----------------------------------------------------------------------------

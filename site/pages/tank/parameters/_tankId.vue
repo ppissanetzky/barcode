@@ -97,134 +97,203 @@
           </v-card>
         </v-dialog>
       </v-col>
-      <!-- Card with the data -->
-      <v-col cols="12">
+      <v-col
+        v-if="tank"
+        cols="12"
+      >
         <v-card
-          v-if="tank"
           elevation="6"
         >
-          <v-card-title>{{ tank.name }}</v-card-title>
-          <v-toolbar
-            flat
-          >
-            <v-menu
-              offset-y
-              close-on-content-click
-              close-on-click
-            >
-              <template v-slot:activator="{ on, attrs }">
-                <v-btn
-                  color="primary"
-                  v-bind="attrs"
-                  v-on="on"
-                >
-                  Add
-                  <!-- <v-icon>mdi-plus</v-icon> -->
-                </v-btn>
-              </template>
-              <v-card flat max-width="500px">
-                <v-card-text>
-                  <v-chip
-                    v-for="type in trackedEntryTypes"
-                    :key="type.entryTypeId"
-                    small
-                    label
-                    :color="type.color"
-                    class="ma-1"
-                    @click="addEntry(type.entryTypeId)"
+          <v-toolbar flat>
+            <v-toolbar-title>{{ tank.name }}</v-toolbar-title>
+            <template v-slot:extension>
+              <v-tabs
+                v-model="tab"
+                fixed-tabs
+              >
+                <v-tab>Notes</v-tab>
+                <v-tab>Pictures</v-tab>
+                <v-tab>Livestock</v-tab>
+              </v-tabs>
+            </template>
+          </v-toolbar>
+          <v-sheet height="20px" />
+
+          <v-tabs-items v-model="tab">
+            <!-- Tab for notes & parameters -->
+            <v-tab-item>
+              <v-card flat>
+                <v-toolbar flat>
+                  <v-menu
+                    offset-y
+                    close-on-content-click
+                    close-on-click
                   >
-                    {{ type.name }}
-                  </v-chip>
-                </v-card-text>
-                <v-divider />
-                <v-card-text>
-                  <v-chip
-                    v-for="type in noteEntryTypes"
-                    :key="type.entryTypeId"
-                    small
-                    label
-                    :color="type.color"
-                    class="ma-1"
-                    @click="addEntry(type.entryTypeId)"
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-btn
+                        color="primary"
+                        v-bind="attrs"
+                        v-on="on"
+                      >
+                        Add
+                        <!-- <v-icon>mdi-plus</v-icon> -->
+                      </v-btn>
+                    </template>
+                    <v-card flat max-width="500px">
+                      <v-card-text>
+                        <v-chip
+                          v-for="type in trackedEntryTypes"
+                          :key="type.entryTypeId"
+                          small
+                          label
+                          :color="type.color"
+                          class="ma-1"
+                          @click="addEntry(type.entryTypeId)"
+                        >
+                          {{ type.name }}
+                        </v-chip>
+                      </v-card-text>
+                      <v-divider />
+                      <v-card-text>
+                        <v-chip
+                          v-for="type in noteEntryTypes"
+                          :key="type.entryTypeId"
+                          small
+                          label
+                          :color="type.color"
+                          class="ma-1"
+                          @click="addEntry(type.entryTypeId)"
+                        >
+                          {{ type.name }}
+                        </v-chip>
+                      </v-card-text>
+                      <v-divider />
+                      <v-card-text>
+                        <v-chip
+                          small
+                          label
+                          color="primary"
+                          class="ma-1"
+                          @click="$router.push(`/tank/import/trident-datalog/${tank.tankId}`)"
+                        >
+                          Import Trident data
+                        </v-chip>
+                      </v-card-text>
+                    </v-card>
+                  </v-menu>
+                  <v-spacer />
+                  <v-autocomplete
+                    v-model="selectedEntryTypes"
+                    :items="entryTypesToSelect"
+                    label="Filter"
+                    chips
+                    multiple
+                    clearable
+                    hide-details
+                    outlined
+                    dense
                   >
-                    {{ type.name }}
-                  </v-chip>
-                </v-card-text>
-                <v-divider />
+                    <template v-slot:selection="data">
+                      <v-chip
+                        v-bind="data.attrs"
+                        :input-value="data.selected"
+                        label
+                        small
+                        close
+                        :color="data.item.color"
+                        @click="data.select"
+                        @click:close="removeSelectedEntryType(data.item.value)"
+                      >
+                        {{ data.item.text }}
+                      </v-chip>
+                    </template>
+                  </v-autocomplete>
+                  <v-spacer />
+                  <v-text-field
+                    v-model="search"
+                    append-icon="mdi-magnify"
+                    label="Search"
+                    clearable
+                    hide-details
+                    outlined
+                    dense
+                  />
+                </v-toolbar>
                 <v-card-text>
-                  <v-chip
-                    small
-                    label
-                    color="primary"
-                    class="ma-1"
-                    @click="$router.push(`/tank/import/trident-datalog/${tank.tankId}`)"
+                  <v-data-table
+                    :headers="headers"
+                    :items="filteredEntries"
+                    :search="search"
+                    item-key="rowid"
+                    hide-default-header
+                    mobile-breakpoint="0"
+                    dense
+                    @click:row="clickRow"
                   >
-                    Import Trident data
-                  </v-chip>
+                    <template v-slot:[`item.name`]="{ item }">
+                      <v-chip
+                        label
+                        small
+                        class="ma-1"
+                        :color="item.color"
+                      >
+                        {{ item.name }}
+                      </v-chip>
+                    </template>
+                  </v-data-table>
                 </v-card-text>
               </v-card>
-            </v-menu>
-            <v-spacer />
-            <v-autocomplete
-              v-model="selectedEntryTypes"
-              :items="entryTypesToSelect"
-              label="Filter"
-              chips
-              multiple
-              clearable
-              hide-details
-              outlined
-              dense
-            >
-              <template v-slot:selection="data">
-                <v-chip
-                  v-bind="data.attrs"
-                  :input-value="data.selected"
-                  label
-                  small
-                  close
-                  :color="data.item.color"
-                  @click="data.select"
-                  @click:close="removeSelectedEntryType(data.item.value)"
+            </v-tab-item>
+            <!-- Tab for pictures when there is a thread -->
+            <v-tab-item>
+              <v-card
+                :loading="loadingPictures"
+                flat
+              >
+                <v-card-subtitle
+                  v-if="loadingPictures"
                 >
-                  {{ data.item.text }}
-                </v-chip>
-              </template>
-            </v-autocomplete>
-            <v-spacer />
-            <v-text-field
-              v-model="search"
-              append-icon="mdi-magnify"
-              label="Search"
-              clearable
-              hide-details
-              outlined
-              dense
-            />
-          </v-toolbar>
-          <v-card-text>
-            <v-data-table
-              :headers="headers"
-              :items="filteredEntries"
-              :search="search"
-              item-key="rowid"
-              hide-default-header
-              mobile-breakpoint="0"
-              dense
-              @click:row="clickRow"
-            >
-              <template v-slot:[`item.name`]="{ item }">
-                <v-chip
-                  label
-                  small
-                  class="ma-1"
-                  :color="item.color"
+                  Loading pictures...this can take a few seconds...
+                </v-card-subtitle>
+                <v-card-subtitle v-else-if="pictures.length === 0">
+                  There are no pictures of this tank
+                </v-card-subtitle>
+                <v-container
+                  v-if="pictures"
                 >
-                  {{ item.name }}
-                </v-chip>
-              </template>
-            </v-data-table>
-          </v-card-text>
+                  <v-row
+                    v-for="month in pictures"
+                    :key="month.time"
+                  >
+                    <v-col cols="12">
+                      {{ age(month.time) }}
+                    </v-col>
+                    <v-col
+                      v-for="(p , index) in month.pictures"
+                      :key="index"
+                      cols="4"
+                    >
+                      <a
+                        :href="p.url"
+                        target="_blank"
+                      >
+                        <v-img
+                          :src="p.picture"
+                          :aspect-ratio="1"
+                        />
+                      </a>
+                    </v-col>
+                  </v-row>
+                </v-container>
+              </v-card>
+            </v-tab-item>
+            <!-- Tab for livestock -->
+            <v-tab-item>
+              <v-card flat>
+                <v-card-title>Coming soon...</v-card-title>
+              </v-card>
+            </v-tab-item>
+          </v-tabs-items>
         </v-card>
       </v-col>
     </v-row>
@@ -236,6 +305,7 @@ import format from 'date-fns/format'
 import fromUnixTime from 'date-fns/fromUnixTime'
 import getUnixTime from 'date-fns/getUnixTime'
 import formatDistanceToNowStrict from 'date-fns/formatDistanceToNowStrict'
+import formatDistanceToNow from 'date-fns/formatDistanceToNow'
 export default {
   async fetch () {
     const tankId = this.$route.params.tankId
@@ -243,8 +313,12 @@ export default {
     const { entryTypes, tank, entries } = await this.$axios.$get(url)
     this.tank = tank
     this.entryTypes = entryTypes
-    this.entryTypesToSelect = entryTypes.map(({ entryTypeId, name, color }) =>
-      ({ value: entryTypeId, text: name, color }))
+    this.entryTypesToSelect = [
+      { value: -1, text: 'Parameters' },
+      { value: -2, text: 'Notes' },
+      ...entryTypes.map(({ entryTypeId, name, color }) =>
+        ({ value: entryTypeId, text: name, color }))
+    ]
     for (const entry of entries) {
       entry.date = this.unixTimeToLocaleString(entry.time)
     }
@@ -316,6 +390,9 @@ export default {
       tank: undefined,
       entryTypes: undefined,
       entries: undefined,
+      pictures: undefined,
+      // The selected tab
+      tab: undefined,
       // Header definition for the table
       headers: undefined,
       // Entry types that can be selected in the filter dropdown
@@ -340,7 +417,9 @@ export default {
       // A hint we show about the date
       dateTimeHint: undefined,
       // Sure to delete
-      areYouSure: false
+      areYouSure: false,
+      // While we are loading pictures
+      loadingPictures: true
     }
   },
   computed: {
@@ -350,6 +429,12 @@ export default {
         return this.entries
       }
       const types = new Set(this.selectedEntryTypes)
+      if (types.has(-1)) {
+        this.trackedEntryTypes.forEach(({ entryTypeId }) => types.add(entryTypeId))
+      }
+      if (types.has(-2)) {
+        this.noteEntryTypes.forEach(({ entryTypeId }) => types.add(entryTypeId))
+      }
       return this.entries.filter(({ type }) => types.has(type))
     },
 
@@ -366,6 +451,12 @@ export default {
     showDialog (value) {
       if (value) {
         setTimeout(() => this.$refs.form.resetValidation(), 1)
+      }
+    },
+
+    tab (value) {
+      if (value === 1 && !this.pictures) {
+        this.loadPictures()
       }
     }
   },
@@ -511,6 +602,27 @@ export default {
       }
       this.formSubmitting = false
       this.showDialog = false
+    },
+
+    async loadPictures () {
+      if (this.pictures) {
+        return
+      }
+      // Set to an empty array to prevent multiple calls to loadPictures
+      this.pictures = []
+      const url = `/api/tank/pictures/${this.tank.tankId}`
+      const { months } = await this.$axios.$get(url)
+      this.pictures = months
+      this.loadingPictures = false
+    },
+
+    age (time) {
+      const date = fromUnixTime(time)
+      const month = format(date, 'MMMM yyyy')
+      const distance = formatDistanceToNow(fromUnixTime(time), {
+        addSuffix: true
+      })
+      return `${month} - ${distance}`
     }
   }
 }

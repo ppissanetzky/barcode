@@ -11,7 +11,8 @@ const {
     addYears,
     fromUnixTime,
     getUnixTime,
-    formatDistanceToNowStrict
+    formatDistanceToNowStrict,
+    format
 } = require('date-fns');
 
 // ----------------------------------------------------------------------------
@@ -158,5 +159,6 @@ module.exports = {
     fromUnixTime,
     toUnixTime,
     nowAsUnixTime,
-    strictDifferenceToNow
+    strictDifferenceToNow,
+    format
 };
