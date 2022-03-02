@@ -1,11 +1,10 @@
 <template>
   <v-container fluid>
     <v-row>
-      <v-col cols="auto">
+      <v-col>
         <v-card
           v-if="tank"
           elevation="6"
-          width="375px"
         >
           <v-card-title>Import Trident data</v-card-title>
           <v-card-text>

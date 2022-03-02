@@ -433,7 +433,7 @@ router.get('/pictures/:tankId', async (req, res, next) => {
         const [{time}] = pictures;
         months.push({time, pictures});
     }
-    res.json({tank, months});
+    res.json({months});
 });
 
 //-----------------------------------------------------------------------------

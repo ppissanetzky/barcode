@@ -80,12 +80,12 @@
           <v-divider />
           <v-card-text>
             <v-btn text :to="`/tank/${tank.tankId}/parameters`">
-              {{ 'Notes & parameters' }}
+              Notes and parameters
               <v-icon right>
                 mdi-chevron-double-right
               </v-icon>
             </v-btn>
-            <v-btn v-if="tank.thread" text :to="`/tank/${tank.tankId}/pictures`">
+            <v-btn text :to="`/tank/${tank.tankId}/pictures`">
               Pictures
               <v-icon right>
                 mdi-chevron-double-right

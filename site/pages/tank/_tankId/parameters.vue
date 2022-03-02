@@ -2,349 +2,167 @@
   <v-container fluid>
     <v-row>
       <v-col>
-        <!-- Dialog to edit, delete or add entries -->
-        <v-dialog
-          v-model="showDialog"
-          max-width="500px"
-        >
-          <v-card>
-            <v-toolbar
-              flat
-              :color="dialog.entry.color"
+        <v-card elevation="6">
+          <v-toolbar flat color="teal lighten-4">
+            <v-menu
+              offset-y
+              close-on-content-click
+              close-on-click
             >
-              <v-toolbar-title>{{ dialog.entry.name }}</v-toolbar-title>
-            </v-toolbar>
-            <v-divider />
-            <v-card-text />
-            <v-card-text>
-              <v-form
-                ref="form"
-                v-model="formValid"
-                :disabled="formSubmitting"
-              >
-                <v-container>
-                  <v-row>
-                    <v-col
-                      v-if="dialog.entry.hasValue"
-                    >
-                      <v-text-field
-                        v-model="dialog.entry.value"
-                        :label="dialog.entry.units || 'Value'"
-                        :rules="[validateValue]"
-                        outlined
-                      />
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col>
-                      <v-textarea
-                        v-model="dialog.entry.comment"
-                        label="Comment"
-                        :rules="[validateComment]"
-                        rows="2"
-                        outlined
-                      />
-                    </v-col>
-                  </v-row>
-                  <v-row>
-                    <v-col>
-                      <v-text-field
-                        v-model="dialog.date"
-                        label="Date/time"
-                        :rules="[validateDateTime]"
-                        :hint="dateTimeHint"
-                        outlined
-                      />
-                    </v-col>
-                  </v-row>
-                </v-container>
-              </v-form>
-            </v-card-text>
-            <v-divider />
-            <v-card-actions>
-              <v-checkbox
-                v-if="!dialog.adding"
-                v-model="areYouSure"
-                label="if you're sure"
-                color="error"
-              />
-              <v-btn
-                v-if="!dialog.adding"
-                text
-                color="error"
-                :disabled="!areYouSure"
-                @click.stop="deleteEntry"
-              >
-                Delete
-              </v-btn>
-              <v-spacer />
-              <v-btn
-                text
-                color="secondary"
-                @click="showDialog = false"
-              >
-                Cancel
-              </v-btn>
-              <v-btn
-                text
-                color="primary"
-                :disabled="!formValid"
-                @click.stop="submitEntry"
-              >
-                {{ dialog.adding ? 'Add' : 'Save' }}
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
-      </v-col>
-      <v-col
-        v-if="tank"
-        cols="12"
-      >
-        <v-card
-          elevation="6"
-        >
-          <v-toolbar flat>
-            <v-toolbar-title>{{ tank.name }}</v-toolbar-title>
-            <template v-slot:extension>
-              <v-tabs
-                v-model="tab"
-                fixed-tabs
-              >
-                <v-tab>Notes</v-tab>
-                <v-tab>Pictures</v-tab>
-                <v-tab>Livestock</v-tab>
-              </v-tabs>
-            </template>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn
+                  icon
+                  v-bind="attrs"
+                  v-on="on"
+                >
+                  <v-icon>
+                    mdi-apps
+                  </v-icon>
+                </v-btn>
+              </template>
+              <v-list>
+                <v-list-item to="parameters">
+                  <v-list-item-content>
+                    <v-list-item-title>Notes and parameters</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item to="pictures">
+                  <v-list-item-content>
+                    <v-list-item-title>Pictures</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+                <v-list-item to="livestock">
+                  <v-list-item-content>
+                    <v-list-item-title>Livestock</v-list-item-title>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+            <v-toolbar-title v-if="tank">
+              {{ tank.name }}
+            </v-toolbar-title>
+            <v-spacer />
+            <v-toolbar-title>Notes and parameters</v-toolbar-title>
           </v-toolbar>
-          <v-sheet height="20px" />
-
-          <v-tabs-items v-model="tab">
-            <!-- Tab for notes & parameters -->
-            <v-tab-item>
-              <v-card flat>
-                <v-toolbar flat>
-                  <v-menu
-                    offset-y
-                    close-on-content-click
-                    close-on-click
-                  >
-                    <template v-slot:activator="{ on, attrs }">
-                      <v-btn
-                        color="primary"
-                        v-bind="attrs"
-                        v-on="on"
-                      >
-                        Add
-                        <!-- <v-icon>mdi-plus</v-icon> -->
-                      </v-btn>
-                    </template>
-                    <v-card flat max-width="500px">
-                      <v-card-text>
-                        <v-chip
-                          v-for="type in trackedEntryTypes"
-                          :key="type.entryTypeId"
-                          small
-                          label
-                          :color="type.color"
-                          class="ma-1"
-                          @click="addEntry(type.entryTypeId)"
-                        >
-                          {{ type.name }}
-                        </v-chip>
-                      </v-card-text>
-                      <v-divider />
-                      <v-card-text>
-                        <v-chip
-                          v-for="type in noteEntryTypes"
-                          :key="type.entryTypeId"
-                          small
-                          label
-                          :color="type.color"
-                          class="ma-1"
-                          @click="addEntry(type.entryTypeId)"
-                        >
-                          {{ type.name }}
-                        </v-chip>
-                      </v-card-text>
-                      <v-divider />
-                      <v-card-text>
-                        <v-chip
-                          small
-                          label
-                          color="primary"
-                          class="ma-1"
-                          to="import-trident-datalog"
-                        >
-                          Import Trident data
-                        </v-chip>
-                      </v-card-text>
-                    </v-card>
-                  </v-menu>
-                  <v-spacer />
-                  <v-autocomplete
-                    v-model="selectedEntryTypes"
-                    :items="entryTypesToSelect"
-                    label="Filter"
-                    chips
-                    multiple
-                    clearable
-                    hide-details
-                    outlined
-                    dense
-                  >
-                    <template v-slot:selection="data">
-                      <v-chip
-                        v-bind="data.attrs"
-                        :input-value="data.selected"
-                        label
-                        small
-                        close
-                        :color="data.item.color"
-                        @click="data.select"
-                        @click:close="removeSelectedEntryType(data.item.value)"
-                      >
-                        {{ data.item.text }}
-                      </v-chip>
-                    </template>
-                  </v-autocomplete>
-                  <v-spacer />
-                  <v-text-field
-                    v-model="search"
-                    append-icon="mdi-magnify"
-                    label="Search"
-                    clearable
-                    hide-details
-                    outlined
-                    dense
-                  />
-                </v-toolbar>
+          <v-toolbar flat>
+            <v-menu
+              offset-y
+              close-on-content-click
+              close-on-click
+            >
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn
+                  color="primary"
+                  v-bind="attrs"
+                  v-on="on"
+                >
+                  Add
+                  <!-- <v-icon>mdi-plus</v-icon> -->
+                </v-btn>
+              </template>
+              <v-card flat max-width="500px">
                 <v-card-text>
-                  <v-data-table
-                    :headers="headers"
-                    :items="filteredEntries"
-                    :search="search"
-                    item-key="rowid"
-                    hide-default-header
-                    mobile-breakpoint="0"
-                    dense
-                    @click:row="clickRow"
+                  <v-chip
+                    v-for="type in trackedEntryTypes"
+                    :key="type.entryTypeId"
+                    small
+                    label
+                    :color="type.color"
+                    class="ma-1"
+                    @click="addEntry(type.entryTypeId)"
                   >
-                    <template v-slot:[`item.name`]="{ item }">
-                      <v-chip
-                        label
-                        small
-                        class="ma-1"
-                        :color="item.color"
-                      >
-                        {{ item.name }}
-                      </v-chip>
-                    </template>
-                  </v-data-table>
+                    {{ type.name }}
+                  </v-chip>
+                </v-card-text>
+                <v-divider />
+                <v-card-text>
+                  <v-chip
+                    v-for="type in noteEntryTypes"
+                    :key="type.entryTypeId"
+                    small
+                    label
+                    :color="type.color"
+                    class="ma-1"
+                    @click="addEntry(type.entryTypeId)"
+                  >
+                    {{ type.name }}
+                  </v-chip>
+                </v-card-text>
+                <v-divider />
+                <v-card-text>
+                  <v-chip
+                    small
+                    label
+                    color="primary"
+                    class="ma-1"
+                    to="import-trident-datalog"
+                  >
+                    Import Trident data
+                  </v-chip>
                 </v-card-text>
               </v-card>
-            </v-tab-item>
-            <!-- Tab for pictures when there is a thread -->
-            <v-tab-item>
-              <v-card
-                :loading="loadingPictures"
-                flat
-              >
-                <v-card-subtitle
-                  v-if="loadingPictures"
+            </v-menu>
+            <v-spacer />
+            <v-autocomplete
+              v-model="selectedEntryTypes"
+              :items="entryTypesToSelect"
+              label="Filter"
+              chips
+              multiple
+              clearable
+              hide-details
+              outlined
+              dense
+            >
+              <template v-slot:selection="data">
+                <v-chip
+                  v-bind="data.attrs"
+                  :input-value="data.selected"
+                  label
+                  small
+                  close
+                  :color="data.item.color"
+                  @click="data.select"
+                  @click:close="removeSelectedEntryType(data.item.value)"
                 >
-                  Loading pictures...this can take a few seconds...
-                </v-card-subtitle>
-                <v-card-subtitle v-else-if="pictures.length === 0">
-                  There are no pictures of this tank
-                </v-card-subtitle>
-                <v-container
-                  v-if="pictures"
+                  {{ data.item.text }}
+                </v-chip>
+              </template>
+            </v-autocomplete>
+            <v-spacer />
+            <v-text-field
+              v-model="search"
+              append-icon="mdi-magnify"
+              label="Search"
+              clearable
+              hide-details
+              outlined
+              dense
+            />
+          </v-toolbar>
+          <v-card-text>
+            <v-data-table
+              :headers="headers"
+              :items="filteredEntries"
+              :search="search"
+              item-key="rowid"
+              hide-default-header
+              mobile-breakpoint="0"
+              dense
+              @click:row="clickRow"
+            >
+              <template v-slot:[`item.name`]="{ item }">
+                <v-chip
+                  label
+                  small
+                  class="ma-1"
+                  :color="item.color"
                 >
-                  <v-row
-                    v-for="month in pictures"
-                    :key="month.time"
-                  >
-                    <v-col cols="12">
-                      {{ age(month.time) }}
-                    </v-col>
-                    <v-col
-                      v-for="(p , index) in month.pictures"
-                      :key="index"
-                      cols="4"
-                    >
-                      <a
-                        :href="p.url"
-                        target="_blank"
-                      >
-                        <v-img
-                          :src="p.picture"
-                          :aspect-ratio="1"
-                        />
-                      </a>
-                    </v-col>
-                  </v-row>
-                </v-container>
-              </v-card>
-            </v-tab-item>
-            <!-- Tab for livestock -->
-            <v-tab-item>
-              <v-card
-                :loading="loadingLivestock"
-                flat
-              >
-                <v-card-subtitle v-if="loadingLivestock">
-                  Loading livestock...
-                </v-card-subtitle>
-                <div v-if="livestock">
-                  <v-expansion-panels
-                    v-if="livestock.unassignedFrags.length > 0"
-                    v-model="expandUnassignedPanel"
-                    flat
-                  >
-                    <v-expansion-panel>
-                      <v-expansion-panel-header>
-                        Assign frags to this tank
-                        {{ livestock.unassignedFrags.length ? `(${livestock.unassignedFrags.length} unassigned)` : '' }}
-                      </v-expansion-panel-header>
-                      <v-expansion-panel-content>
-                        <p>
-                          These frags are in your collection but have not been assigned to any tank yet.
-                          Select the ones that are in this tank (or once were) and click 'Assign' below.
-                        </p>
-                        <v-btn
-                          small
-                          color="primary"
-                          :disabled="selectedUnassignedFrags.length === 0"
-                          :loading="assigningFrags"
-                          @click.stop="assignFrags"
-                        >
-                          Assign {{ selectedUnassignedFrags.length || '' }}
-                        </v-btn>
-                        <v-data-table
-                          v-model="selectedUnassignedFrags"
-                          :headers="unassignedFragsHeaders"
-                          :items="livestock.unassignedFrags"
-                          :single-select="false"
-                          item-key="fragId"
-                          show-select
-                        />
-                      </v-expansion-panel-content>
-                    </v-expansion-panel>
-                  </v-expansion-panels>
-                </div>
-                <v-container
-                  v-if="livestock"
-                >
-                  <v-row>
-                    <v-col>
-                      <!-- TODO -->
-                    </v-col>
-                  </v-row>
-                </v-container>
-              </v-card>
-            </v-tab-item>
-          </v-tabs-items>
+                  {{ item.name }}
+                </v-chip>
+              </template>
+            </v-data-table>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
@@ -357,16 +175,108 @@
         </v-btn>
       </template>
     </v-snackbar>
+    <!-- Dialog to edit, delete or add entries -->
+    <v-dialog
+      v-model="showDialog"
+      max-width="500px"
+    >
+      <v-card>
+        <v-toolbar
+          flat
+          :color="dialog.entry.color"
+        >
+          <v-toolbar-title>{{ dialog.entry.name }}</v-toolbar-title>
+        </v-toolbar>
+        <v-divider />
+        <v-card-text />
+        <v-card-text>
+          <v-form
+            ref="form"
+            v-model="formValid"
+            :disabled="formSubmitting"
+          >
+            <v-container>
+              <v-row>
+                <v-col
+                  v-if="dialog.entry.hasValue"
+                >
+                  <v-text-field
+                    v-model="dialog.entry.value"
+                    :label="dialog.entry.units || 'Value'"
+                    :rules="[validateValue]"
+                    outlined
+                  />
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <v-textarea
+                    v-model="dialog.entry.comment"
+                    label="Comment"
+                    :rules="[validateComment]"
+                    rows="2"
+                    outlined
+                  />
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col>
+                  <v-text-field
+                    v-model="dialog.date"
+                    label="Date/time"
+                    :rules="[validateDateTime]"
+                    :hint="dateTimeHint"
+                    outlined
+                  />
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-form>
+        </v-card-text>
+        <v-divider />
+        <v-card-actions>
+          <v-checkbox
+            v-if="!dialog.adding"
+            v-model="areYouSure"
+            label="if you're sure"
+            color="error"
+          />
+          <v-btn
+            v-if="!dialog.adding"
+            text
+            color="error"
+            :disabled="!areYouSure"
+            @click.stop="deleteEntry"
+          >
+            Delete
+          </v-btn>
+          <v-spacer />
+          <v-btn
+            text
+            color="secondary"
+            @click="showDialog = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            text
+            color="primary"
+            :disabled="!formValid"
+            @click.stop="submitEntry"
+          >
+            {{ dialog.adding ? 'Add' : 'Save' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 <script>
 import parse from 'date-fns/parse'
 import format from 'date-fns/format'
-import parseISO from 'date-fns/parseISO'
 import fromUnixTime from 'date-fns/fromUnixTime'
 import getUnixTime from 'date-fns/getUnixTime'
 import formatDistanceToNowStrict from 'date-fns/formatDistanceToNowStrict'
-import formatDistanceToNow from 'date-fns/formatDistanceToNow'
 export default {
   async fetch () {
     const tankId = this.$route.params.tankId
@@ -388,77 +298,19 @@ export default {
       { value: 'name', sortable: false },
       { value: 'text', sortable: false },
       { value: 'age', sortable: false, filterable: false, cellClass: 'text-right' }
-      // { value: 'date', sortable: false, cellClass: 'caption text-right' }
     ]
   },
-  /*
-  mounted () {
-    const script = document.createElement('script')
-    script.setAttribute('src', 'https://www.gstatic.com/charts/loader.js')
-    script.onload = doit;
-    document.head.appendChild(script)
 
-    function doit() {
-      google.charts.load('current', {'packages':['corechart', 'line']})
-      google.charts.setOnLoadCallback(drawChart);
-
-      function drawChart() {
-        var data = new google.visualization.DataTable();
-        data.addColumn('number', 'Day');
-        data.addColumn('number', 'Guardians of the Galaxy');
-        data.addColumn('number', 'The Avengers');
-        data.addColumn('number', 'Transformers: Age of Extinction');
-
-        data.addRows([
-          [1,  37.8, 80.8, 41.8],
-          [2,  30.9, 69.5, 32.4],
-          [3,  25.4,   57, 25.7],
-          [4,  11.7, 18.8, 10.5],
-          [5,  11.9, 17.6, 10.4],
-          [6,   8.8, 13.6,  7.7],
-          [7,   7.6, 12.3,  9.6],
-          [8,  12.3, 29.2, 10.6],
-          [9,  16.9, 42.9, 14.8],
-          [10, 12.8, 30.9, 11.6],
-          [11,  5.3,  7.9,  4.7],
-          [12,  6.6,  8.4,  5.2],
-          [13,  4.8,  6.3,  3.6],
-          [14,  4.2,  6.2,  3.4]
-        ]);
-
-        var options = {
-          chart: {
-            title: 'Box Office Earnings',
-            subtitle: 'in millions of dollars (USD)',
-          },
-          legend: {
-              position: 'none'
-          }
-          // width: 375,
-          // height: 375
-        };
-
-        var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
-
-        chart.draw(data, options);
-      }
-    }
-  },
-  */
   data () {
     return {
       // Data from the server
       tank: undefined,
-      entryTypes: undefined,
-      entries: undefined,
-      pictures: undefined,
-      livestock: undefined,
+      entryTypes: [],
+      entries: [],
       // Whether the snackbar is open
       snackbar: false,
       // The text shown in the snackbar
       snackbarText: undefined,
-      // The selected tab
-      tab: undefined,
       // Header definition for the table
       headers: undefined,
       // Entry types that can be selected in the filter dropdown
@@ -483,25 +335,7 @@ export default {
       // A hint we show about the date
       dateTimeHint: undefined,
       // Sure to delete
-      areYouSure: false,
-      // While we are loading pictures
-      loadingPictures: true,
-      // While we are loading livestock
-      loadingLivestock: true,
-      // Whether the panel to assign frags is expanded
-      expandUnassignedPanel: false,
-      // The frags selected in the unassigned table
-      selectedUnassignedFrags: [],
-      // The headers for the unassigned frags table
-      unassignedFragsHeaders: [
-        { text: 'Name', value: 'name' },
-        { text: 'Type', value: 'type' },
-        { text: 'Collection', value: 'rules' },
-        { text: 'Status', value: 'status' },
-        { text: 'Date acquired', value: 'date', cellClass: 'text-right' }
-      ],
-      // While we are assigning frags
-      assigningFrags: false
+      areYouSure: false
     }
   },
   computed: {
@@ -526,13 +360,6 @@ export default {
 
     noteEntryTypes () {
       return this.entryTypes.filter(({ isTracked }) => !isTracked)
-    },
-
-    hasAnyLivestock () {
-      if (this.livestock?.frags?.length || this.livestock?.fish?.length) {
-        return true
-      }
-      return false
     }
 
   },
@@ -542,15 +369,8 @@ export default {
       if (value) {
         setTimeout(() => this.$refs.form.resetValidation(), 1)
       }
-    },
-
-    tab (value) {
-      if (value === 1 && !this.pictures) {
-        this.loadPictures()
-      } else if (value === 2 && !this.livestock) {
-        this.loadLivestock()
-      }
     }
+
   },
   methods: {
 
@@ -696,68 +516,6 @@ export default {
       this.formSubmitting = false
       this.showDialog = false
       this.snack('Entry deleted')
-    },
-
-    async loadPictures () {
-      if (this.pictures) {
-        return
-      }
-      // Set to an empty array to prevent multiple calls to loadPictures
-      this.pictures = []
-      const url = `/api/tank/pictures/${this.tank.tankId}`
-      const { months } = await this.$axios.$get(url)
-      this.pictures = months
-      this.loadingPictures = false
-    },
-
-    age (time) {
-      const date = fromUnixTime(time)
-      const month = format(date, 'MMMM yyyy')
-      const distance = formatDistanceToNow(fromUnixTime(time), {
-        addSuffix: true
-      })
-      return `${month} - ${distance}`
-    },
-
-    async loadLivestock (force) {
-      if (!force) {
-        if (this.livestock) {
-          return
-        }
-        this.livestock = {
-          frags: [],
-          unassignedFrags: [],
-          fish: []
-        }
-      }
-      const url = `/api/tank/livestock/${this.tank.tankId}`
-      const { frags, unassignedFrags, fish } = await this.$axios.$get(url)
-      for (const frag of unassignedFrags) {
-        if (!frag.isAlive) {
-          frag.status = frag.status || 'dead'
-        }
-        frag.date = parseISO(frag.dateAcquired).toLocaleDateString()
-      }
-      this.livestock = { frags, unassignedFrags, fish }
-      if (frags.length === 0 && unassignedFrags.length > 0) {
-        this.expandUnassignedPanel = 0
-      }
-      this.loadingLivestock = false
-    },
-
-    async assignFrags () {
-      this.assigningFrags = true
-      const formData = new FormData()
-      formData.set('tankId', this.tank.tankId)
-      for (const frag of this.selectedUnassignedFrags) {
-        formData.append('fragId', frag.fragId)
-      }
-      const url = '/api/tank/assign-frags'
-      const { assigned } = await this.$axios.$post(url, formData)
-      this.selectedUnassignedFrags = []
-      await this.loadLivestock(true)
-      this.assigningFrags = false
-      this.snack(`Assigned ${assigned} frag${assigned > 1 ? 's' : ''}`)
     },
 
     snack (text) {
