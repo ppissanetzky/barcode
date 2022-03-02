@@ -1285,6 +1285,19 @@ function addSwapFrag(swapId, sourceFragId, traderId, category) {
         {swapId, sourceFragId, traderId, category}
     );
 }
+
+//-----------------------------------------------------------------------------
+
+function assignFrag(fragId, tankId) {
+    return db.change(
+        `
+        UPDATE frags
+        SET tankId = $tankId
+        WHERE tankId IS NULL AND fragId = $fragId
+        `,
+        {fragId, tankId});
+}
+
 //-----------------------------------------------------------------------------
 
 module.exports = {
@@ -1331,5 +1344,6 @@ module.exports = {
     getSwap,
     getSwapFrags,
     addSwapFrag,
-    getSwapParticipants
+    getSwapParticipants,
+    assignFrag
 };

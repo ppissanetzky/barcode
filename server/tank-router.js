@@ -10,10 +10,17 @@ const _ = require('lodash');
 const {age, fromUnixTime, toUnixTime, format} = require('./dates');
 const {entryInfo, parameterInfo, noteInfo} = require('./tank-parameters');
 const {getTankJournalsForUser, getThread, getThreadPosts} = require('./xenforo');
-const {INVALID_TANK, INVALID_ENTRY, INVALID_IMPORT} = require('./errors');
+const {
+    INVALID_TANK,
+    INVALID_ENTRY,
+    INVALID_IMPORT,
+    INVALID_FRAG,
+    NOT_YOURS
+} = require('./errors');
 const {BC_UPLOADS_DIR} = require('./barcode.config');
 const {parseTridentDataLog} = require('./trident-datalog');
 const {importTankEntries} = require('./tank-import');
+const {selectAllFragsForUser, assignFrag} = require('./dbtc-database');
 
 //-----------------------------------------------------------------------------
 // A function that returns a new connection to the database, so we can
@@ -134,26 +141,6 @@ router.get('/:tankId', (req, res, next) => {
     const entryTypes = db.getEntryTypes();
     res.json({
         entryTypes,
-        tank
-    });
-});
-
-//-----------------------------------------------------------------------------
-// Adding a journal entry
-// To be deprecated
-//-----------------------------------------------------------------------------
-
-router.post('/journal', upload.none(), (req, res, next) => {
-    const {db, user, body} = req;
-    const {tankId} = body;
-    const tank = db.getTankForUser(user.id, tankId);
-    if (!tank) {
-        return next(INVALID_TANK());
-    }
-    db.addEntry(tankId, body);
-    // This will fetch the latest parameters and notes again
-    augmentTank(db, tank);
-    res.json({
         tank
     });
 });
@@ -388,6 +375,9 @@ router.post('/import', upload.single('data'), async (req, res, next) => {
 });
 
 //-----------------------------------------------------------------------------
+// Gets pictures of the tank, from the tank journal thread, frag journals and
+// livestock
+//-----------------------------------------------------------------------------
 
 router.get('/pictures/:tankId', async (req, res, next) => {
     const {db, user, params} = req;
@@ -402,7 +392,7 @@ router.get('/pictures/:tankId', async (req, res, next) => {
     }
     const pictures = [];
     if (tank.threadId) {
-        let posts = await getThreadPosts(user.id, tank.threadId);
+        let posts = await getThreadPosts(tank.userId, tank.threadId);
         posts = posts.filter(({attachments, user: {id}}) =>
             id === user.id && attachments?.length > 0);
         for (const post of posts) {
@@ -443,7 +433,78 @@ router.get('/pictures/:tankId', async (req, res, next) => {
         const [{time}] = pictures;
         months.push({time, pictures});
     }
-    res.json({months});
+    res.json({tank, months});
+});
+
+//-----------------------------------------------------------------------------
+// Gets livestock from frags and the local livestock table. Frags include those
+// that belong to the tank as well as those that have not been assigned to any
+// tank, so the user can assign them. It includes dead and transferred frags.
+//-----------------------------------------------------------------------------
+
+router.get('/livestock/:tankId', (req, res, next) => {
+    const {db, user, params} = req;
+    const {tankId} = params;
+    const tank = db.getTankForUser(user.id, tankId);
+    // This could be because the tank doesn't exist or
+    // it belongs to someone else.
+    // TODO: We should allow others to have a limited view of
+    // someone else's tank
+    if (!tank) {
+        return next(INVALID_TANK());
+    }
+    // First, get all the frags for this user
+    const allFrags = selectAllFragsForUser({id: tank.userId});
+    // Now, split the list into those that have been assigned to this tank
+    // and those that have not been assigned to any tank
+    const frags = [];
+    const unassignedFrags = [];
+    for (const frag of allFrags) {
+        if (frag.tankId === tank.tankId) {
+            frags.push(frag);
+        }
+        else if (!frag.tankId) {
+            unassignedFrags.push(frag);
+        }
+    }
+    // TODO: now, fetch from the 'livestock' table
+    const fish = [];
+    res.json({tank, frags, unassignedFrags, fish});
+});
+
+//-----------------------------------------------------------------------------
+
+router.post('/assign-frags', upload.none(), (req, res, next) => {
+    const {db, user, body} = req;
+    const {tankId} = body;
+    const fragIds = _.isArray(body.fragId) ? body.fragId : [body.fragId];
+    const tank = db.getTankForUser(user.id, tankId);
+    // This could be because the tank doesn't exist or
+    // it belongs to someone else.
+    if (!tank) {
+        return next(INVALID_TANK());
+    }
+    // Get all the frags for this user so we can validate
+    const allFrags = selectAllFragsForUser(user);
+    for (const fragIdString of fragIds) {
+        const fragId = parseInt(fragIdString, 10);
+        const target = allFrags.find((existing) => existing.fragId === fragId);
+        if (!target) {
+            return next(INVALID_FRAG());
+        }
+        if (target.ownerId !== user.id) {
+            return next(NOT_YOURS());
+        }
+        if (target.tankId !== null) {
+            return next(INVALID_FRAG());
+        }
+    }
+    let assigned = 0;
+    // OK, all good, we are ready to make the update
+    for (const fragIdString of fragIds) {
+        assigned += assignFrag(fragIdString, tankId);
+    }
+    res.json({assigned});
 });
 
 //-----------------------------------------------------------------------------

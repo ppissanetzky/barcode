@@ -174,7 +174,7 @@
                           label
                           color="primary"
                           class="ma-1"
-                          @click="$router.push(`/tank/import/trident-datalog/${tank.tankId}`)"
+                          to="import-trident-datalog"
                         >
                           Import Trident data
                         </v-chip>
@@ -289,19 +289,80 @@
             </v-tab-item>
             <!-- Tab for livestock -->
             <v-tab-item>
-              <v-card flat>
-                <v-card-title>Coming soon...</v-card-title>
+              <v-card
+                :loading="loadingLivestock"
+                flat
+              >
+                <v-card-subtitle v-if="loadingLivestock">
+                  Loading livestock...
+                </v-card-subtitle>
+                <div v-if="livestock">
+                  <v-expansion-panels
+                    v-if="livestock.unassignedFrags.length > 0"
+                    v-model="expandUnassignedPanel"
+                    flat
+                  >
+                    <v-expansion-panel>
+                      <v-expansion-panel-header>
+                        Assign frags to this tank
+                        {{ livestock.unassignedFrags.length ? `(${livestock.unassignedFrags.length} unassigned)` : '' }}
+                      </v-expansion-panel-header>
+                      <v-expansion-panel-content>
+                        <p>
+                          These frags are in your collection but have not been assigned to any tank yet.
+                          Select the ones that are in this tank (or once were) and click 'Assign' below.
+                        </p>
+                        <v-btn
+                          small
+                          color="primary"
+                          :disabled="selectedUnassignedFrags.length === 0"
+                          :loading="assigningFrags"
+                          @click.stop="assignFrags"
+                        >
+                          Assign {{ selectedUnassignedFrags.length || '' }}
+                        </v-btn>
+                        <v-data-table
+                          v-model="selectedUnassignedFrags"
+                          :headers="unassignedFragsHeaders"
+                          :items="livestock.unassignedFrags"
+                          :single-select="false"
+                          item-key="fragId"
+                          show-select
+                        />
+                      </v-expansion-panel-content>
+                    </v-expansion-panel>
+                  </v-expansion-panels>
+                </div>
+                <v-container
+                  v-if="livestock"
+                >
+                  <v-row>
+                    <v-col>
+                      <!-- TODO -->
+                    </v-col>
+                  </v-row>
+                </v-container>
               </v-card>
             </v-tab-item>
           </v-tabs-items>
         </v-card>
       </v-col>
     </v-row>
+    <!-- Temporary alert we show at the bottom when changes are made -->
+    <v-snackbar v-model="snackbar" timeout="3000">
+      {{ snackbarText }}
+      <template v-slot:action="{ attrs }">
+        <v-btn text v-bind="attrs" @click="snackbar = false">
+          OK
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-container>
 </template>
 <script>
 import parse from 'date-fns/parse'
 import format from 'date-fns/format'
+import parseISO from 'date-fns/parseISO'
 import fromUnixTime from 'date-fns/fromUnixTime'
 import getUnixTime from 'date-fns/getUnixTime'
 import formatDistanceToNowStrict from 'date-fns/formatDistanceToNowStrict'
@@ -391,6 +452,11 @@ export default {
       entryTypes: undefined,
       entries: undefined,
       pictures: undefined,
+      livestock: undefined,
+      // Whether the snackbar is open
+      snackbar: false,
+      // The text shown in the snackbar
+      snackbarText: undefined,
       // The selected tab
       tab: undefined,
       // Header definition for the table
@@ -419,7 +485,23 @@ export default {
       // Sure to delete
       areYouSure: false,
       // While we are loading pictures
-      loadingPictures: true
+      loadingPictures: true,
+      // While we are loading livestock
+      loadingLivestock: true,
+      // Whether the panel to assign frags is expanded
+      expandUnassignedPanel: false,
+      // The frags selected in the unassigned table
+      selectedUnassignedFrags: [],
+      // The headers for the unassigned frags table
+      unassignedFragsHeaders: [
+        { text: 'Name', value: 'name' },
+        { text: 'Type', value: 'type' },
+        { text: 'Collection', value: 'rules' },
+        { text: 'Status', value: 'status' },
+        { text: 'Date acquired', value: 'date', cellClass: 'text-right' }
+      ],
+      // While we are assigning frags
+      assigningFrags: false
     }
   },
   computed: {
@@ -444,7 +526,15 @@ export default {
 
     noteEntryTypes () {
       return this.entryTypes.filter(({ isTracked }) => !isTracked)
+    },
+
+    hasAnyLivestock () {
+      if (this.livestock?.frags?.length || this.livestock?.fish?.length) {
+        return true
+      }
+      return false
     }
+
   },
   watch: {
 
@@ -457,6 +547,8 @@ export default {
     tab (value) {
       if (value === 1 && !this.pictures) {
         this.loadPictures()
+      } else if (value === 2 && !this.livestock) {
+        this.loadLivestock()
       }
     }
   },
@@ -588,6 +680,7 @@ export default {
       this.entries = this.entries.sort((a, b) => b.time - a.time)
       this.formSubmitting = false
       this.showDialog = false
+      this.snack(`${adding ? 'Added' : 'Updated'} ${entry.name}`)
     },
 
     async deleteEntry () {
@@ -602,6 +695,7 @@ export default {
       }
       this.formSubmitting = false
       this.showDialog = false
+      this.snack('Entry deleted')
     },
 
     async loadPictures () {
@@ -623,6 +717,52 @@ export default {
         addSuffix: true
       })
       return `${month} - ${distance}`
+    },
+
+    async loadLivestock (force) {
+      if (!force) {
+        if (this.livestock) {
+          return
+        }
+        this.livestock = {
+          frags: [],
+          unassignedFrags: [],
+          fish: []
+        }
+      }
+      const url = `/api/tank/livestock/${this.tank.tankId}`
+      const { frags, unassignedFrags, fish } = await this.$axios.$get(url)
+      for (const frag of unassignedFrags) {
+        if (!frag.isAlive) {
+          frag.status = frag.status || 'dead'
+        }
+        frag.date = parseISO(frag.dateAcquired).toLocaleDateString()
+      }
+      this.livestock = { frags, unassignedFrags, fish }
+      if (frags.length === 0 && unassignedFrags.length > 0) {
+        this.expandUnassignedPanel = 0
+      }
+      this.loadingLivestock = false
+    },
+
+    async assignFrags () {
+      this.assigningFrags = true
+      const formData = new FormData()
+      formData.set('tankId', this.tank.tankId)
+      for (const frag of this.selectedUnassignedFrags) {
+        formData.append('fragId', frag.fragId)
+      }
+      const url = '/api/tank/assign-frags'
+      const { assigned } = await this.$axios.$post(url, formData)
+      this.selectedUnassignedFrags = []
+      await this.loadLivestock(true)
+      this.assigningFrags = false
+      this.snack(`Assigned ${assigned} frag${assigned > 1 ? 's' : ''}`)
+    },
+
+    snack (text) {
+      this.snackbarText = text
+      this.snackbar = true
     }
   }
 }

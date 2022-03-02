@@ -18,7 +18,6 @@
       >
         <v-card
           elevation="6"
-          width="375px"
         >
           <v-card-title v-text="tank.name" />
           <v-card-subtitle>
@@ -51,17 +50,16 @@
           <v-card-text v-if="tank.description">
             {{ tank.description }}
           </v-card-text>
-          <div v-if="tank.parameters.length > 0">
-            <!-- <v-divider /> -->
+          <v-card-text v-if="tank.parameters.length > 0">
             <v-container fluid>
-              <v-row cols="auto">
+              <v-row>
                 <v-col
                   v-for="p in tank.parameters"
                   :key="p.name"
+                  cols="auto"
                 >
                   <v-card
                     :color="p.color"
-                    width="100px"
                   >
                     <v-card-text>
                       <div>
@@ -78,24 +76,28 @@
                 </v-col>
               </v-row>
             </v-container>
-          </div>
-          <v-sheet
-            color="primary"
-            height="42px"
-            @click.stop="$router.push(`/tank/parameters/${tank.tankId}`)"
-          >
-            <v-card-actions>
-              <v-spacer />
-              <v-btn
-                small
-                depressed
-                color="primary"
-              >
-                Details
-              </v-btn>
-              <v-spacer />
-            </v-card-actions>
-          </v-sheet>
+          </v-card-text>
+          <v-divider />
+          <v-card-text>
+            <v-btn text :to="`/tank/${tank.tankId}/parameters`">
+              {{ 'Notes & parameters' }}
+              <v-icon right>
+                mdi-chevron-double-right
+              </v-icon>
+            </v-btn>
+            <v-btn v-if="tank.thread" text :to="`/tank/${tank.tankId}/pictures`">
+              Pictures
+              <v-icon right>
+                mdi-chevron-double-right
+              </v-icon>
+            </v-btn>
+            <v-btn text :to="`/tank/${tank.tankId}/livestock`">
+              Livestock
+              <v-icon right>
+                mdi-chevron-double-right
+              </v-icon>
+            </v-btn>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
