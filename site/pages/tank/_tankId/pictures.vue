@@ -73,7 +73,11 @@
                   <v-img
                     :src="p.picture"
                     :aspect-ratio="1"
-                  />
+                  >
+                    <template v-slot:placeholder>
+                      <v-sheet color="grey" class="fill-height fill-width ma-0" />
+                    </template>
+                  </v-img>
                 </a>
               </v-col>
             </v-row>

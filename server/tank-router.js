@@ -17,10 +17,15 @@ const {
     INVALID_FRAG,
     NOT_YOURS
 } = require('./errors');
-const {BC_UPLOADS_DIR} = require('./barcode.config');
+const {BC_UPLOADS_DIR, BC_SITE_BASE_URL} = require('./barcode.config');
 const {parseTridentDataLog} = require('./trident-datalog');
 const {importTankEntries} = require('./tank-import');
-const {selectAllFragsForUser, assignFrag} = require('./dbtc-database');
+const {
+    selectAllFragsForUser,
+    assignFrag,
+    getFragsInTank,
+    getFragJournals
+} = require('./dbtc-database');
 
 //-----------------------------------------------------------------------------
 // A function that returns a new connection to the database, so we can
@@ -407,8 +412,32 @@ router.get('/pictures/:tankId', async (req, res, next) => {
         }
     }
 
-    // TODO: Once we hook up livestock, add pictures from their
-    // journals
+    const frags = getFragsInTank(tank.userId, tank.tankId);
+    for (const frag of frags) {
+        const {fragId} = frag;
+        const journals = getFragJournals(fragId).filter(({picture}) => picture);
+        // If there are no journals with a picture, see if the frag itself has one
+        if (journals.length === 0) {
+            if (frag.picture) {
+                pictures.push({
+                    time: toUnixTime(frag.dateAcquired),
+                    picture: `${BC_SITE_BASE_URL}/uploads/${frag.picture}`,
+                    url: `/frag/${fragId}`
+                });
+            }
+        }
+        else {
+            for (const journal of journals) {
+                pictures.push({
+                    time: toUnixTime(journal.timestamp),
+                    picture: `${BC_SITE_BASE_URL}/uploads/${journal.picture}`,
+                    url: `/frag/${fragId}`
+                });
+            }
+        }
+    }
+
+    // TODO: livestock pictures
 
     // Sort them in descending order by time (latest first)
     pictures.sort((a, b) => b.time - a.time);

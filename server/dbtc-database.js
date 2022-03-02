@@ -1298,6 +1298,21 @@ function assignFrag(fragId, tankId) {
         {fragId, tankId});
 }
 
+function getFragsInTank(userId, tankId) {
+    return db.all(
+        `
+        SELECT *
+        FROM mothers, frags
+        WHERE
+            frags.motherId = mothers.motherId AND
+            frags.ownerId = $userId AND
+            frags.tankId = $tankId
+        ORDER BY
+            frags.dateAcquired DESC
+        `,
+        {userId, tankId}
+    );
+}
 //-----------------------------------------------------------------------------
 
 module.exports = {
@@ -1345,5 +1360,6 @@ module.exports = {
     getSwapFrags,
     addSwapFrag,
     getSwapParticipants,
-    assignFrag
+    assignFrag,
+    getFragsInTank
 };
