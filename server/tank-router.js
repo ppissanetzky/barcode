@@ -8,7 +8,7 @@ const multer = require('multer');
 const _ = require('lodash');
 
 const {age, fromUnixTime, toUnixTime, format} = require('./dates');
-const {entryInfo, parameterInfo, noteInfo} = require('./tank-parameters');
+const {entryInfo, parameterInfo, noteInfo, fragJournalInfo} = require('./tank-parameters');
 const {getTankJournalsForUser, getThread, getThreadPosts} = require('./xenforo');
 const {
     INVALID_TANK,
@@ -24,8 +24,16 @@ const {
     selectAllFragsForUser,
     assignFrag,
     getFragsInTank,
-    getFragJournals
+    getFragJournalsForTank
 } = require('./dbtc-database');
+
+//-----------------------------------------------------------------------------
+// These must match the database
+//-----------------------------------------------------------------------------
+
+const CORAL_ENTRY_TYPE = 12;
+const FISH_ENTRY_TYPE = 13;
+const INVERT_ENTRY_TYPE = 14;
 
 //-----------------------------------------------------------------------------
 // A function that returns a new connection to the database, so we can
@@ -278,6 +286,8 @@ router.delete('/entry/:tankId/:rowid', (req, res, next) => {
 });
 
 //-----------------------------------------------------------------------------
+// Gets all entries for a tank, not just parameters
+//-----------------------------------------------------------------------------
 
 router.get('/parameters/:tankId', (req, res, next) => {
     const {db, user, params} = req;
@@ -299,10 +309,15 @@ router.get('/parameters/:tankId', (req, res, next) => {
         const entryType = map.get(entry.entryTypeId);
         return entryInfo(entryType, entry);
     });
+    // Now, get synthetic entries from frag journals
+    const fragEntryType = map.get(CORAL_ENTRY_TYPE);
+    const fragEntries = getFragJournalsForTank(tank.userId, tankId).map((entry) =>
+        fragJournalInfo(fragEntryType, entry));
+
     res.json({
         entryTypes,
         tank,
-        entries
+        entries: _.sortBy([...entries, ...fragEntries], ['time']).reverse()
     });
 });
 
@@ -412,29 +427,14 @@ router.get('/pictures/:tankId', async (req, res, next) => {
         }
     }
 
-    const frags = getFragsInTank(tank.userId, tank.tankId);
-    for (const frag of frags) {
-        const {fragId} = frag;
-        const journals = getFragJournals(fragId).filter(({picture}) => picture);
-        // If there are no journals with a picture, see if the frag itself has one
-        if (journals.length === 0) {
-            if (frag.picture) {
-                pictures.push({
-                    time: toUnixTime(frag.dateAcquired),
-                    picture: `${BC_SITE_BASE_URL}/uploads/${frag.picture}`,
-                    url: `/frag/${fragId}`
-                });
-            }
-        }
-        else {
-            for (const journal of journals) {
-                pictures.push({
-                    time: toUnixTime(journal.timestamp),
-                    picture: `${BC_SITE_BASE_URL}/uploads/${journal.picture}`,
-                    url: `/frag/${fragId}`
-                });
-            }
-        }
+    // Pictures from frag journals
+    const journals = getFragJournalsForTank(tank.userId, tank.tankId);
+    for (const journal of journals) {
+        pictures.push({
+            time: toUnixTime(journal.timestamp),
+            picture: `${BC_SITE_BASE_URL}/uploads/${journal.picture}`,
+            url: `/frag/${journal.fragId}`
+        });
     }
 
     // TODO: livestock pictures

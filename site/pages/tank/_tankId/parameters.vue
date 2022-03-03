@@ -121,7 +121,7 @@
                   label
                   small
                   close
-                  :color="data.item.color"
+                  :color="data.item.color || 'primary'"
                   @click="data.select"
                   @click:close="removeSelectedEntryType(data.item.value)"
                 >
@@ -284,9 +284,15 @@ export default {
     const { entryTypes, tank, entries } = await this.$axios.$get(url)
     this.tank = tank
     this.entryTypes = entryTypes
+    const categories = new Set()
+    for (const entryType of entryTypes) {
+      this.entryTypeMap.set(entryType.entryTypeId, entryType)
+      categories.add(entryType.category)
+    }
     this.entryTypesToSelect = [
-      { value: -1, text: 'Parameters' },
-      { value: -2, text: 'Notes' },
+      ...(Array.from(categories)).map(category =>
+        ({ value: category, text: category })),
+      { divider: true },
       ...entryTypes.map(({ entryTypeId, name, color }) =>
         ({ value: entryTypeId, text: name, color }))
     ]
@@ -307,6 +313,8 @@ export default {
       tank: undefined,
       entryTypes: [],
       entries: [],
+      // A map of entry types by entryTypeId
+      entryTypeMap: new Map(),
       // Whether the snackbar is open
       snackbar: false,
       // The text shown in the snackbar
@@ -345,21 +353,23 @@ export default {
         return this.entries
       }
       const types = new Set(this.selectedEntryTypes)
-      if (types.has(-1)) {
-        this.trackedEntryTypes.forEach(({ entryTypeId }) => types.add(entryTypeId))
-      }
-      if (types.has(-2)) {
-        this.noteEntryTypes.forEach(({ entryTypeId }) => types.add(entryTypeId))
-      }
-      return this.entries.filter(({ type }) => types.has(type))
+      return this.entries.filter(({ type }) => {
+        if (types.has(type)) {
+          return true
+        }
+        const { category } = this.entryTypeMap.get(type)
+        return types.has(category)
+      })
     },
 
     trackedEntryTypes () {
-      return this.entryTypes.filter(({ isTracked }) => isTracked)
+      return this.entryTypes.filter(({ isTracked, external }) =>
+        !external && isTracked)
     },
 
     noteEntryTypes () {
-      return this.entryTypes.filter(({ isTracked }) => !isTracked)
+      return this.entryTypes.filter(({ isTracked, external }) =>
+        !external && !isTracked)
     }
 
   },
@@ -388,6 +398,12 @@ export default {
     },
 
     async clickRow (item, metadata) {
+      if (item.external) {
+        if (item.url) {
+          window.open(item.url, '_blank')
+        }
+        return
+      }
       const url = `/api/tank/entry/${this.tank.tankId}/${item.rowid}`
       const { entry } = await this.$axios.$get(url)
       const date = format(fromUnixTime(entry.time), 'P pp')

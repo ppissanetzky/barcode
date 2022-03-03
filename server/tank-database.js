@@ -8,7 +8,7 @@ const {nowAsIsoString, utcIsoStringFromString, toUnixTime, nowAsUnixTime} = requ
 
 //-----------------------------------------------------------------------------
 
-const TANK_DB_VERSION = 2;
+const TANK_DB_VERSION = 3;
 
 const database = new Database('tank', TANK_DB_VERSION);
 

@@ -3,7 +3,13 @@
 const numeral = require('numeral');
 const _ = require('lodash');
 
-const {age, differenceInDays, strictDifferenceToNow, fromUnixTime} = require('./dates');
+const {
+    age,
+    differenceInDays,
+    strictDifferenceToNow,
+    fromUnixTime,
+    toUnixTime
+} = require('./dates');
 
 //-----------------------------------------------------------------------------
 // Number of days after which a parameter is considered 'old'
@@ -85,10 +91,27 @@ function entryInfo(entryType, row) {
     };
 }
 
+function fragJournalInfo(entryType, frag, journal) {
+    const {timestamp} = journal;
+    return {
+        rowid: `fj-${journal.journalId}`,
+        type: entryType.entryTypeId,
+        time: toUnixTime(timestamp),
+        text: `${frag.name} / ${journal.notes || journal.entryType}`,
+        age: strictDifferenceToNow(timestamp) + ' ago',
+        name: entryType.name,
+        color: entryType.color,
+        external: Boolean(entryType.external),
+        url: `/frag/${frag.fragId}`
+    };
+
+}
+
 //-----------------------------------------------------------------------------
 
 module.exports = {
     parameterInfo,
     noteInfo,
-    entryInfo
+    entryInfo,
+    fragJournalInfo
 };
