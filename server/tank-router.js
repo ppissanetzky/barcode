@@ -23,7 +23,6 @@ const {importTankEntries} = require('./tank-import');
 const {
     selectAllFragsForUser,
     assignFrag,
-    getFragsInTank,
     getFragJournalsForTank
 } = require('./dbtc-database');
 
@@ -32,8 +31,8 @@ const {
 //-----------------------------------------------------------------------------
 
 const CORAL_ENTRY_TYPE = 12;
-const FISH_ENTRY_TYPE = 13;
-const INVERT_ENTRY_TYPE = 14;
+// const FISH_ENTRY_TYPE = 13;
+// const INVERT_ENTRY_TYPE = 14;
 
 //-----------------------------------------------------------------------------
 // A function that returns a new connection to the database, so we can
