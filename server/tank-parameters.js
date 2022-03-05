@@ -91,18 +91,18 @@ function entryInfo(entryType, row) {
     };
 }
 
-function fragJournalInfo(entryType, frag, journal) {
+function fragJournalInfo(entryType, journal) {
     const {timestamp} = journal;
     return {
         rowid: `fj-${journal.journalId}`,
         type: entryType.entryTypeId,
         time: toUnixTime(timestamp),
-        text: `${frag.name} / ${journal.notes || journal.entryType}`,
+        text: `${journal.name} / ${journal.notes || journal.entryType}`,
         age: strictDifferenceToNow(timestamp) + ' ago',
         name: entryType.name,
         color: entryType.color,
         external: Boolean(entryType.external),
-        url: `/frag/${frag.fragId}`
+        url: `/frag/${journal.fragId}`
     };
 
 }

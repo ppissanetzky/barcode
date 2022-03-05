@@ -103,10 +103,18 @@
               </v-card>
             </v-menu>
             <v-spacer />
+            <v-switch
+              v-model="showGraph"
+              :disabled="disableGraph"
+              :loading="disableGraph ? false : loadingGraph"
+              inset
+              prepend-icon="mdi-chart-bar"
+              class="mt-5"
+            />
             <v-autocomplete
               v-model="selectedEntryTypes"
               :items="entryTypesToSelect"
-              label="Filter"
+              label="Filter and graph"
               chips
               multiple
               clearable
@@ -140,6 +148,13 @@
               dense
             />
           </v-toolbar>
+          <v-card-text
+            v-if="showGraph"
+          >
+            <v-sheet height="400px">
+              <div id="chart_div" class="fill-height fill-width" />
+            </v-sheet>
+          </v-card-text>
           <v-card-text>
             <v-data-table
               :headers="headers"
@@ -277,6 +292,22 @@ import format from 'date-fns/format'
 import fromUnixTime from 'date-fns/fromUnixTime'
 import getUnixTime from 'date-fns/getUnixTime'
 import formatDistanceToNowStrict from 'date-fns/formatDistanceToNowStrict'
+
+import { classToHex } from 'vuetify/lib/util/colorUtils'
+import colors from 'vuetify/lib/util/colors'
+
+function convertColor (css) {
+  // This is because 'classToHex' is broken for colors that include
+  // a hyphen such as 'deep-purple'. We change that to 'deepPurple'
+  //
+  // We also change -5 to -3 to darken the color a bit, because the
+  // lighter colors don't show up well in a white chart
+  const upper = css
+    .replace(/(-\D)/, match => match.substr(1).toUpperCase())
+    .replace('-5', '-2')
+  return classToHex(upper, colors, {})
+}
+
 export default {
   async fetch () {
     const tankId = this.$route.params.tankId
@@ -343,9 +374,15 @@ export default {
       // A hint we show about the date
       dateTimeHint: undefined,
       // Sure to delete
-      areYouSure: false
+      areYouSure: false,
+      // Whether the graph is shown
+      showGraph: false,
+      disableGraph: false,
+      loadingGraph: false,
+      chart: undefined
     }
   },
+
   computed: {
 
     filteredEntries () {
@@ -373,15 +410,37 @@ export default {
     }
 
   },
+
   watch: {
 
     showDialog (value) {
       if (value) {
         setTimeout(() => this.$refs.form.resetValidation(), 1)
       }
+    },
+
+    showGraph () {
+      this.drawChart()
+    },
+
+    filteredEntries () {
+      this.drawChart()
     }
 
   },
+
+  mounted () {
+    const script = document.createElement('script')
+    script.setAttribute('src', 'https://www.gstatic.com/charts/loader.js')
+    script.onload = () => {
+      window.google.charts.load('current', {
+        packages: ['corechart', 'line']
+      })
+      window.google.charts.setOnLoadCallback(() => {})
+    }
+    document.head.appendChild(script)
+  },
+
   methods: {
 
     removeSelectedEntryType (entryTypeId) {
@@ -537,6 +596,163 @@ export default {
     snack (text) {
       this.snackbarText = text
       this.snackbar = true
+    },
+
+    async drawChart () {
+      if (this.selectedEntryTypes.length === 0) {
+        if (this.showGraph) {
+          this.showGraph = false
+        }
+        this.disableGraph = true
+      } else {
+        this.disableGraph = false
+      }
+      if (!this.showGraph) {
+        return
+      }
+
+      this.loadingGraph = true
+
+      const data = new window.google.visualization.DataTable()
+      data.addColumn('datetime', 'Time')
+
+      // Create a set of entry types, resolving categories
+
+      const entryTypes = new Set()
+      for (const type of this.selectedEntryTypes) {
+        const single = this.entryTypeMap.get(type)
+        if (single) {
+          entryTypes.add(single)
+        } else {
+          for (const entryType of this.entryTypes) {
+            if (entryType.category === type) {
+              entryTypes.add(entryType)
+            }
+          }
+        }
+      }
+
+      const entries = this.filteredEntries
+
+      // Add the columns for tracked and non-tracked entries
+
+      const map = new Map()
+      const series = []
+      let seriesIndex = 0
+
+      for (const type of entryTypes) {
+        const index = data.getNumberOfColumns()
+        map.set(type.entryTypeId, { ...type, index })
+        if (type.isTracked) {
+          data.addColumn('number', type.name)
+          series[seriesIndex++] = {
+            color: convertColor(type.color)
+          }
+        } else {
+          data.addColumn('number', type.name)
+          data.addColumn({ type: 'string', role: 'annotation' })
+          data.addColumn({ type: 'string', role: 'tooltip' })
+          series[seriesIndex++] = {
+            color: convertColor(type.color),
+            lineWidth: 0,
+            pointSize: 9,
+            pointShape: 'diamond'
+          }
+        }
+      }
+
+      // Add the rows for tracked entries and calculate the overall
+      // min and max values
+
+      const columns = data.getNumberOfColumns()
+      let min = Infinity
+      let max = -Infinity
+      let trackedCount = 0
+
+      for (const entry of entries) {
+        const info = map.get(entry.type)
+        if (info) {
+          if (info.isTracked) {
+            const row = new Array(columns)
+            row[0] = fromUnixTime(entry.time)
+            row[info.index] = entry.value
+            data.addRow(row)
+            min = Math.min(min, entry.value)
+            max = Math.max(max, entry.value)
+            ++trackedCount
+          }
+        }
+      }
+
+      const vAxis = {}
+
+      if (trackedCount === 0) {
+        min = 0
+        max = 100
+        // Removes the dummy values from the vertical axis
+        vAxis.textPosition = 'none'
+      }
+
+      // Add the non-tracked entries
+
+      for (const entry of entries) {
+        const info = map.get(entry.type)
+        if (info) {
+          if (!info.isTracked) {
+            const { index, name } = info
+            const row = new Array(columns)
+            const date = fromUnixTime(entry.time)
+            // This is to step the different series
+            const value = min + ((max - min) * (index / columns))
+            row[0] = date
+            row[index + 0] = value
+            row[index + 1] = name
+            row[index + 2] = `${date.toLocaleDateString()}\n${entry.text}`
+            data.addRow(row)
+          }
+        }
+      }
+
+      // Options for the chart
+
+      const options = {
+        curveType: 'function',
+        pointSize: 3,
+        lineWidth: 2,
+        series,
+        explorer: {
+          axis: 'horizontal',
+          keepInBounds: true
+        },
+        vAxis,
+        hAxis: {
+          viewWindow: {
+            max: new Date()
+          },
+          gridlines: {
+            // Get rid of the vertical grid lines
+            color: 'none',
+            units: {
+              days: {
+                format: ['MMM d']
+              },
+              hours: {
+                format: ['HH:mm', 'ha']
+              }
+            }
+          }
+        }
+      }
+      // Next turn, since the div may not be visible right now
+
+      await new Promise(resolve => setTimeout(resolve, 1))
+
+      // Create the chart
+
+      this.chart = new window.google.visualization.LineChart(document.getElementById('chart_div'))
+      this.chart.draw(data, options)
+
+      this.loadingGraph = false
     }
   }
 }

@@ -58,6 +58,9 @@
             </router-link>
             to assign them to this one.
           </v-card-subtitle>
+          <v-card-title v-else>
+            Under construction...
+          </v-card-title>
         </v-card>
       </v-col>
     </v-row>
