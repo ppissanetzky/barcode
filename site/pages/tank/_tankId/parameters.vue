@@ -613,32 +613,40 @@ export default {
 
       this.loadingGraph = true
 
+      const entries = this.filteredEntries
+
       const data = new window.google.visualization.DataTable()
       data.addColumn('datetime', 'Time')
 
       // Create a set of entry types, resolving categories
 
+      let trackedEntryCount = 0
+
       const entryTypes = new Set()
-      for (const type of this.selectedEntryTypes) {
-        const single = this.entryTypeMap.get(type)
-        if (single) {
-          entryTypes.add(single)
-        } else {
-          for (const entryType of this.entryTypes) {
-            if (entryType.category === type) {
-              entryTypes.add(entryType)
-            }
+      for (const { type } of entries) {
+        if (!entryTypes.has(type)) {
+          const entryType = this.entryTypeMap.get(type)
+          entryTypes.add(entryType)
+          if (entryType.isTracked) {
+            trackedEntryCount++
           }
         }
       }
-
-      const entries = this.filteredEntries
 
       // Add the columns for tracked and non-tracked entries
 
       const map = new Map()
       const series = []
       let seriesIndex = 0
+      let axis = 0
+
+      const vAxes = {
+        [trackedEntryCount ? 2 : 0]: {
+          textPosition: 'none',
+          minValue: 0,
+          maxValue: 100
+        }
+      }
 
       for (const type of entryTypes) {
         const index = data.getNumberOfColumns()
@@ -646,7 +654,8 @@ export default {
         if (type.isTracked) {
           data.addColumn('number', type.name)
           series[seriesIndex++] = {
-            color: convertColor(type.color)
+            color: convertColor(type.color),
+            targetAxisIndex: Math.min(axis++, 1)
           }
         } else {
           data.addColumn('number', type.name)
@@ -656,7 +665,8 @@ export default {
             color: convertColor(type.color),
             lineWidth: 0,
             pointSize: 9,
-            pointShape: 'diamond'
+            pointShape: 'diamond',
+            targetAxisIndex: trackedEntryCount ? 2 : 0
           }
         }
       }
@@ -665,58 +675,44 @@ export default {
       // min and max values
 
       const columns = data.getNumberOfColumns()
-      let min = Infinity
-      let max = -Infinity
-      let trackedCount = 0
+      const rows = new Map()
 
-      for (const entry of entries) {
-        const info = map.get(entry.type)
-        if (info) {
-          if (info.isTracked) {
-            const row = new Array(columns)
-            row[0] = fromUnixTime(entry.time)
-            row[info.index] = entry.value
-            data.addRow(row)
-            min = Math.min(min, entry.value)
-            max = Math.max(max, entry.value)
-            ++trackedCount
-          }
+      function getOrAddRow (time) {
+        let row = rows.get(time)
+        if (!row) {
+          row = new Array(columns)
+          row[0] = fromUnixTime(time)
+          rows.set(time, row)
         }
+        return row
       }
-
-      const vAxis = {}
-
-      if (trackedCount === 0) {
-        min = 0
-        max = 100
-        // Removes the dummy values from the vertical axis
-        vAxis.textPosition = 'none'
-      }
-
-      // Add the non-tracked entries
 
       for (const entry of entries) {
         const info = map.get(entry.type)
         if (info) {
-          if (!info.isTracked) {
-            const { index, name } = info
-            const row = new Array(columns)
-            const date = fromUnixTime(entry.time)
-            // This is to step the different series
-            const value = min + ((max - min) * (index / columns))
-            row[0] = date
-            row[index + 0] = value
+          const { index, name, isTracked } = info
+          const { time, text, value } = entry
+          const row = getOrAddRow(time)
+          if (isTracked) {
+            row[info.index] = value
+          } else {
+            const date = fromUnixTime(time)
+            row[index + 0] = 100 * (index / columns)
             row[index + 1] = name
-            row[index + 2] = `${date.toLocaleDateString()}\n${entry.text}`
-            data.addRow(row)
+            row[index + 2] = `${date.toLocaleDateString()}\n${text}`
           }
         }
+      }
+
+      for (const [, row] of rows) {
+        data.addRow(row)
       }
 
       // Options for the chart
 
       const options = {
         curveType: 'function',
+        interpolateNulls: true,
         pointSize: 3,
         lineWidth: 2,
         series,
@@ -724,7 +720,12 @@ export default {
           axis: 'horizontal',
           keepInBounds: true
         },
-        vAxis,
+        vAxes,
+        vAxis: {
+          minorGridlines: {
+            count: 0
+          }
+        },
         hAxis: {
           viewWindow: {
             max: new Date()
