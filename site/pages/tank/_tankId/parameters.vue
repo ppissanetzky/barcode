@@ -109,8 +109,9 @@
               :loading="disableGraph ? false : loadingGraph"
               inset
               prepend-icon="mdi-chart-bar"
-              class="mt-5"
+              hide-details
             />
+
             <v-autocomplete
               v-model="selectedEntryTypes"
               :items="entryTypesToSelect"
@@ -148,6 +149,17 @@
               dense
             />
           </v-toolbar>
+          <v-card-text>
+            <v-range-slider
+              v-model="timeRange"
+              :min="earliestTime"
+              :max="latestTime"
+              :step="timeStep"
+              :tick-labels="tickLabels"
+              ticks="always"
+              hide-details
+            />
+          </v-card-text>
           <v-card-text
             v-if="showGraph"
           >
@@ -328,8 +340,23 @@ export default {
         ({ value: entryTypeId, text: name, color }))
     ]
     for (const entry of entries) {
-      entry.date = this.unixTimeToLocaleString(entry.time)
+      const { time } = entry
+      entry.date = this.unixTimeToLocaleString(time)
+      this.earliestTime = Math.min(this.earliestTime || Infinity, time)
+      this.latestTime = Math.max(this.latestTime || -Infinity, time)
     }
+    this.timeStep = (this.latestTime - this.earliestTime) / 6
+    this.timeRange = [
+      this.latestTime - this.timeStep,
+      this.latestTime
+    ]
+    this.tickLabels = []
+    for (let i = this.earliestTime; i <= this.latestTime; i += this.timeStep) {
+      this.tickLabels.push(fromUnixTime(i).toLocaleDateString())
+    }
+    this.tickLabels[0] = fromUnixTime(this.earliestTime).toLocaleDateString()
+    this.tickLabels[6] = fromUnixTime(this.latestTime).toLocaleDateString()
+
     this.entries = entries
     this.headers = [
       { value: 'name', sortable: false },
@@ -379,18 +406,28 @@ export default {
       showGraph: false,
       disableGraph: false,
       loadingGraph: false,
-      chart: undefined
+      chart: undefined,
+      // The value for the time range slider
+      timeRange: [0, 0],
+      earliestTime: 0,
+      latestTime: 0,
+      timeStep: 0,
+      tickLabels: []
     }
   },
 
   computed: {
 
     filteredEntries () {
+      const [earliest, latest] = this.timeRange
+      const filtered = this.entries.filter(({ time }) => {
+        return time >= earliest && time <= latest
+      })
       if (this.selectedEntryTypes.length === 0) {
-        return this.entries
+        return filtered
       }
       const types = new Set(this.selectedEntryTypes)
-      return this.entries.filter(({ type }) => {
+      return filtered.filter(({ type }) => {
         if (types.has(type)) {
           return true
         }
@@ -442,6 +479,13 @@ export default {
   },
 
   methods: {
+
+    age (time) {
+      if (!time) {
+        return ''
+      }
+      return formatDistanceToNowStrict(fromUnixTime(time))
+    },
 
     removeSelectedEntryType (entryTypeId) {
       this.selectedEntryTypes = this.selectedEntryTypes.filter(value =>
@@ -611,9 +655,17 @@ export default {
         return
       }
 
-      this.loadingGraph = true
-
       const entries = this.filteredEntries
+
+      if (entries.length === 0) {
+        if (this.chart) {
+          this.chart.clearChart()
+          this.chart = undefined
+        }
+        return
+      }
+
+      this.loadingGraph = true
 
       const data = new window.google.visualization.DataTable()
       data.addColumn('datetime', 'Time')
@@ -716,10 +768,10 @@ export default {
         pointSize: 3,
         lineWidth: 2,
         series,
-        explorer: {
-          axis: 'horizontal',
-          keepInBounds: true
-        },
+        // explorer: {
+        //   axis: 'horizontal',
+        //   keepInBounds: true
+        // },
         vAxes,
         vAxis: {
           minorGridlines: {
@@ -727,9 +779,10 @@ export default {
           }
         },
         hAxis: {
-          viewWindow: {
-            max: new Date()
-          },
+          // viewWindow: {
+          //   min: fromUnixTime(this.timeRange[0]),
+          //   max: fromUnixTime(this.timeRange[1])
+          // },
           gridlines: {
             // Get rid of the vertical grid lines
             color: 'none',
