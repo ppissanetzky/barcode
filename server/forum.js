@@ -97,9 +97,14 @@ function itemImported(user, threadId, motherId, fragId) {
 function madeFragsAvailable(user, frag) {
     later(async () => {
         const fans = await Promise.all(db.getFans(frag.motherId).map(async ({userId, timestamp}) => {
-            const {name} = await lookupUser(userId);
+            const fan = await lookupUser(userId);
+            if (!fan) {
+                console.error('Failed to lookup fan', userId);
+                return null;
+            }
+            const {name} = fan;
             return ({name, timestamp});
-        }));
+        })).filter((fan) => fan);
         uberPost(frag.threadId, 'frags-available', {
             user,
             frag,
