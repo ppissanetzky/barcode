@@ -325,6 +325,10 @@ const INSERT_BAN = `
     )
 `;
 
+function addBan(values) {
+    db.run(INSERT_BAN, values);
+}
+
 function transferItem(itemId, fromUserId, toUserId, exemptFromBans) {
     return db.transaction(({all, run, first}) => {
         const now = new Date();
@@ -451,6 +455,7 @@ module.exports = {
     getQueue,
     getQueueForUser,
     getBan,
+    addBan,
     getOtp,
     deleteOtp,
     updateOtp,

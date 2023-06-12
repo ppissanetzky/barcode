@@ -7,6 +7,19 @@
     </v-row>
     <v-row>
       <v-col>
+        <v-btn
+          v-for="tool in tools"
+          :key="tool"
+          small
+          class="mr-2"
+          @click="$router.push(`/tools/${tool}`)"
+        >
+          {{ tool }}
+        </v-btn>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
         <v-autocomplete
           v-model="selectedScript"
           :items="scriptNames"
@@ -124,6 +137,8 @@ export default {
       value: name,
       text: `${name} (${schedule})`
     }))
+    const { tools } = await this.$axios.$get('/api/admin/tools')
+    this.tools = tools
   },
   data () {
     return {
@@ -143,7 +158,10 @@ export default {
       tab: undefined,
 
       // Jobs
-      selectedJob: undefined
+      selectedJob: undefined,
+
+      // Tools
+      tools: []
     }
   },
   computed: {

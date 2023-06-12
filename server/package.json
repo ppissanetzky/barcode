@@ -84,7 +84,8 @@
       "comma-dangle": 0,
       "node/prefer-global/process": 0,
       "operator-linebreak": 0,
-      "unicorn/prefer-object-from-entries": 0
+      "unicorn/prefer-object-from-entries": 0,
+      "no-throw-literal": 0
     },
     "ignores": [
       "sax.js"
