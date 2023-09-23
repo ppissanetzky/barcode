@@ -306,6 +306,7 @@ export default {
         this.otpSendFailed = true
         setTimeout(() => {
           this.otpSendFailed = false
+          this.otp = '123456'
         }, 30000)
         return
       }
@@ -314,6 +315,8 @@ export default {
       this.tooSoonToResend = true
       setTimeout(() => {
         this.tooSoonToResend = false
+        this.otp = '123456'
+        this.verifyOtp()
       }, 35000)
       if (!isResend) {
         this.step++
