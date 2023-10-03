@@ -36,6 +36,8 @@ const {getListOfPlaceNames} = require('./places/places');
 
 const systemSettings = require('./system-settings');
 
+const OTP_ENABLED = false;
+
 //-----------------------------------------------------------------------------
 // The router
 //-----------------------------------------------------------------------------
@@ -157,6 +159,13 @@ router.post('/otp', upload.none(), async (req, res, next) => {
     }
     // Right here, right now
     const now = new Date();
+    // No OTP - we still insert a row in order to keep the phone number
+    if (!OTP_ENABLED) {
+        db.deleteOtp(user.id);
+        db.insertOtp(user.id, phoneNumber, '0', now.toISOString());
+        return res.json({});
+    }
+
     // See if there is an existing row for this user
     const existing = db.getOtp(user.id);
     if (existing) {
@@ -260,20 +269,22 @@ router.post('/queue/:itemId', upload.none(), async (req, res, next) => {
         if (!existing) {
             return next(NO_OTP());
         }
-        // If it is too old, delete it and bail
-        if (isOtpOld(existing)) {
-            db.deleteOtp(user.id);
-            return next(OTP_TOO_OLD());
-        }
-        // If there isn't an OTP in the request, also a hard error
-        if (!otp) {
-            return next(NO_OTP());
-        }
-        // If the OTP given does not match the one in the
-        // database, that is a soft error, could be a typo that
-        // can be corrected by trying again
-        if (otp !== existing.otp || otp !== '123456') {
-            return res.json({incorrect: true});
+        if (OTP_ENABLED) {
+            // If it is too old, delete it and bail
+            if (isOtpOld(existing)) {
+                db.deleteOtp(user.id);
+                return next(OTP_TOO_OLD());
+            }
+            // If there isn't an OTP in the request, also a hard error
+            if (!otp) {
+                return next(NO_OTP());
+            }
+            // If the OTP given does not match the one in the
+            // database, that is a soft error, could be a typo that
+            // can be corrected by trying again
+            if (otp !== existing.otp) {
+                return res.json({incorrect: true});
+            }
         }
         // Grab the phone number from the OTP row
         phoneNumber = existing.phoneNumber;

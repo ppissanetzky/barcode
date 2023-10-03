@@ -77,7 +77,7 @@
         </v-stepper-step>
         <v-stepper-content step="3">
           <p>You must have a verified phone number to borrow the {{ item.shortName }}.</p>
-          <p>We will send a code to this number via SMS. Please enter your phone number below.</p>
+          <!-- <p>We will send a code to this number via SMS. Please enter your phone number below.</p> -->
           <p
             v-if="otpSendFailed"
             class="error--text"
@@ -306,21 +306,23 @@ export default {
         this.otpSendFailed = true
         setTimeout(() => {
           this.otpSendFailed = false
-          this.otp = '123456'
         }, 30000)
         return
       }
       // Otherwise, it was sent and we can move to the next step
       // But first, we set a timeout to enable the resend button
-      this.tooSoonToResend = true
-      setTimeout(() => {
-        this.tooSoonToResend = false
-        this.otp = '123456'
-        this.verifyOtp()
-      }, 35000)
-      if (!isResend) {
-        this.step++
-      }
+      // this.tooSoonToResend = true
+      // setTimeout(() => {
+      //   this.tooSoonToResend = false
+      //   this.verifyOtp()
+      // }, 35000)
+      // if (!isResend) {
+      //   this.step++
+      // }
+
+      this.otp = '0'
+      this.step++
+      await this.verifyOtp()
     },
     async verifyOtp () {
       this.verifyingOtp = true
