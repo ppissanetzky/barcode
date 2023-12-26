@@ -31,7 +31,7 @@ no title - this is a post
 [B]Waiting for the {{item.shortName}}[/B]
 
 {{#each queue.waiters}}
-@{{this.user.name}} {{this.eta}}{{#if this.user.location}} - {{this.user.location}}{{/if}}
+@{{this.user.name}} {{this.ageWaiting}}{{#if this.user.location}} - {{this.user.location}}{{/if}}
 {{/each}}
 {{else}}
 [B]No one waiting in line[/B]
