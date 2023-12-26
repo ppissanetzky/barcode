@@ -540,7 +540,7 @@ async function startForumThread(userId, forumId, title, message) {
 
 //-----------------------------------------------------------------------------
 
-async function postToForumThread(threadId, message) {
+async function postToForumThread(threadId, message, asUserId) {
     console.log('New post to thread', threadId);
     console.log(`"${message}"`);
     if (!POSTING_ENABLED) {
@@ -552,7 +552,7 @@ async function postToForumThread(threadId, message) {
         api_bypass_permissions: 1
     },
     {
-        'XF-Api-User': BARCODE_USER
+        'XF-Api-User': asUserId || BARCODE_USER
     });
 }
 

@@ -706,7 +706,7 @@ router.put('/fan/:motherId', async (req, res, next) => {
         db.addFan(user.id, motherId);
     }
     const result = await getLikes(user.id, motherId);
-    uberPost(frag.threadId, 'got-in-line', {user, frag, fans: result.users});
+    uberPost(frag.threadId, 'got-in-line', {user, frag, fans: result.users}, user.id);
     res.json(result);
 });
 

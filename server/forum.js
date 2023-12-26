@@ -66,14 +66,14 @@ function itemAdded(fragId) {
 
 //-----------------------------------------------------------------------------
 
-function uberPost(threadId, messageName, context) {
+function uberPost(threadId, messageName, context, asUserId) {
     later(async () => {
         if (!threadId) {
             console.log(`Not posting "${messageName}" because there is no thread ID`);
             return;
         }
         const [, message] = await renderMessage(messageName, context);
-        await postToForumThread(threadId, message);
+        await postToForumThread(threadId, message, asUserId);
         console.log(`Posted to thread ${threadId}`);
     });
 }
@@ -89,7 +89,7 @@ function uberPm(userIds, messageName, context) {
 //-----------------------------------------------------------------------------
 
 function itemImported(user, threadId, motherId, fragId) {
-    uberPost(threadId, 'item-imported', {user, motherId, fragId});
+    uberPost(threadId, 'item-imported', {user, motherId, fragId}, user.id);
 }
 
 //-----------------------------------------------------------------------------
@@ -109,7 +109,7 @@ function madeFragsAvailable(user, frag) {
             user,
             frag,
             fans
-        });
+        }, user.id);
     });
 }
 
@@ -117,26 +117,26 @@ function madeFragsAvailable(user, frag) {
 
 function fragGiven(user, recipient, fragId) {
     const [frag] = db.selectFrag(fragId);
-    uberPost(frag.threadId, 'frag-given', {user, recipient, frag});
+    uberPost(frag.threadId, 'frag-given', {user, recipient, frag}, user.id);
 }
 
 //-----------------------------------------------------------------------------
 
 function fragTransferred(user, recipient, fragId) {
     const [frag] = db.selectFrag(fragId);
-    uberPost(frag.threadId, 'frag-transferred', {user, recipient, frag});
+    uberPost(frag.threadId, 'frag-transferred', {user, recipient, frag}, user.id);
 }
 
 //-----------------------------------------------------------------------------
 
 function journalUpdated(user, frag, journal) {
-    uberPost(frag.threadId, 'journal-updated', {user, frag, journal});
+    uberPost(frag.threadId, 'journal-updated', {user, frag, journal}, user.id);
 }
 
 //-----------------------------------------------------------------------------
 
 function fragDied(user, frag, journal) {
-    uberPost(frag.threadId, 'frag-died', {user, frag, journal});
+    uberPost(frag.threadId, 'frag-died', {user, frag, journal}, user.id);
 }
 
 //-----------------------------------------------------------------------------

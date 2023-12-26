@@ -302,7 +302,7 @@ router.post('/queue/:itemId', upload.none(), async (req, res, next) => {
     // Get the new queue
     const queue = await getQueue(item);
     // Post to the forum
-    uberPost(item.threadId, 'equipment-got-in-line', {item, user, queue});
+    uberPost(item.threadId, 'equipment-got-in-line', {item, user, queue}, user.id);
     // If the queue was empty before this (there's only 1 waiter now),
     // let the holders know about this exciting new development
     if (queue.waiters.length === 1 && queue.haves.length > 0) {
@@ -342,7 +342,7 @@ router.delete('/queue/:itemId', async (req, res, next) => {
     // Get the latest queue
     const queue = await getQueue(item);
     // Post to the forum
-    uberPost(item.threadId, 'equipment-dropped-from-line', {item, user, queue});
+    uberPost(item.threadId, 'equipment-dropped-from-line', {item, user, queue}, user.id);
     // Respond
     res.json({queue});
 });
@@ -417,7 +417,7 @@ router.put('/queue/:itemId/:verb/:otherUserId', async (req, res, next) => {
     // And return the new queue and ban
     const queue = await getQueue(sourceItem);
     // Post that the item has been passed
-    uberPost(sourceItem.threadId, 'equipment-passed', {item: sourceItem, fromUser, toUser, queue});
+    uberPost(sourceItem.threadId, 'equipment-passed', {item: sourceItem, fromUser, toUser, queue}, fromUser.id);
     // Return the new queue and the ban if it is for the caller
     res.json({
         queue,
@@ -482,7 +482,7 @@ router.put('/done/:itemId', async (req, res, next) => {
             }
             // Post that the user is done
             uberPost(item.threadId, 'equipment-available', {
-                item, user, queue, distances});
+                item, user, queue, distances}, user.id);
             if (waiters.length > 0) {
                 // Send a group PM to all the waiters
                 const next = waiters.map(({user: {id}}) => id);
